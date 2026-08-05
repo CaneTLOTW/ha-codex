@@ -69,9 +69,9 @@ Use `codex_approval_policy: never` only when you want autonomous execution witho
 
 Home Assistant updates the Codex App when this repository publishes a higher version in `codex/config.yaml`.
 
-A daily GitHub Actions check opens a pull request when npm publishes a newer
-`@openai/codex` release. That pull request updates the image pin and increments
-the App patch version; merging it starts the image publication workflow.
+A daily GitHub Actions check updates `main` when npm publishes a newer
+`@openai/codex` release. It updates the image pin, increments the App patch
+version, and starts the image publication workflow.
 
 The App uses prebuilt images from GitHub Container Registry:
 

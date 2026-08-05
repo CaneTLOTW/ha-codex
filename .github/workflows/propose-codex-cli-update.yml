@@ -1,4 +1,4 @@
-name: Propose Codex CLI update
+name: Update Codex CLI
 
 on:
   schedule:
@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
-  pull-requests: write
 
 concurrency:
-  group: propose-codex-cli-update
+  group: update-codex-cli
   cancel-in-progress: false
 
 jobs:
@@ -26,44 +26,24 @@ jobs:
         id: version
         run: bash scripts/update-codex-version.sh
 
-      - name: Create update pull request
+      - name: Commit and publish update
         if: steps.version.outputs.changed == 'true'
         env:
-          APP_VERSION: ${{ steps.version.outputs.app_version }}
           CODEX_VERSION: ${{ steps.version.outputs.codex_version }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
-          branch="automation/codex-cli-${CODEX_VERSION}"
-          existing_pr="$(curl --fail-with-body --silent --show-error --get \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            --data-urlencode "state=open" \
-            --data-urlencode "head=${GITHUB_REPOSITORY_OWNER}:${branch}" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls" | jq -r '.[0].html_url // empty')"
-          if [[ -n "${existing_pr}" ]]; then
-            echo "An update pull request already exists: ${existing_pr}"
-            exit 0
-          fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "${branch}"
           git add codex/Dockerfile codex/config.yaml codex/CHANGELOG.md
           git commit -m "chore: update Codex CLI to ${CODEX_VERSION}"
-          git push --force origin "${branch}"
-
-          payload="$(jq -n \
-            --arg title "chore: update Codex CLI to ${CODEX_VERSION}" \
-            --arg head "${branch}" \
-            --arg body "Updates the bundled Codex CLI to \`${CODEX_VERSION}\` and the Home Assistant App version to \`${APP_VERSION}\`. The image build starts automatically after this PR is merged." \
-            '{title: $title, head: $head, base: "main", body: $body}')"
+          git push origin HEAD:main
           curl --fail-with-body --silent --show-error \
             -X POST \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls" \
-            --data "${payload}"
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/publish-codex.yml/dispatches" \
+            --data '{"ref":"main"}'

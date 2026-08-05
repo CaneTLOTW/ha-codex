@@ -184,9 +184,8 @@ option remains in the schema so existing App configurations continue to load,
 but enabling it only logs a warning and keeps using the image-installed CLI.
 
 The repository checks npm daily for a new `@openai/codex` release. When one is
-available, GitHub Actions opens a pull request that updates the image pin and
-increments the App patch version. Merging that pull request publishes the new
-image.
+available, GitHub Actions updates `main`, updates the image pin, increments the
+App patch version, and publishes the new image.
 
 ## Home Assistant App Updates
 
