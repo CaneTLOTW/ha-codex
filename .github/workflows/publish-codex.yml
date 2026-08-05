@@ -13,6 +13,8 @@ on:
 env:
   ARCHITECTURES: '["amd64", "aarch64"]'
   IMAGE_NAME: ha-codex
+  # GitHub preserves account-name casing, but OCI repository names must be lowercase.
+  REGISTRY_PREFIX: ghcr.io/canetlotw
 
 permissions:
   contents: read
@@ -46,6 +48,7 @@ jobs:
         with:
           architectures: ${{ env.ARCHITECTURES }}
           image-name: ${{ env.IMAGE_NAME }}
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}
 
   build:
     name: Build ${{ matrix.arch }}
@@ -115,3 +118,4 @@ jobs:
           image-tags: |
             ${{ needs.init.outputs.version }}
             latest
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}
