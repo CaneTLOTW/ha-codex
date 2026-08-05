@@ -20,15 +20,15 @@ https://github.com/CaneTLOTW/ha-codex
 ```
 
 The add-on keeps the existing slug `codex`, so Home Assistant can treat version
-`0.3.0` as an update of the existing Codex App. The published image is:
+`0.3.1` as an update of the existing Codex App. The published image is:
 
 ```text
-ghcr.io/canetlotw/ha-codex:0.3.0
+ghcr.io/canetlotw/ha-codex:0.3.1
 ```
 
 ## What Changed
 
-- Codex CLI `0.145.0` is installed while the image is built.
+- Codex CLI `0.146.1` is installed while the image is built.
 - Runtime npm updates are disabled; the App no longer writes into `/usr/local`
   during startup.
 - The image-installed executable is preferred over stale user-level launchers
@@ -43,13 +43,19 @@ ghcr.io/canetlotw/ha-codex:0.3.0
 1. Create a full Home Assistant backup.
 2. Stop the old Codex App, but do not uninstall it.
 3. Add the repository URL above and refresh the App Store.
-4. Install the `0.3.0` update for the existing Codex App.
+4. Install the `0.3.1` update for the existing Codex App.
 5. Start the App and verify the CLI version with `codex --version`.
 6. Verify that `/homeassistant` files, login state, MCP, and the working
    directory are available.
+7. On the Codex App page, enable Home Assistant's **Auto update** option if
+   future published App images should install automatically.
 
 Do not run `npm install -g @openai/codex` inside the App. Future Codex CLI
 updates are published as new App image versions.
+
+Home Assistant's **Auto update** option is the supported automation. It is
+separate from `auto_update_codex`, which remains only for configuration
+compatibility and must stay disabled.
 
 ## Rollback
 

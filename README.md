@@ -79,7 +79,10 @@ The App uses prebuilt images from GitHub Container Registry:
 ghcr.io/canetlotw/ha-codex:<version>
 ```
 
-Enable **Auto update** on the Codex App page in Home Assistant if you want Home Assistant to install future App versions automatically.
+> **Automatic updates:** Enable **Auto update** on the Codex App page in Home
+> Assistant. Home Assistant then installs newly published App images
+> automatically. This is separate from the legacy `auto_update_codex` option,
+> which must remain disabled because runtime npm updates are unsupported.
 
 ## Documentation
 
