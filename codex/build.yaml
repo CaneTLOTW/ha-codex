@@ -4,5 +4,5 @@ build_from:
 labels:
   org.opencontainers.image.title: "Codex App for Home Assistant"
   org.opencontainers.image.description: "OpenAI Codex App for the Home Assistant sidebar with terminal access, model controls, and optional MCP integration"
-  org.opencontainers.image.source: "https://github.com/kecksdigital/codex-hass"
+  org.opencontainers.image.source: "https://github.com/CaneTLOTW/ha-codex"
   org.opencontainers.image.licenses: "MIT"

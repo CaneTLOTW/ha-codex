@@ -11,7 +11,7 @@ on:
 
 env:
   ARCHITECTURES: '["amd64", "aarch64"]'
-  IMAGE_NAME: codex-hass
+  IMAGE_NAME: ha-codex
 
 permissions:
   contents: read
