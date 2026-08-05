@@ -44,15 +44,14 @@ configuration:
       interactive safety, untrusted to ask for non-trusted commands, or never
       for autonomous execution without approval prompts.
   auto_update_codex:
-    name: Auto-update Codex CLI
+    name: Runtime Codex CLI updates
     description: >-
-      Check for the latest Codex CLI on startup with a bounded npm install.
-      Disabled by default so startup remains predictable.
+      Retained for compatibility. Codex CLI updates are delivered through
+      Home Assistant App image updates, not runtime npm installs.
   codex_update_timeout:
     name: Codex Update Timeout
     description: >-
-      Maximum seconds to wait for the optional Codex CLI startup update.
-      Applies only when auto-update is enabled.
+      Retained for compatibility. Runtime CLI updates are disabled.
 
 network:
   7681/tcp: Web Terminal (ttyd)

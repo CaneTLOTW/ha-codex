@@ -45,17 +45,15 @@ configuration:
       on-request para segurança interativa, untrusted para pedir aprovação em
       comandos não confiáveis, ou never para execução autônoma sem avisos.
   auto_update_codex:
-    name: Atualizar Codex CLI automaticamente
+    name: Atualizações em tempo de execução da CLI do Codex
     description: >-
-      Procura a versão mais recente do Codex CLI na inicialização com uma
-      instalação npm limitada por tempo. Desabilitado por padrão para manter a
-      inicialização previsível.
+      Mantido por compatibilidade. As atualizações da CLI do Codex são
+      entregues por atualizações da imagem do App.
   codex_update_timeout:
     name: Tempo limite da atualização
     description: >-
-      Segundos máximos para aguardar a atualização opcional do Codex CLI na
-      inicialização. Aplica-se apenas quando a atualização automática está
-      habilitada.
+      Mantido por compatibilidade. As atualizações em tempo de execução estão
+      desabilitadas.
 
 network:
   7681/tcp: Terminal Web (ttyd)

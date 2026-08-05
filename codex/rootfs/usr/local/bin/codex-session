@@ -20,7 +20,7 @@ fail_open_shell() {
       fallback_npm_cache="${fallback_root}/.npm"
       fallback_npm_prefix="${fallback_root}/.local"
       fallback_npm_bin="${fallback_npm_prefix}/bin"
-      fallback_path="${fallback_npm_bin}:${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+      fallback_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}:${fallback_npm_bin}"
       mkdir -p "${fallback_root}/.codex" "$fallback_npm_cache" "$fallback_npm_bin" 2>/dev/null || true
     fi
 

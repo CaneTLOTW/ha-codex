@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codex/image-pinned-cli-fix
     paths:
       - ".github/workflows/publish-codex.yml"
       - "codex/**"

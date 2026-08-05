@@ -1,7 +1,7 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21
 FROM ${BUILD_FROM}
 
-LABEL maintainer="Kecks Digital"
+LABEL maintainer="CaneTLOTW"
 LABEL org.opencontainers.image.title="Codex App for Home Assistant"
 LABEL org.opencontainers.image.description="OpenAI Codex App for the Home Assistant sidebar with terminal access, model controls, and optional MCP integration"
 LABEL org.opencontainers.image.source="https://github.com/CaneTLOTW/ha-codex"

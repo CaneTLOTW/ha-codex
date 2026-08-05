@@ -253,7 +253,9 @@ Version `0.2.13` removes that incompatible UI state automatically and keeps the 
 
 ### Startup is slow
 
-Disable `auto_update_codex` unless you specifically need the newest CLI on every start. Keep `session_persistence` off until authentication is complete.
+Runtime CLI updates are disabled. Install a newer Home Assistant App image when
+an updated Codex CLI is needed. Keep `session_persistence` off until
+authentication is complete.
 
 ## Upstream Codex References
 
