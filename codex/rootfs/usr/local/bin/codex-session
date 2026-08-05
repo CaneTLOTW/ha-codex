@@ -8,7 +8,7 @@ fail_open_shell() {
   local fallback_npm_cache="${fallback_root}/.npm"
   local fallback_npm_prefix="${fallback_root}/.local"
   local fallback_npm_bin="${fallback_npm_prefix}/bin"
-  local fallback_path="${fallback_npm_bin}:${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+  local fallback_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}:${fallback_npm_bin}"
 
   echo "[ERROR] ${message}" >&2
   echo "[ERROR] Startup exit code: ${status}" >&2
@@ -67,7 +67,7 @@ codex_approval_policy="${CODEX_APPROVAL_POLICY:-on-request}"
 session_uid=22000
 system_user="codex"
 session_gid=0
-session_path="${user_npm_bin}:${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+session_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}:${user_npm_bin}"
 
 mkdir -p "$user_codex_home" "$user_root" "$user_npm_cache" "$user_npm_bin" || fail_open_shell "$?" "Unable to create Codex state directories."
 

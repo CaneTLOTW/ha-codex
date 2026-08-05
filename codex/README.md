@@ -77,7 +77,7 @@ When Codex or a prompt mentions `/config`, treat it as `/homeassistant` in this 
 | `default_model` | `gpt-5.4` | Writes the managed startup model for Codex |
 | `codex_permissions` | `workspace` | Selects Codex local sandbox behavior |
 | `codex_approval_policy` | `on-request` | Selects when Codex asks before running actions |
-| `auto_update_codex` | `false` | Optionally updates Codex CLI at startup |
+| `auto_update_codex` | `false` | Retained for compatibility; runtime CLI updates are disabled |
 | `codex_update_timeout` | `300` | Maximum seconds for the optional startup update |
 
 ## Models
@@ -173,17 +173,15 @@ If copying text behaves oddly while tmux is active, hold `Ctrl+Shift` while sele
 
 ## Codex CLI Updates
 
-The image installs Codex CLI during build. For predictable startup, the App does not auto-update Codex by default.
+The image installs a pinned Codex CLI version during the image build. Runtime npm
+updates are intentionally disabled because Home Assistant's writable data
+mounts are not executable, while the image's `/usr/local` tree is not writable
+by the interactive Codex user. This avoids the broken user-level launcher and
+the `bad interpreter: Permission denied` failure after manual npm updates.
 
-Enable `auto_update_codex` if you want the App to run this on startup:
-
-```bash
-npm install -g @openai/codex@latest
-```
-
-The update is bounded by `codex_update_timeout`. If the update fails or times out, the App continues with the image-installed Codex version and logs the failure.
-
-When you run npm global installs from the interactive terminal, the App uses a persistent user-owned npm cache and prefix under the Codex user's home directory. That keeps `npm install -g @openai/codex@latest` writable for the unprivileged runtime user and makes the installed `codex` binary available on `PATH` in later sessions.
+To update Codex, update the Home Assistant App image. The `auto_update_codex`
+option remains in the schema so existing App configurations continue to load,
+but enabling it only logs a warning and keeps using the image-installed CLI.
 
 ## Home Assistant App Updates
 

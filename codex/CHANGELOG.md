@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-08-06
+
+### Fixed
+- Pin the Codex CLI in the image build instead of updating it at App startup.
+- Prefer the executable image-installed CLI over stale user-level npm launchers.
+- Keep the existing add-on slug, options, and persistent state paths for a compatible upgrade.
+- Retain `auto_update_codex` only for configuration compatibility; runtime npm updates are disabled.
+
 ## [0.2.15] - 2026-05-31
 
 ### Fixed
