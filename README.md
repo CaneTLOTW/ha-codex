@@ -4,6 +4,12 @@
 
 Run OpenAI Codex from the Home Assistant sidebar.
 
+This repository is a compatible fork of the original
+[kecksdigital/codex-hass](https://github.com/kecksdigital/codex-hass) App. It
+keeps the original `codex` add-on slug and persistent paths while carrying a
+different image update strategy; see [MIGRATION.md](MIGRATION.md) for the
+changes and upgrade path.
+
 This repository publishes one Home Assistant App: `Codex`. It gives you a browser terminal inside Home Assistant, starts in your Home Assistant configuration directory, and can optionally connect Codex to Home Assistant through MCP.
 
 ## Install

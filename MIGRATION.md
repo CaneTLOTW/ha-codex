@@ -2,6 +2,16 @@
 
 ## Source
 
+This is a compatible fork of the original add-on:
+
+```text
+https://github.com/kecksdigital/codex-hass
+```
+
+The original project remains the upstream source for the add-on structure and
+the existing `codex` data layout. This repository adds the image-pinned CLI
+update fix described below.
+
 Add this repository to Home Assistant under Settings -> Apps -> App Store ->
 Repositories:
 
