@@ -12,6 +12,18 @@ changes and upgrade path.
 
 This repository publishes one Home Assistant App: `Codex`. It gives you a browser terminal inside Home Assistant, starts in your Home Assistant configuration directory, and can optionally connect Codex to Home Assistant through MCP.
 
+## Why This Fork
+
+The original App can leave Codex unusable after a runtime npm update: writable
+Home Assistant mounts are not executable, while the image-installed CLI cannot
+be replaced by the unprivileged terminal user. This fork installs a pinned
+Codex CLI in the image, disables runtime npm updates, and keeps the `codex`
+slug, App options, and persistent state paths so an existing installation can
+upgrade in place.
+
+Read [MIGRATION.md](MIGRATION.md) before switching repositories. It explains
+the exact changes, backup-first upgrade steps, and rollback path.
+
 ## Install
 
 [![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCaneTLOTW%2Fha-codex)
