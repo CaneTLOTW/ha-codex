@@ -62,6 +62,82 @@ The source and target values must be checked manually before running any
 cleanup or copy command. Keep the target backup until the new App has been
 verified.
 
+## Optional full host-level data migration
+
+Use this procedure only when the new App received a different data directory
+and the existing Codex state is not visible after the repository migration.
+The procedure copies the complete App data directory, including hidden files,
+SSH configuration, authentication state, and Codex sessions.
+
+The HAOS host address is installation-specific. Set it once in PowerShell and
+use the variable instead of copying an example address:
+
+```powershell
+$haosHost = Read-Host "HAOS host IP or hostname"
+ssh -i "$env:USERPROFILE\.ssh\haos_debug" -p 22222 root@$haosHost
+```
+
+On the HAOS host, stop both Codex Apps through the Home Assistant UI. Do not
+refer to a fixed Docker container name; verify dynamically that no Codex
+container is still running:
+
+```sh
+docker ps --format '{{.Names}}\t{{.Image}}' | grep -i codex || true
+```
+
+Find the actual data directories. The parent path and hash prefix can differ
+between installations:
+
+```sh
+find /mnt/data/supervisor -type d -name '*_codex' -print
+```
+
+Assign the paths from that output. Replace only the values inside the quotes:
+
+```sh
+OLD_DIR="/mnt/data/supervisor/<actual-data-path>/<old-id>_codex"
+NEW_DIR="/mnt/data/supervisor/<actual-data-path>/<new-id>_codex"
+
+test -d "$OLD_DIR" || { echo "Old Codex directory not found"; exit 1; }
+test -d "$NEW_DIR" || { echo "New Codex directory not found"; exit 1; }
+test "$OLD_DIR" != "$NEW_DIR" || { echo "Source and target are identical"; exit 1; }
+
+printf 'Source: %s\nTarget: %s\n' "$OLD_DIR" "$NEW_DIR"
+```
+
+Create a recoverable backup of the new directory before replacing its
+contents:
+
+```sh
+BACKUP_DIR="${NEW_DIR}.backup-before-migration-$(date +%Y%m%d-%H%M%S)"
+cp -a "$NEW_DIR" "$BACKUP_DIR"
+du -sh "$NEW_DIR" "$BACKUP_DIR"
+```
+
+Only after checking the printed source, target, and backup paths, replace the
+target contents and copy the old state. The `/.` suffix preserves hidden files
+without creating an additional source directory below the target:
+
+```sh
+find "$NEW_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+cp -a "$OLD_DIR"/. "$NEW_DIR"/
+```
+
+Verify the result before starting the new App:
+
+```sh
+du -sh "$OLD_DIR" "$NEW_DIR"
+diff -qr "$OLD_DIR" "$NEW_DIR" || true
+find "$OLD_DIR" -type f | wc -l
+find "$NEW_DIR" -type f | wc -l
+```
+
+Start only the new Codex App from the Home Assistant UI. Keep the backup and
+the old App stopped until authentication, GitHub SSH access, Codex sessions,
+and the working directory have been checked. If the migration must be
+reverted, stop the new App, move its directory aside, and restore the backup
+directory after validating both paths again.
+
 ## What Changed
 
 - Codex CLI `0.146.1` is installed while the image is built.
