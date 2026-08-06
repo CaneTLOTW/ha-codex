@@ -2,16 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.3] - 2026-08-06
-
-### Fixed
-- Restore missing Codex chat session files from the legacy Codex home without overwriting newer sessions.
-
-## [0.3.2] - 2026-08-06
-
-### Fixed
-- Restore missing SSH files from the legacy Codex home without overwriting an existing SSH configuration.
-
 ## [0.3.1] - 2026-08-06
 
 ### Changed
