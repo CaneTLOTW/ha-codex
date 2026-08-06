@@ -74,6 +74,31 @@ migrate_legacy_ssh() {
 
 migrate_legacy_ssh
 
+migrate_legacy_sessions() {
+  local legacy_sessions="$CODEX_STATE_ROOT/legacy-global-home/sessions"
+  local user_sessions="$CODEX_STATE_ROOT/users/anonymous/.codex/sessions"
+  local source relative target copied=0
+
+  [[ -d "$legacy_sessions" ]] || return
+  mkdir -p "$user_sessions"
+
+  while IFS= read -r -d '' source; do
+    relative="${source#"$legacy_sessions"/}"
+    target="$user_sessions/$relative"
+    if [[ ! -e "$target" ]]; then
+      mkdir -p "$(dirname "$target")"
+      cp -a "$source" "$target"
+      copied=$((copied + 1))
+    fi
+  done < <(find "$legacy_sessions" -type f -print0)
+
+  [[ "$copied" -gt 0 ]] || return
+  chown -R 22000:0 "$user_sessions"
+  echo "[INFO] Restored ${copied} missing Codex session file(s) from the legacy Codex home."
+}
+
+migrate_legacy_sessions
+
 grant_group_root_access() {
   local target="$1"
   if [[ ! -e "$target" ]]; then
