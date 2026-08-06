@@ -62,6 +62,81 @@ The source and target values must be checked manually before running any
 cleanup or copy command. Keep the target backup until the new App has been
 verified.
 
+## Enable HAOS debug SSH access
+
+The normal terminal SSH connection reaches only the App container. Access to
+the Supervisor and App data directories requires the Home Assistant OS debug
+SSH service on port `22222`.
+
+### Create an SSH key on Windows
+
+Run these commands in PowerShell. The private key remains on the Windows PC:
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.ssh"
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\haos_debug"
+```
+
+This creates `haos_debug` and `haos_debug.pub`. Never copy the private
+`haos_debug` file to HAOS.
+
+### Prepare the `CONFIG` device
+
+HAOS imports the public key from a partition or device named `CONFIG`. Create a
+file named exactly `authorized_keys` in its root directory. It must contain the
+complete public key on one line and must not have a `.pub` or `.txt` suffix.
+
+Replace the drive letter in `$configRoot` with the mounted `CONFIG` device:
+
+```powershell
+$configRoot = "E:\"
+$publicKey = (Get-Content "$env:USERPROFILE\.ssh\haos_debug.pub" -Raw).Trim()
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText(
+  (Join-Path $configRoot "authorized_keys"),
+  "$publicKey`n",
+  $utf8NoBom
+)
+```
+
+The `CONFIG` device can be a USB drive or a virtual disk attached to the HAOS
+VM. FAT, ext4, and NTFS are supported by HAOS.
+
+### Import the key and connect to HAOS
+
+Open the HAOS VM console and run this at the `ha >` prompt:
+
+```text
+os import
+```
+
+The full form is also valid:
+
+```sh
+ha os import
+```
+
+If required, reboot HAOS with the `CONFIG` device attached. Then connect from
+PowerShell. Use the actual HAOS IP address or hostname; do not copy an example
+address from this document:
+
+```powershell
+$haosHost = Read-Host "HAOS host IP or hostname"
+ssh -i "$env:USERPROFILE\.ssh\haos_debug" -p 22222 root@$haosHost
+```
+
+At the first connection, confirm the host key. A successful session should
+return `root` for:
+
+```sh
+whoami
+pwd
+```
+
+For WinSCP, use SCP first with port `22222`, user `root`, no password, and the
+private key `haos_debug`. The actual HAOS data path is discovered in the next
+section and must not be assumed from another installation.
+
 ## Optional full host-level data migration
 
 Use this procedure only when the new App received a different data directory
