@@ -26,6 +26,42 @@ The add-on keeps the existing slug `codex`, so Home Assistant can treat version
 ghcr.io/canetlotw/ha-codex:0.3.1
 ```
 
+## Installation-specific paths
+
+The Home Assistant OS data directory and the hash prefix of an App data
+directory are installation-specific. Do not copy the example container or
+directory names from another system. Find the actual Codex data directories on
+the HAOS host first:
+
+```sh
+find /mnt/data/supervisor -type d -name '*_codex' -print
+```
+
+After identifying the old and new directories, assign their real paths and
+validate them before copying:
+
+```sh
+OLD_DIR="/mnt/data/supervisor/<actual-data-path>/<old-id>_codex"
+NEW_DIR="/mnt/data/supervisor/<actual-data-path>/<new-id>_codex"
+
+test -d "$OLD_DIR" || { echo "Old Codex directory not found"; exit 1; }
+test -d "$NEW_DIR" || { echo "New Codex directory not found"; exit 1; }
+test "$OLD_DIR" != "$NEW_DIR" || { echo "Source and target are identical"; exit 1; }
+
+printf 'Source: %s\nTarget: %s\n' "$OLD_DIR" "$NEW_DIR"
+```
+
+Stop both Codex Apps before copying. Container names are also dynamic, so use
+the running-container list only as a check:
+
+```sh
+docker ps --format '{{.Names}}\t{{.Image}}' | grep -i codex || true
+```
+
+The source and target values must be checked manually before running any
+cleanup or copy command. Keep the target backup until the new App has been
+verified.
+
 ## What Changed
 
 - Codex CLI `0.146.1` is installed while the image is built.
