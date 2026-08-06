@@ -20,10 +20,10 @@ https://github.com/CaneTLOTW/ha-codex
 ```
 
 The add-on keeps the existing slug `codex`, so Home Assistant can treat version
-`0.3.1` as an update of the existing Codex App. The published image is:
+`0.3.2` as an update of the existing Codex App. The published image is:
 
 ```text
-ghcr.io/canetlotw/ha-codex:0.3.1
+ghcr.io/canetlotw/ha-codex:0.3.2
 ```
 
 ## What Changed
@@ -33,6 +33,8 @@ ghcr.io/canetlotw/ha-codex:0.3.1
   during startup.
 - The image-installed executable is preferred over stale user-level launchers
   under `/data/codex-home/users/anonymous/.local/bin`.
+- Missing SSH files are restored once from the legacy Codex home without
+  replacing an existing SSH configuration.
 - Existing App options, the `codex` slug, and the persistent Codex state paths
   remain compatible.
 - `auto_update_codex` remains accepted for old configurations, but only emits
@@ -43,7 +45,7 @@ ghcr.io/canetlotw/ha-codex:0.3.1
 1. Create a full Home Assistant backup.
 2. Stop the old Codex App, but do not uninstall it.
 3. Add the repository URL above and refresh the App Store.
-4. Install the `0.3.1` update for the existing Codex App.
+4. Install the `0.3.2` update for the existing Codex App.
 5. Start the App and verify the CLI version with `codex --version`.
 6. Verify that `/homeassistant` files, login state, MCP, and the working
    directory are available.

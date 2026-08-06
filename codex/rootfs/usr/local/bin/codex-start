@@ -48,6 +48,32 @@ if [[ -d /homeassistant/.codex-home && ! -d "$CODEX_STATE_ROOT/legacy-global-hom
   echo "[INFO] Backed up legacy Codex state from /homeassistant/.codex-home to $CODEX_STATE_ROOT/legacy-global-home"
 fi
 
+migrate_legacy_ssh() {
+  local legacy_ssh="$CODEX_STATE_ROOT/legacy-global-home/.ssh"
+  local user_ssh="$CODEX_STATE_ROOT/users/anonymous/.ssh"
+  local source target copied=false
+
+  [[ -d "$legacy_ssh" ]] || return
+  mkdir -p "$user_ssh"
+
+  for source in "$legacy_ssh"/*; do
+    [[ -e "$source" ]] || continue
+    target="$user_ssh/${source##*/}"
+    if [[ ! -e "$target" ]]; then
+      cp -a "$source" "$target"
+      copied=true
+    fi
+  done
+
+  [[ "$copied" == "true" ]] || return
+  chown -R 22000:0 "$user_ssh"
+  chmod 700 "$user_ssh"
+  find "$user_ssh" -type f -name 'id_*' ! -name '*.pub' -exec chmod 600 {} +
+  echo "[INFO] Restored missing SSH files from the legacy Codex home."
+}
+
+migrate_legacy_ssh
+
 grant_group_root_access() {
   local target="$1"
   if [[ ! -e "$target" ]]; then
