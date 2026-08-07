@@ -44,7 +44,7 @@ RUN apk add --no-cache \
     && update-ca-certificates
 
 ARG BUILD_ARCH
-ARG CODEX_VERSION=0.146.1
+ARG CODEX_VERSION=0.147.0
 RUN case "${BUILD_ARCH}" in \
         amd64) TTYD_ARCH="x86_64"; TTYD_SHA256="8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55" ;; \
         aarch64) TTYD_ARCH="aarch64"; TTYD_SHA256="b38acadd89d1d396a0f5649aa52c539edbad07f4bc7348b27b4f4b7219dd4165" ;; \
