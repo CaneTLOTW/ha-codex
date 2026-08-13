@@ -178,6 +178,19 @@ Session persistence is off by default because first-time authentication is usual
 
 After Codex is authenticated, enable `session_persistence` if you want browser refreshes and disconnects to reattach to the same tmux session.
 
+If an Add-on update or restart ends the active terminal process, the Codex
+conversation itself remains in the persistent Codex home. Reopen it from the
+terminal with:
+
+```bash
+cd /homeassistant
+codex resume
+```
+
+Choose the previous conversation interactively, or resume a specific session
+with `codex resume <session-id>`. The session files are stored below
+`/data/codex-home/users/anonymous/.codex/sessions/`.
+
 Useful tmux keys:
 
 | Key | Action |

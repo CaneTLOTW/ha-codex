@@ -1,48 +1,40 @@
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -81,6 +81,7 @@ export class Xterm {
-     private titleFixed?: string;
+@@ -81,6 +81,8 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
-+    private clipboardTimer?: number;
      private doReconnect = true;
++    private touchScrollLastY?: number;
++    private touchScrollRemainder = 0;
  
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-@@ -151,12 +152,22 @@ export class Xterm {
+@@ -169,6 +171,11 @@ export class Xterm {
          );
-         register(
-             terminal.onSelectionChange(() => {
--                if (this.terminal.getSelection() === '') return;
--                try {
--                    document.execCommand('copy');
--                } catch (e) {
--                    return;
--                }
--                this.overlayAddon?.showOverlay('\u2702', 200);
-+                if (this.clipboardTimer !== undefined) {
-+                    window.clearTimeout(this.clipboardTimer);
-+                }
-+                this.clipboardTimer = window.setTimeout(() => {
-+                    const selection = this.terminal.getSelection();
-+                    if (selection === '') return;
-+
-+                    const copy = navigator.clipboard?.writeText(selection);
-+                    if (copy !== undefined) {
-+                        copy.then(
-+                            () => this.overlayAddon?.showOverlay('\u2702', 200),
-+                            () => this.copySelectionWithLegacyApi()
-+                        );
-+                    } else {
-+                        this.copySelectionWithLegacyApi();
-+                    }
-+                }, 100);
-             })
-         );
-@@ -169,5 +188,16 @@ export class Xterm {
+         register(addEventListener(window, 'resize', () => fitAddon.fit()));
          register(addEventListener(window, 'beforeunload', this.onWindowUnload));
++        if (terminal.element) {
++            register(addEventListener(terminal.element, 'mouseup', this.copySelection));
++            register(addEventListener(terminal.element, 'touchend', this.copySelection));
++            register(this.registerTouchScrolling(terminal.element));
++        }
      }
  
+     @bind
++    private copySelection() {
++        const selection = this.terminal.getSelection();
++        if (selection === '') return;
++        const copy = navigator.clipboard?.writeText(selection);
++        if (copy !== undefined) {
++            copy.then(
++                () => this.overlayAddon?.showOverlay('\u2702', 200),
++                () => this.copySelectionWithLegacyApi()
++            );
++        } else {
++            this.copySelectionWithLegacyApi();
++        }
++    }
++
 +    @bind
 +    private copySelectionWithLegacyApi() {
 +        try {
@@ -54,5 +46,42 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +        }
 +    }
 +
-     @bind
++    @bind
++    private registerTouchScrolling(element: HTMLElement): IDisposable {
++        const onStart = (event: TouchEvent) => {
++            if (event.touches.length === 1) {
++                this.touchScrollLastY = event.touches[0].clientY;
++                this.touchScrollRemainder = 0;
++            }
++        };
++        const onMove = (event: TouchEvent) => {
++            if (event.touches.length !== 1 || this.touchScrollLastY === undefined) return;
++            const currentY = event.touches[0].clientY;
++            const delta = this.touchScrollLastY - currentY;
++            this.touchScrollLastY = currentY;
++            const lineHeight = Math.max(12, (this.terminal.options.fontSize ?? 13) * (this.terminal.options.lineHeight ?? 1.2));
++            const lines = Math.trunc((this.touchScrollRemainder + delta) / lineHeight);
++            this.touchScrollRemainder += delta - lines * lineHeight;
++            if (lines !== 0) {
++                event.preventDefault();
++                this.terminal.scrollLines(lines);
++            }
++        };
++        const onEnd = () => {
++            this.touchScrollLastY = undefined;
++            this.touchScrollRemainder = 0;
++        };
++        element.addEventListener('touchstart', onStart, { passive: true });
++        element.addEventListener('touchmove', onMove, { passive: false });
++        element.addEventListener('touchend', onEnd, { passive: true });
++        element.addEventListener('touchcancel', onEnd, { passive: true });
++        return toDisposable(() => {
++            element.removeEventListener('touchstart', onStart);
++            element.removeEventListener('touchmove', onMove);
++            element.removeEventListener('touchend', onEnd);
++            element.removeEventListener('touchcancel', onEnd);
++        });
++    }
++
++    @bind
      public writeData(data: string | Uint8Array) {

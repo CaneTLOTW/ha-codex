@@ -58,7 +58,8 @@ On first launch, Codex prompts you to sign in. The Codex CLI supports ChatGPT si
 - Model: `gpt-5.4`
 - Access: `workspace`
 - Approval policy: `on-request`
-- Session persistence: off for a cleaner first sign-in
+- Session persistence: off for a cleaner first sign-in; Codex conversations
+  can be restored after an App restart with `codex resume`
 - MCP: on
 - Auto-update Codex CLI: off
 

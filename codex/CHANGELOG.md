@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.9] - 2026-08-13
+
+### Fixed
+- Copy selected terminal text directly on mouse or touch release.
+- Keep touch scrolling inside the terminal on iOS instead of scrolling the parent view.
+
 ## [0.3.8] - 2026-08-13
 
 ### Fixed
