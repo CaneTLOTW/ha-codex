@@ -43,6 +43,7 @@ RUN apk add --no-cache \
     json-c \
     libuv \
     libwebsockets \
+    libwebsockets-evlib_uv \
     libstdc++ \
     && update-ca-certificates
 
