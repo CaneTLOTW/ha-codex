@@ -1,0 +1,58 @@
+diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
+--- a/html/src/components/terminal/xterm/index.ts
++++ b/html/src/components/terminal/xterm/index.ts
+@@ -81,6 +81,7 @@ export class Xterm {
+     private titleFixed?: string;
+     private resizeOverlay = true;
+     private reconnect = true;
++    private clipboardTimer?: number;
+     private doReconnect = true;
+ 
+     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
+@@ -151,16 +152,34 @@ export class Xterm {
+         );
+         register(
+             terminal.onSelectionChange(() => {
+-                if (this.terminal.getSelection() === '') return;
+-                try {
+-                    document.execCommand('copy');
+-                } catch (e) {
+-                    return;
+-                }
+-                this.overlayAddon?.showOverlay('\u2702', 200);
++                if (this.clipboardTimer !== undefined) {
++                    window.clearTimeout(this.clipboardTimer);
++                }
++                this.clipboardTimer = window.setTimeout(() => {
++                    const selection = this.terminal.getSelection();
++                    if (selection === '') return;
++
++                    const copy = navigator.clipboard?.writeText(selection);
++                    if (copy !== undefined) {
++                        copy.then(
++                            () => this.overlayAddon?.showOverlay('\u2702', 200),
++                            () => this.copySelectionWithLegacyApi(),
++                        );
++                    } else {
++                        this.copySelectionWithLegacyApi();
++                    }
++                }, 100);
+             })
+         );
+@@ -169,6 +188,19 @@ export class Xterm {
+         register(addEventListener(window, 'beforeunload', this.onWindowUnload));
+     }
+ 
++    @bind
++    private copySelectionWithLegacyApi() {
++        try {
++            if (document.execCommand('copy')) {
++                this.overlayAddon?.showOverlay('\u2702', 200);
++            }
++        } catch {
++            // Clipboard access can be denied by a browser or embedded WebView.
++        }
++    }
++
+     @bind
+     public writeData(data: string | Uint8Array) {

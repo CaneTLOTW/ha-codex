@@ -45,14 +45,32 @@ RUN apk add --no-cache \
 
 ARG BUILD_ARCH
 ARG CODEX_VERSION=0.147.0
-RUN case "${BUILD_ARCH}" in \
-        amd64) TTYD_ARCH="x86_64"; TTYD_SHA256="8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55" ;; \
-        aarch64) TTYD_ARCH="aarch64"; TTYD_SHA256="b38acadd89d1d396a0f5649aa52c539edbad07f4bc7348b27b4f4b7219dd4165" ;; \
-        *) echo "Unsupported arch: ${BUILD_ARCH}" && exit 1 ;; \
-    esac && \
-    curl -fsSL "https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.${TTYD_ARCH}" -o /usr/bin/ttyd && \
-    echo "${TTYD_SHA256}  /usr/bin/ttyd" | sha256sum -c - && \
-    chmod +x /usr/bin/ttyd
+ARG TTYD_VERSION=1.7.7
+COPY ttyd-selection-clipboard.patch /tmp/ttyd-selection-clipboard.patch
+RUN apk add --no-cache --virtual .ttyd-build-deps \
+        build-base \
+        cmake \
+        json-c-dev \
+        libuv-dev \
+        libwebsockets-dev \
+        linux-headers \
+        openssl-dev \
+        pkgconf \
+        zlib-dev \
+    && mkdir -p /tmp/ttyd-build \
+    && curl -fsSL "https://github.com/tsl0922/ttyd/archive/refs/tags/${TTYD_VERSION}.tar.gz" \
+        | tar -xz -C /tmp/ttyd-build --strip-components=1 \
+    && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-selection-clipboard.patch \
+    && cd /tmp/ttyd-build/html \
+    && corepack enable \
+    && yarn install --immutable \
+    && yarn inline \
+    && cd /tmp/ttyd-build \
+    && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --parallel 2 \
+    && install -m 0755 build/ttyd /usr/bin/ttyd \
+    && rm -rf /tmp/ttyd-build /tmp/ttyd-selection-clipboard.patch \
+    && apk del .ttyd-build-deps
 
 RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION} \
     && codex --version \

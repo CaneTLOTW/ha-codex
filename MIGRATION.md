@@ -218,6 +218,8 @@ directory after validating both paths again.
 - Codex CLI `0.146.1` is installed while the image is built.
 - iOS terminal scrolling and selection use documented ttyd/xterm client
   options; native clipboard access may still be restricted by the HA WebView.
+- Desktop browsers automatically copy selected terminal text; keyboard
+  shortcuts remain available as a fallback.
 - Runtime npm updates are disabled; the App no longer writes into `/usr/local`
   during startup.
 - The image-installed executable is preferred over stale user-level launchers

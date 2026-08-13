@@ -188,8 +188,9 @@ but enabling it only logs a warning and keeps using the image-installed CLI.
 The App enables ttyd/xterm options for Safari-compatible canvas rendering,
 terminal-local scrolling, and text selection. iOS may still restrict native
 clipboard access inside the Home Assistant WebView. Reliable copy and paste
-buttons require a custom terminal frontend and are not provided by the
-embedded ttyd page.
+selected text is now copied automatically in desktop browsers after the
+selection is released. The legacy copy fallback and keyboard shortcuts remain
+available when Clipboard API access is denied.
 
 In desktop browsers, use `Ctrl+Shift+C` to copy a selected terminal range and
 `Ctrl+Shift+V` to paste. The right mouse button is handled by ttyd in some
