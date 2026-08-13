@@ -93,7 +93,7 @@ the browser's native copy action.
 | `terminal_theme` | `dark` | Chooses the terminal color theme |
 | `working_directory` | `/homeassistant` | Sets the starting folder |
 | `session_persistence` | `false` | Reattaches terminal sessions through tmux when enabled |
-| `default_model` | `gpt-5.4` | Writes the managed startup model for Codex |
+| `default_model` | `gpt-5.6-sol` | Selects the managed startup model for Codex; choices follow the CLI catalog |
 | `codex_permissions` | `workspace` | Selects Codex local sandbox behavior |
 | `codex_approval_policy` | `on-request` | Selects when Codex asks before running actions |
 
@@ -193,6 +193,11 @@ If copying text behaves oddly while tmux is active, hold `Ctrl+Shift` while sele
 The image installs a pinned Codex CLI version during the image build. Runtime
 npm updates are intentionally disabled. New Codex CLI versions are delivered
 through new Home Assistant App versions published to this repository.
+
+The `default_model` dropdown is generated from the visible, API-supported
+models reported by `codex debug models --bundled`. The automatic CLI update
+workflow refreshes this list when the Codex CLI catalog changes. Account-level
+availability can still vary by ChatGPT plan or rollout.
 
 To update Codex, open the Home Assistant Add-on Store and install the available
 Codex update. Home Assistant's App **Auto update** setting can install future

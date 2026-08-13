@@ -2,10 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-08-13
+
+### Added
+- Add a Home Assistant model dropdown populated from the current Codex CLI catalog.
+- Refresh the dropdown automatically when the CLI update workflow detects new models.
+
 ## [0.3.6] - 2026-08-13
 
 ### Fixed
 - Include ttyd's libwebsockets runtime dependencies in the final App image.
+
+### Note
+- The Codex update workflow refreshes the model dropdown from the CLI's bundled model catalog.
 
 ## [0.3.5] - 2026-08-13
 
