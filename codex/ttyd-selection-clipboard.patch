@@ -9,7 +9,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
      private doReconnect = true;
  
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-@@ -151,16 +152,34 @@ export class Xterm {
+@@ -151,12 +152,22 @@ export class Xterm {
          );
          register(
              terminal.onSelectionChange(() => {
@@ -39,7 +39,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +                }, 100);
              })
          );
-@@ -169,6 +188,19 @@ export class Xterm {
+@@ -169,5 +188,16 @@ export class Xterm {
          register(addEventListener(window, 'beforeunload', this.onWindowUnload));
      }
  
