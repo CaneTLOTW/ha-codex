@@ -53,6 +53,7 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
         json-c-dev \
         libuv-dev \
         libwebsockets-dev \
+        libwebsockets-evlib_uv \
         linux-headers \
         openssl-dev \
         pkgconf \
