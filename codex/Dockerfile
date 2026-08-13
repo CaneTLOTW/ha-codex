@@ -62,6 +62,7 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
         | tar -xz -C /tmp/ttyd-build --strip-components=1 \
     && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-selection-clipboard.patch \
     && cd /tmp/ttyd-build/html \
+    && npm install --global corepack@0.31.0 \
     && corepack enable \
     && yarn install --immutable \
     && yarn inline \
