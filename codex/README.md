@@ -183,6 +183,14 @@ To update Codex, update the Home Assistant App image. The `auto_update_codex`
 option remains in the schema so existing App configurations continue to load,
 but enabling it only logs a warning and keeps using the image-installed CLI.
 
+### iOS terminal behavior
+
+The App enables ttyd/xterm options for Safari-compatible canvas rendering,
+terminal-local scrolling, and text selection. iOS may still restrict native
+clipboard access inside the Home Assistant WebView. Reliable copy and paste
+buttons require a custom terminal frontend and are not provided by the
+embedded ttyd page.
+
 The repository checks npm daily for a new `@openai/codex` release. When one is
 available, GitHub Actions updates `main`, updates the image pin, increments the
 App patch version, and publishes the new image.

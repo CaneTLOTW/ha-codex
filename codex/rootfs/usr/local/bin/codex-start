@@ -180,6 +180,13 @@ exec ttyd \
   --max-clients 5 \
   -t "fontSize=${font_size}" \
   -t fontFamily=Monaco,Consolas,monospace \
+  -t rendererType=canvas \
+  -t scrollSensitivity=1 \
+  -t fastScrollSensitivity=5 \
+  -t scrollOnUserInput=true \
+  -t smoothScrollDuration=0 \
+  -t rightClickSelectsWord=true \
+  -t macOptionClickForcesSelection=true \
   -t scrollback=5000 \
   -t "theme=${colors}" \
   /usr/local/bin/codex-session

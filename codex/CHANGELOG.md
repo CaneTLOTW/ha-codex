@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Update bundled OpenAI Codex CLI to 0.147.0.
+### Fixed
+- Improve iOS terminal scrolling and selection behavior through documented ttyd/xterm client options.
+- Use the canvas renderer for more reliable Safari and iOS rendering.
 
 ## [0.3.1] - 2026-08-06
 

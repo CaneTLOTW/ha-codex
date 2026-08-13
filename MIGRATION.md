@@ -20,10 +20,10 @@ https://github.com/CaneTLOTW/ha-codex
 ```
 
 The add-on keeps the existing slug `codex`, so Home Assistant can treat version
-`0.3.1` as an update of the existing Codex App. The published image is:
+`0.3.2` as an update of the existing Codex App. The published image is:
 
 ```text
-ghcr.io/canetlotw/ha-codex:0.3.1
+ghcr.io/canetlotw/ha-codex:0.3.2
 ```
 
 ## Installation-specific paths
@@ -216,6 +216,8 @@ directory after validating both paths again.
 ## What Changed
 
 - Codex CLI `0.146.1` is installed while the image is built.
+- iOS terminal scrolling and selection use documented ttyd/xterm client
+  options; native clipboard access may still be restricted by the HA WebView.
 - Runtime npm updates are disabled; the App no longer writes into `/usr/local`
   during startup.
 - The image-installed executable is preferred over stale user-level launchers
