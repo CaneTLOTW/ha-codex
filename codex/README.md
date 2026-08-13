@@ -65,6 +65,25 @@ The useful paths are:
 
 When Codex or a prompt mentions `/config`, treat it as `/homeassistant` in this App.
 
+## Terminal Features
+
+The browser terminal includes the following interaction improvements:
+
+- **Automatic copy on selection:** Select terminal text and release the mouse
+  button. Desktop browsers copy the selected text automatically.
+- **Keyboard clipboard shortcuts:** Use `Ctrl+Shift+C` to copy a selection and
+  `Ctrl+Shift+V` to paste into the terminal.
+- **Native browser fallback:** The browser's right-click menu remains available;
+  on Windows, hold `Shift` while right-clicking if the terminal captures the
+  normal context menu.
+- **Terminal-local scrolling:** Mouse-wheel and touch scrolling stay within
+  the terminal where the browser permits it, including the canvas renderer for
+  Safari and iOS compatibility.
+
+Clipboard access is controlled by the browser. Home Assistant's iOS WebView
+may deny automatic clipboard writes; in that case use the keyboard shortcut or
+the browser's native copy action.
+
 ## App Options
 
 | Option | Default | What it does |
@@ -187,10 +206,10 @@ but enabling it only logs a warning and keeps using the image-installed CLI.
 
 The App enables ttyd/xterm options for Safari-compatible canvas rendering,
 terminal-local scrolling, and text selection. iOS may still restrict native
-clipboard access inside the Home Assistant WebView. Reliable copy and paste
-selected text is now copied automatically in desktop browsers after the
-selection is released. The legacy copy fallback and keyboard shortcuts remain
-available when Clipboard API access is denied.
+clipboard access inside the Home Assistant WebView. On desktop browsers,
+selected text is copied automatically after the selection is released. The
+legacy copy fallback and keyboard shortcuts remain available when Clipboard
+API access is denied.
 
 In desktop browsers, use `Ctrl+Shift+C` to copy a selected terminal range and
 `Ctrl+Shift+V` to paste. The right mouse button is handled by ttyd in some
