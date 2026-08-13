@@ -43,15 +43,5 @@ configuration:
       Controls when Codex asks before running actions. Use on-request for
       interactive safety, untrusted to ask for non-trusted commands, or never
       for autonomous execution without approval prompts.
-  auto_update_codex:
-    name: Runtime Codex CLI updates
-    description: >-
-      Retained for compatibility. Codex CLI updates are delivered through
-      Home Assistant App image updates, not runtime npm installs.
-  codex_update_timeout:
-    name: Codex Update Timeout
-    description: >-
-      Retained for compatibility. Runtime CLI updates are disabled.
-
 network:
   7681/tcp: Web Terminal (ttyd)

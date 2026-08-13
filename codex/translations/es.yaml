@@ -45,16 +45,5 @@ configuration:
       Controla cuándo Codex pide aprobación antes de ejecutar acciones. Usa
       on-request para seguridad interactiva, untrusted para pedir aprobación en
       comandos no confiables, o never para ejecución autónoma sin avisos.
-  auto_update_codex:
-    name: Actualización de Codex CLI en tiempo de ejecución
-    description: >-
-      Se conserva por compatibilidad. Las actualizaciones de Codex CLI se
-      entregan mediante actualizaciones de la imagen de la App.
-  codex_update_timeout:
-    name: Tiempo máximo de actualización
-    description: >-
-      Se conserva por compatibilidad. Las actualizaciones en tiempo de
-      ejecución están deshabilitadas.
-
 network:
   7681/tcp: Terminal Web (ttyd)

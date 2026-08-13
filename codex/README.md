@@ -96,8 +96,6 @@ the browser's native copy action.
 | `default_model` | `gpt-5.4` | Writes the managed startup model for Codex |
 | `codex_permissions` | `workspace` | Selects Codex local sandbox behavior |
 | `codex_approval_policy` | `on-request` | Selects when Codex asks before running actions |
-| `auto_update_codex` | `false` | Retained for compatibility; runtime CLI updates are disabled |
-| `codex_update_timeout` | `300` | Maximum seconds for the optional startup update |
 
 ## Models
 
@@ -192,15 +190,13 @@ If copying text behaves oddly while tmux is active, hold `Ctrl+Shift` while sele
 
 ## Codex CLI Updates
 
-The image installs a pinned Codex CLI version during the image build. Runtime npm
-updates are intentionally disabled because Home Assistant's writable data
-mounts are not executable, while the image's `/usr/local` tree is not writable
-by the interactive Codex user. This avoids the broken user-level launcher and
-the `bad interpreter: Permission denied` failure after manual npm updates.
+The image installs a pinned Codex CLI version during the image build. Runtime
+npm updates are intentionally disabled. New Codex CLI versions are delivered
+through new Home Assistant App versions published to this repository.
 
-To update Codex, update the Home Assistant App image. The `auto_update_codex`
-option remains in the schema so existing App configurations continue to load,
-but enabling it only logs a warning and keeps using the image-installed CLI.
+To update Codex, open the Home Assistant Add-on Store and install the available
+Codex update. Home Assistant's App **Auto update** setting can install future
+published App versions automatically.
 
 ### iOS terminal behavior
 

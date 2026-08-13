@@ -16,14 +16,6 @@ enable_mcp="$(jq -r '.enable_mcp // true' /data/options.json)"
 default_model="$(jq -r '.default_model // ""' /data/options.json)"
 codex_permissions="$(jq -r '.codex_permissions // "workspace"' /data/options.json)"
 codex_approval_policy="$(jq -r '.codex_approval_policy // "on-request"' /data/options.json)"
-auto_update_codex="$(jq -r '.auto_update_codex // false' /data/options.json)"
-codex_update_timeout="$(jq -r '.codex_update_timeout // 300' /data/options.json)"
-case "$codex_update_timeout" in
-  *[!0-9]*|'') codex_update_timeout=300 ;;
-esac
-if [[ "$codex_update_timeout" -lt 30 || "$codex_update_timeout" -gt 300 ]]; then
-  codex_update_timeout=300
-fi
 
 export CODEX_STATE_ROOT="/data/codex-home"
 export CODEX_MANAGED_ROOT="/data/codex-managed"
@@ -72,11 +64,7 @@ printf '%s' "${SUPERVISOR_TOKEN:-}" > "$CODEX_SUPERVISOR_TOKEN_FILE"
 chmod 600 "$CODEX_SUPERVISOR_TOKEN_FILE"
 unset SUPERVISOR_TOKEN
 
-if [[ "$auto_update_codex" == "true" ]]; then
-  echo "[WARN] Runtime Codex CLI updates are disabled in this build; using the image-installed version: $(codex --version 2>/dev/null || echo unknown)"
-else
-  echo "[INFO] auto_update_codex disabled - using image-installed Codex CLI: $(codex --version 2>/dev/null || echo unknown)"
-fi
+echo "[INFO] Using image-installed Codex CLI: $(codex --version 2>/dev/null || echo unknown)"
 
 cat > "$CODEX_MANAGED_ROOT/AGENTS.md" <<'EOF'
 # Codex App for Home Assistant

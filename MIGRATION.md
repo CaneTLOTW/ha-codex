@@ -226,8 +226,6 @@ directory after validating both paths again.
   under `/data/codex-home/users/anonymous/.local/bin`.
 - Existing App options, the `codex` slug, and the persistent Codex state paths
   remain compatible.
-- `auto_update_codex` remains accepted for old configurations, but only emits
-  a warning because App image updates are now the supported update mechanism.
 
 ## Upgrade
 
@@ -244,9 +242,8 @@ directory after validating both paths again.
 Do not run `npm install -g @openai/codex` inside the App. Future Codex CLI
 updates are published as new App image versions.
 
-Home Assistant's **Auto update** option is the supported automation. It is
-separate from `auto_update_codex`, which remains only for configuration
-compatibility and must stay disabled.
+Home Assistant's **Auto update** option is the supported automation for future
+Codex App versions and the Codex CLI versions included in them.
 
 ## Rollback
 

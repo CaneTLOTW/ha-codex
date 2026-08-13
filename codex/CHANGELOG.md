@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-08-13
+
+### Changed
+- Removed obsolete runtime Codex CLI update options from the App configuration.
+- Documented Home Assistant Add-on Store updates as the supported update path.
+
 ## [0.3.4] - 2026-08-13
 
 ### Added

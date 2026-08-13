@@ -80,9 +80,9 @@ ghcr.io/canetlotw/ha-codex:<version>
 ```
 
 > **Automatic updates:** Enable **Auto update** on the Codex App page in Home
-> Assistant. Home Assistant then installs newly published App images
-> automatically. This is separate from the legacy `auto_update_codex` option,
-> which must remain disabled because runtime npm updates are unsupported.
+> Assistant. Home Assistant then installs newly published App versions
+> automatically. Codex CLI updates are included in these App versions; runtime
+> npm updates are not used.
 
 ## Documentation
 
