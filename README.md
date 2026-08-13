@@ -55,13 +55,13 @@ On first launch, Codex prompts you to sign in. The Codex CLI supports ChatGPT si
 
 ## Defaults
 
-- Model: `gpt-5.4`
+- Model: `gpt-5.6-sol` by default; the available choices are maintained from the bundled Codex CLI catalog.
 - Access: `workspace`
 - Approval policy: `on-request`
 - Session persistence: off for a cleaner first sign-in; Codex conversations
   can be restored after an App restart with `codex resume`
 - MCP: on
-- Auto-update Codex CLI: off
+- Codex CLI updates: delivered through new Home Assistant App versions, not by npm at runtime.
 
 Use `full_access` only when you want Codex to run with broad local access inside the App container.
 Use `codex_approval_policy: never` only when you want autonomous execution without per-action approval prompts.

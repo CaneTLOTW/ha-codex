@@ -30,7 +30,7 @@ configuration:
   default_model:
     name: Modelo Padrão
     description: >-
-      Modelo persistente inicial para o Codex. A App inicia com gpt-5.4,
+      Modelo persistente inicial para o Codex. A App inicia com gpt-5.6-sol,
       e os usuários ainda podem trocar o modelo durante a sessão com /model.
   codex_permissions:
     name: Nível de Acesso do Codex

@@ -1,7 +1,7 @@
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -81,5 +81,7 @@ export class Xterm {
+@@ -96,5 +96,7 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -9,7 +9,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +    private touchScrollRemainder = 0;
  
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-@@ -169,6 +171,11 @@ export class Xterm {
+@@ -194,7 +196,77 @@ export class Xterm {
          );
          register(addEventListener(window, 'resize', () => fitAddon.fit()));
          register(addEventListener(window, 'beforeunload', this.onWindowUnload));
@@ -20,7 +20,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +        }
      }
  
-     @bind
++    @bind
 +    private copySelection() {
 +        const selection = this.terminal.getSelection();
 +        if (selection === '') return;
@@ -59,9 +59,11 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +            const currentY = event.touches[0].clientY;
 +            const delta = this.touchScrollLastY - currentY;
 +            this.touchScrollLastY = currentY;
-+            const lineHeight = Math.max(12, (this.terminal.options.fontSize ?? 13) * (this.terminal.options.lineHeight ?? 1.2));
-+            const lines = Math.trunc((this.touchScrollRemainder + delta) / lineHeight);
-+            this.touchScrollRemainder += delta - lines * lineHeight;
++            const fontSize = this.terminal.options.fontSize ?? 13;
++            const lineHeight = this.terminal.options.lineHeight ?? 1.2;
++            const pixelsPerLine = Math.max(12, fontSize * lineHeight);
++            const lines = Math.trunc((this.touchScrollRemainder + delta) / pixelsPerLine);
++            this.touchScrollRemainder += delta - lines * pixelsPerLine;
 +            if (lines !== 0) {
 +                event.preventDefault();
 +                this.terminal.scrollLines(lines);
@@ -83,5 +85,5 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +        });
 +    }
 +
-+    @bind
+     @bind
      public writeData(data: string | Uint8Array) {

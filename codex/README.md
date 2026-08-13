@@ -99,7 +99,7 @@ the browser's native copy action.
 
 ## Models
 
-The App starts with `gpt-5.4` because it is a practical default for Home Assistant work. This is only a default, not a lock.
+The App starts with `gpt-5.6-sol` by default. The selectable models are maintained from the visible, API-supported models reported by the bundled Codex CLI catalog. This is only a default, not a lock.
 
 Change models in either place:
 
