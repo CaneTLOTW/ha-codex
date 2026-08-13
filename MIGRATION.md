@@ -20,10 +20,10 @@ https://github.com/CaneTLOTW/ha-codex
 ```
 
 The add-on keeps the existing slug `codex`, so Home Assistant can treat version
-`0.3.2` as an update of the existing Codex App. The published image is:
+`0.3.3` as an update of the existing Codex App. The published image is:
 
 ```text
-ghcr.io/canetlotw/ha-codex:0.3.2
+ghcr.io/canetlotw/ha-codex:0.3.3
 ```
 
 ## Installation-specific paths

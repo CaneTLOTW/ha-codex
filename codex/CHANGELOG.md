@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-08-13
+
+### Fixed
+- Avoid overriding the browser's right-click behavior, improving native Windows text selection and clipboard access.
+
 ## [0.3.2] - 2026-08-07
 
 ### Changed

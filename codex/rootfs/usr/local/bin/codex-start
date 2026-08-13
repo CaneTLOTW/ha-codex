@@ -185,7 +185,6 @@ exec ttyd \
   -t fastScrollSensitivity=5 \
   -t scrollOnUserInput=true \
   -t smoothScrollDuration=0 \
-  -t rightClickSelectsWord=true \
   -t macOptionClickForcesSelection=true \
   -t scrollback=5000 \
   -t "theme=${colors}" \

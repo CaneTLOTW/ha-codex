@@ -191,6 +191,10 @@ clipboard access inside the Home Assistant WebView. Reliable copy and paste
 buttons require a custom terminal frontend and are not provided by the
 embedded ttyd page.
 
+In desktop browsers, use `Ctrl+Shift+C` to copy a selected terminal range and
+`Ctrl+Shift+V` to paste. The right mouse button is handled by ttyd in some
+browser contexts; holding `Shift` exposes the browser's native context menu.
+
 The repository checks npm daily for a new `@openai/codex` release. When one is
 available, GitHub Actions updates `main`, updates the image pin, increments the
 App patch version, and publishes the new image.
