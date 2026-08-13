@@ -81,8 +81,9 @@ The browser terminal includes the following interaction improvements:
   Safari and iOS compatibility.
 
 Clipboard access is controlled by the browser. Home Assistant's iOS WebView
-may deny automatic clipboard writes; in that case use the keyboard shortcut or
-the browser's native copy action.
+may deny automatic clipboard writes; in that case use the browser's native copy
+action. Image paste is not supported in this headless App: Codex cannot read an
+iOS image clipboard through X11.
 
 ## App Options
 

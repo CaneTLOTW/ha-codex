@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.10] - 2026-08-13
+
+### Fixed
+- Capture iOS touch gestures from their first movement so Home Assistant does
+  not take over terminal scrolling.
+- Do not trigger selected-text copying after an intentional touch scroll.
+
 ## [0.3.9] - 2026-08-13
 
 ### Fixed

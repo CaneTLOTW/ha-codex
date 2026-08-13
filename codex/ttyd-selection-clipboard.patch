@@ -1,21 +1,23 @@
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -96,5 +96,7 @@ export class Xterm {
+@@ -96,5 +96,8 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
 +    private touchScrollLastY?: number;
 +    private touchScrollRemainder = 0;
++    private touchScrollMoved = false;
  
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-@@ -194,7 +196,77 @@ export class Xterm {
+@@ -194,7 +196,83 @@ export class Xterm {
          );
          register(addEventListener(window, 'resize', () => fitAddon.fit()));
          register(addEventListener(window, 'beforeunload', this.onWindowUnload));
 +        if (terminal.element) {
++            terminal.element.style.touchAction = 'none';
++            terminal.element.style.overscrollBehavior = 'contain';
 +            register(addEventListener(terminal.element, 'mouseup', this.copySelection));
-+            register(addEventListener(terminal.element, 'touchend', this.copySelection));
 +            register(this.registerTouchScrolling(terminal.element));
 +        }
      }
@@ -52,34 +54,39 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +            if (event.touches.length === 1) {
 +                this.touchScrollLastY = event.touches[0].clientY;
 +                this.touchScrollRemainder = 0;
++                this.touchScrollMoved = false;
 +            }
 +        };
 +        const onMove = (event: TouchEvent) => {
 +            if (event.touches.length !== 1 || this.touchScrollLastY === undefined) return;
++            event.preventDefault();
 +            const currentY = event.touches[0].clientY;
 +            const delta = this.touchScrollLastY - currentY;
 +            this.touchScrollLastY = currentY;
++            this.touchScrollMoved ||= delta !== 0;
 +            const fontSize = this.terminal.options.fontSize ?? 13;
 +            const lineHeight = this.terminal.options.lineHeight ?? 1.2;
 +            const pixelsPerLine = Math.max(12, fontSize * lineHeight);
 +            const lines = Math.trunc((this.touchScrollRemainder + delta) / pixelsPerLine);
 +            this.touchScrollRemainder += delta - lines * pixelsPerLine;
 +            if (lines !== 0) {
-+                event.preventDefault();
 +                this.terminal.scrollLines(lines);
 +            }
 +        };
 +        const onEnd = () => {
++            const copySelection = !this.touchScrollMoved;
 +            this.touchScrollLastY = undefined;
 +            this.touchScrollRemainder = 0;
++            this.touchScrollMoved = false;
++            if (copySelection) this.copySelection();
 +        };
 +        element.addEventListener('touchstart', onStart, { passive: true });
-+        element.addEventListener('touchmove', onMove, { passive: false });
++        element.addEventListener('touchmove', onMove, { capture: true, passive: false });
 +        element.addEventListener('touchend', onEnd, { passive: true });
 +        element.addEventListener('touchcancel', onEnd, { passive: true });
 +        return toDisposable(() => {
 +            element.removeEventListener('touchstart', onStart);
-+            element.removeEventListener('touchmove', onMove);
++            element.removeEventListener('touchmove', onMove, true);
 +            element.removeEventListener('touchend', onEnd);
 +            element.removeEventListener('touchcancel', onEnd);
 +        });
