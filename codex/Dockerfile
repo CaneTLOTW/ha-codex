@@ -40,6 +40,9 @@ RUN apk add --no-cache \
     su-exec \
     tmux \
     vim \
+    json-c \
+    libuv \
+    libwebsockets \
     libstdc++ \
     && update-ca-certificates
 

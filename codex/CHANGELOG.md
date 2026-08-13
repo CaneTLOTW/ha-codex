@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-08-13
+
+### Fixed
+- Include ttyd's libwebsockets runtime dependencies in the final App image.
+
 ## [0.3.5] - 2026-08-13
 
 ### Changed
