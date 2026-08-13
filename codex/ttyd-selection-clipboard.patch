@@ -31,7 +31,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +                    if (copy !== undefined) {
 +                        copy.then(
 +                            () => this.overlayAddon?.showOverlay('\u2702', 200),
-+                            () => this.copySelectionWithLegacyApi(),
++                            () => this.copySelectionWithLegacyApi()
 +                        );
 +                    } else {
 +                        this.copySelectionWithLegacyApi();
