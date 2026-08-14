@@ -10,7 +10,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +    private touchScrollMoved = false;
  
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-@@ -194,7 +196,83 @@ export class Xterm {
+@@ -194,7 +196,101 @@ export class Xterm {
          );
          register(addEventListener(window, 'resize', () => fitAddon.fit()));
          register(addEventListener(window, 'beforeunload', this.onWindowUnload));
@@ -89,6 +89,24 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +            element.removeEventListener('touchmove', onMove, true);
 +            element.removeEventListener('touchend', onEnd);
 +            element.removeEventListener('touchcancel', onEnd);
++        });
++    }
++
++    @bind
++    public scrollLines(lines: number) {
++        this.terminal.scrollLines(lines);
++    }
++
++    @bind
++    public copySelectionFromToolbar() {
++        this.copySelection();
++    }
++
++    @bind
++    public pasteFromClipboard() {
++        const read = navigator.clipboard?.readText();
++        read?.then(text => {
++            if (text) this.sendData(text);
 +        });
 +    }
 +
