@@ -1,7 +1,7 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -35,11 +35,23 @@ export class Terminal extends Component<Props, State> {
+@@ -35,11 +35,47 @@ export class Terminal extends Component<Props, State> {
      render({ id }: Props, { modal }: State) {
 +        const isTouchDevice =
 +            typeof navigator !== 'undefined' &&
@@ -11,10 +11,34 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
 +            <div class={shellClass}>
 +                <div class="terminal-toolbar" role="toolbar" aria-label="Terminal tools">
-+                    <button type="button" onClick={() => this.xterm.scrollLines(-12)} aria-label="Scroll up">▲</button>
-+                    <button type="button" onClick={() => this.xterm.scrollLines(12)} aria-label="Scroll down">▼</button>
-+                    <button type="button" onClick={this.xterm.copySelectionFromToolbar} aria-label="Copy selection">Copy</button>
-+                    <button type="button" onClick={this.xterm.pasteFromClipboard} aria-label="Paste clipboard">Paste</button>
++                    <button
++                        type="button"
++                        onClick={() => this.xterm.scrollLines(-12)}
++                        aria-label="Scroll up"
++                    >
++                        Up
++                    </button>
++                    <button
++                        type="button"
++                        onClick={() => this.xterm.scrollLines(12)}
++                        aria-label="Scroll down"
++                    >
++                        Down
++                    </button>
++                    <button
++                        type="button"
++                        onClick={this.xterm.copySelectionFromToolbar}
++                        aria-label="Copy selection"
++                    >
++                        Copy
++                    </button>
++                    <button
++                        type="button"
++                        onClick={this.xterm.pasteFromClipboard}
++                        aria-label="Paste clipboard"
++                    >
++                        Paste
++                    </button>
 +                </div>
 +                <div id={id} ref={c => (this.container = c as HTMLElement)}>
                  <Modal show={modal}>
