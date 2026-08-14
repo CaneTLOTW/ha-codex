@@ -220,8 +220,6 @@ directory after validating both paths again.
   options; native clipboard access may still be restricted by the HA WebView.
 - Desktop browsers automatically copy selected terminal text; keyboard
   shortcuts remain available as a fallback.
-- Touch devices show a full-width terminal toolbar with scroll, copy, and paste
-  fallbacks.
 - Codex conversations remain available after an App restart or update and can
   be restored with `codex resume` or `codex resume <session-id>`.
 - Runtime npm updates are disabled; the App no longer writes into `/usr/local`

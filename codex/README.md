@@ -230,10 +230,6 @@ In desktop browsers, use `Ctrl+Shift+C` to copy a selected terminal range and
 `Ctrl+Shift+V` to paste. The right mouse button is handled by ttyd in some
 browser contexts; holding `Shift` exposes the browser's native context menu.
 
-On touch devices, a full-width toolbar appears above the terminal with scroll,
-copy, and paste buttons. It is hidden on desktop browsers and is sized to the
-available mobile viewport width.
-
 The repository checks npm daily for a new `@openai/codex` release. When one is
 available, GitHub Actions updates `main`, updates the image pin, increments the
 App patch version, and publishes the new image.

@@ -2,12 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.11] - 2026-08-14
-
-### Added
-- Show a full-width mobile terminal toolbar on touch devices only.
-- Provide mobile fallback buttons for terminal scrolling, copy, and paste.
-
 ## [0.3.10] - 2026-08-13
 
 ### Fixed

@@ -51,7 +51,6 @@ ARG BUILD_ARCH
 ARG CODEX_VERSION=0.147.0
 ARG TTYD_VERSION=1.7.7
 COPY ttyd-selection-clipboard.patch /tmp/ttyd-selection-clipboard.patch
-COPY ttyd-mobile-toolbar.patch /tmp/ttyd-mobile-toolbar.patch
 RUN apk add --no-cache --virtual .ttyd-build-deps \
         build-base \
         cmake \
@@ -67,7 +66,6 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && curl -fsSL "https://github.com/tsl0922/ttyd/archive/refs/tags/${TTYD_VERSION}.tar.gz" \
         | tar -xz -C /tmp/ttyd-build --strip-components=1 \
     && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-selection-clipboard.patch \
-    && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-mobile-toolbar.patch \
     && cd /tmp/ttyd-build/html \
     && npm install --global corepack@0.31.0 \
     && corepack enable \
@@ -77,7 +75,7 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --parallel 2 \
     && install -m 0755 build/ttyd /usr/bin/ttyd \
-    && rm -rf /tmp/ttyd-build /tmp/ttyd-selection-clipboard.patch /tmp/ttyd-mobile-toolbar.patch \
+    && rm -rf /tmp/ttyd-build /tmp/ttyd-selection-clipboard.patch \
     && apk del .ttyd-build-deps
 
 RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION} \
