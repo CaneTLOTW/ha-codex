@@ -48,7 +48,7 @@ RUN apk add --no-cache \
     && update-ca-certificates
 
 ARG BUILD_ARCH
-ARG CODEX_VERSION=0.150.1
+ARG CODEX_VERSION=0.151.0
 ARG TTYD_VERSION=1.7.7
 COPY ttyd-selection-clipboard.patch /tmp/ttyd-selection-clipboard.patch
 RUN apk add --no-cache --virtual .ttyd-build-deps \
