@@ -112,7 +112,7 @@ RUN chmod +x \
     /usr/local/bin/codex-start \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 
-RUN cat > /etc/tmux.conf << 'EOF'
+COPY <<'EOF' /etc/tmux.conf
 set -g history-limit 5000
 set -ga terminal-overrides ',xterm*:smcup@:rmcup@'
 set -g mouse on
@@ -131,7 +131,7 @@ EOF
 
 RUN ln -sf /etc/tmux.conf /root/.tmux.conf
 
-RUN cat > /etc/codex.bashrc << 'EOF'
+COPY <<'EOF' /etc/codex.bashrc
 export TERM=xterm-256color
 export LANG=C.UTF-8
 export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
