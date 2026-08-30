@@ -13,7 +13,8 @@ SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
 MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
 DOCKERFILE = CODEX_DIR / "Dockerfile"
-MOBILE_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+TTYD_PATCH_DIR = CODEX_DIR / "ttyd-mobile-keys"
+MOBILE_PATCH = TTYD_PATCH_DIR / "ttyd-1.7.7-mobile-keys.patch"
 OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 
 
@@ -45,20 +46,26 @@ class ModernizationTests(unittest.TestCase):
         start_text = START.read_text(encoding="utf-8")
         patch = MOBILE_PATCH.read_text(encoding="utf-8")
 
+        patch_files = sorted(path.name for path in TTYD_PATCH_DIR.glob("*.patch"))
+        self.assertEqual(patch_files, [MOBILE_PATCH.name])
         self.assertEqual(dockerfile.count("ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"), 1)
-        self.assertNotIn("ttyd-1.7.7-ios-viewport.patch", dockerfile)
-        self.assertNotIn("ttyd-1.7.7-ios-toolbar-focus.patch", dockerfile)
-        self.assertNotIn("ttyd-1.7.7-ios-toolbar-clipboard.patch", dockerfile)
         self.assertIn("mobile-keys", patch)
         self.assertIn("Scroll one page up", patch)
         self.assertIn("transformInput", patch)
+        self.assertIn("{ label: 'Enter', ariaLabel: 'Enter', value: '\\r' }", patch)
+        self.assertIn("shiftLock", patch)
+        self.assertIn("Shift lock", patch)
+        self.assertIn("Hide software keyboard", patch)
+        self.assertIn("public blur()", patch)
+        self.assertIn("grid-template-columns: repeat(7, minmax(0, 1fr))", patch)
+        self.assertIn("grid-template-rows: repeat(2, 38px)", patch)
         self.assertIn('meta name="viewport"', patch)
         self.assertIn("width=device-width", patch)
         self.assertIn("viewport-fit=cover", patch)
         self.assertIn("matchMedia", patch)
         self.assertIn("pointer: coarse", patch)
-        self.assertIn("Paste from clipboard (Ctrl Shift V)", patch)
-        self.assertIn("navigator.clipboard.readText()", patch)
+        self.assertNotIn("navigator.clipboard.readText()", patch)
+        self.assertNotIn("Paste from clipboard (Ctrl Shift V)", patch)
         self.assertIn("yarn inline", dockerfile)
         self.assertIn(
             "install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html",
