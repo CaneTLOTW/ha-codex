@@ -1,322 +1,221 @@
 # Codex App for Home Assistant
 
-Codex App puts the OpenAI Codex CLI inside Home Assistant so you can inspect, edit, and troubleshoot your Home Assistant configuration from the sidebar.
+Codex App puts the OpenAI Codex CLI inside Home Assistant so you can inspect, edit, and troubleshoot Home Assistant configuration from the sidebar.
 
-It is designed as a Home Assistant-native App, not a copied terminal wrapper. The App prepares Codex with Home Assistant path guidance, safe starter defaults, optional Home Assistant MCP access, and persistent Codex state that survives restarts.
+For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS.md).
 
 ## How It Works
 
 1. Home Assistant opens Codex through ingress.
-2. `ttyd` serves a browser terminal on port `7681`.
-3. The terminal starts in `/homeassistant`, which is the Home Assistant configuration folder inside this container.
-4. Codex state is stored under `/data/codex-home/users/anonymous/.codex`.
-5. The App generates user-level Codex defaults in `~/.codex/config.toml`.
-6. The App generates `~/.codex/AGENTS.md` with Home Assistant path mapping, log commands, and MCP notes.
-7. If MCP is enabled, Codex gets a managed `homeassistant` MCP server that talks to Home Assistant through `hass-mcp`.
+2. A customized ttyd 1.7.7 build serves the browser terminal on port `7681`.
+3. The terminal starts in `/homeassistant`.
+4. Codex state is persisted under `/data/codex-home/users/anonymous/.codex`.
+5. Managed defaults are merged into `~/.codex/config.toml` without deleting unrelated user configuration.
+6. The App generates `~/.codex/AGENTS.md` with Home Assistant path and MCP guidance.
+7. The bundled `homeassistant` MCP server is added when `enable_mcp` is enabled.
+8. Additional remote Streamable HTTP MCP servers can be managed from App options.
+9. On touch devices and narrow screens, ttyd provides a mobile key bar and page navigation.
 
-The App keeps OpenAI credentials out of Home Assistant options. Codex signs in using its own CLI authentication flow and stores its own auth state in the persistent Codex home.
+OpenAI authentication stays in Codex's persistent home. Credentials explicitly configured for remote MCP servers or environment variables are stored in Home Assistant App options and supplied to the Codex process environment.
 
 ## Install
 
-1. Add `https://github.com/CaneTLOTW/ha-codex` to the Home Assistant Add-on Store repositories.
+1. Add `https://github.com/CaneTLOTW/ha-codex` to **Settings → Apps → App Store → Repositories**.
 2. Install **Codex**.
 3. Review the App options.
-4. Start Codex.
-5. Open Codex from the Home Assistant sidebar.
+4. Start the App.
+5. Open **Codex** from the Home Assistant sidebar.
 
-The App is published as a prebuilt GitHub Container Registry image, so Home Assistant should download the image instead of compiling it on your Home Assistant machine.
+The App is published as prebuilt multi-architecture GHCR images.
 
 ## First Sign-In
 
-When the terminal opens, Codex starts automatically.
-
-If you have not authenticated yet, Codex asks you to sign in. The Codex CLI supports two normal paths:
-
-- ChatGPT sign-in for subscription or workspace-based Codex access.
-- OpenAI API key sign-in for usage billed through your OpenAI Platform account.
-
-On Home Assistant OS, the browser callback flow may not always be reachable from the container. If the normal login flow does not complete, choose device-code login in Codex or run:
+Codex starts automatically when the terminal opens. If normal browser authentication cannot complete from the Home Assistant container, use device authentication:
 
 ```bash
 codex login --device-auth
 ```
 
-Open the displayed URL on your phone or computer, enter the one-time code, and return to the Home Assistant terminal. Codex caches the login in the persistent Codex home so you should not need to sign in every time.
+Codex caches the login in its persistent home.
 
-## Everyday Use
-
-Use Codex as your Home Assistant working terminal:
-
-```bash
-codex
-ha-config
-ha-logs
-```
-
-The useful paths are:
+## Paths
 
 | Path | Purpose | Access |
-|------|---------|--------|
-| `/homeassistant` | Home Assistant configuration | Read-write |
-| `/share` | Shared Home Assistant files | Read-write |
-| `/media` | Media files | Read-write |
-| `/ssl` | SSL certificates | Read-only |
-| `/backup` | Backups | Read-only |
+| --- | --- | --- |
+| `/homeassistant` | Home Assistant configuration | read-write |
+| `/share` | Shared Home Assistant files | read-write |
+| `/media` | Media files | read-write |
+| `/ssl` | SSL certificates | read-only |
+| `/backup` | Backups | read-only |
 
-When Codex or a prompt mentions `/config`, treat it as `/homeassistant` in this App.
+When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.
 
-## Terminal Features
+## Mobile Terminal
 
-The browser terminal includes the following interaction improvements:
+The App builds ttyd 1.7.7 from source with a dedicated mobile-controls patch. On touch devices and narrow screens the terminal shows:
 
-- **Automatic copy on selection:** Select terminal text and release the mouse
-  button. Desktop browsers copy the selected text automatically.
-- **Keyboard clipboard shortcuts:** Use `Ctrl+Shift+C` to copy a selection and
-  `Ctrl+Shift+V` to paste into the terminal.
-- **Native browser fallback:** The browser's right-click menu remains available;
-  on Windows, hold `Shift` while right-clicking if the terminal captures the
-  normal context menu.
-- **Terminal-local scrolling:** Mouse-wheel and touch scrolling stay within
-  the terminal where the browser permits it, including the canvas renderer for
-  Safari and iOS compatibility.
+```text
+Esc  Tab  Ctrl  Alt  ←  ↓  ↑  →  PgUp  PgDn
+```
 
-Clipboard access is controlled by the browser. Home Assistant's iOS WebView
-may deny automatic clipboard writes; in that case use the browser's native copy
-action. Image paste is not supported in this headless App: Codex cannot read an
-iOS image clipboard through X11.
+`Ctrl` and `Alt` are one-shot modifiers. Vertical swipes perform page navigation. With `session_persistence` enabled, page keys and swipes integrate with tmux copy mode.
+
+The managed web session starts Codex with `tui.alternate_screen="never"` so previous output remains available in xterm scrollback.
+
+The earlier experimental custom touch/automatic-selection-copy patch is no longer part of the build. Desktop text selection, native browser context menus, and normal ttyd/xterm clipboard shortcuts remain available without mixing clipboard code into the mobile gesture implementation.
 
 ## App Options
 
-| Option | Default | What it does |
-|--------|---------|--------------|
-| `enable_mcp` | `true` | Adds the managed `homeassistant` MCP server to Codex |
-| `terminal_font_size` | `14` | Sets terminal font size, clamped to `10-24` |
-| `terminal_theme` | `dark` | Chooses the terminal color theme |
-| `working_directory` | `/homeassistant` | Sets the starting folder |
-| `session_persistence` | `false` | Reattaches terminal sessions through tmux when enabled |
-| `default_model` | `gpt-5.6-sol` | Selects the managed startup model for Codex; choices follow the CLI catalog |
-| `codex_permissions` | `workspace` | Selects Codex local sandbox behavior |
-| `codex_approval_policy` | `on-request` | Selects when Codex asks before running actions |
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `enable_mcp` | `true` | Manage the bundled `homeassistant` MCP server |
+| `terminal_font_size` | `14` | Web-terminal font size, clamped to `10-24` |
+| `terminal_theme` | `dark` | Dark or light terminal theme |
+| `working_directory` | `/homeassistant` | Starting directory |
+| `session_persistence` | `false` | Reattach the terminal through tmux |
+| `default_model` | `gpt-5.6-sol` | Managed startup model; choices follow the bundled CLI catalog |
+| `codex_permissions` | `workspace` | Codex sandbox profile |
+| `codex_approval_policy` | `on-request` | Codex action-approval policy |
+| `mcp_servers` | `[]` | Additional remote Streamable HTTP MCP servers |
+| `environment_variables` | `[]` | Additional variables supplied to Codex sessions |
 
-## Models
+## Home Assistant MCP
 
-The App starts with `gpt-5.6-sol` by default. The selectable models are maintained from the visible, API-supported models reported by the bundled Codex CLI catalog. This is only a default, not a lock.
+When `enable_mcp` is `true`, the App manages a `homeassistant` MCP entry using `/usr/local/bin/hass-mcp-wrapper`.
 
-Change models in either place:
+The Home Assistant Supervisor token is not exported into the interactive shell. It is written to a protected runtime file and used only through the privileged helper path for the bundled Home Assistant MCP server.
 
-- Set `default_model` in Home Assistant options for the persistent startup default.
-- Use `/model` inside Codex for the current session.
+An explicit `enable_mcp: false` is preserved. Disabling the option removes the App-managed `homeassistant` MCP entry rather than silently replacing `false` with the default `true`.
 
-Leave `default_model` blank if you want Codex to use its own default or if you manage the model in project config.
+## Additional MCP Servers
 
-## Access Levels
+Remote Streamable HTTP MCP servers can be configured in App options:
 
-`codex_permissions` writes Codex's `sandbox_mode` default:
+```yaml
+mcp_servers:
+  - name: example
+    url: https://mcp.example.com/mcp
+    bearer_token: your-token
+```
 
-| Option | Codex setting | Use when |
-|--------|---------------|----------|
-| `workspace` | `workspace-write` | Normal Home Assistant configuration work |
-| `full_access` | `danger-full-access` | You deliberately want broad local access inside the container |
+Rules:
 
-`full_access` does not grant access outside the container or outside the folders Home Assistant maps into this App. It does remove Codex's local workspace sandbox restrictions inside those available paths.
+- names must be unique;
+- `homeassistant` is reserved;
+- URLs must begin with `http://` or `https://`;
+- bearer tokens are optional.
 
-When `workspace` is selected, Codex uses its Linux sandbox runtime inside the App container. Version `0.2.14` includes `bubblewrap` for this path. If Home Assistant or the host still blocks sandbox creation, switch to `full_access` only if you deliberately want to bypass Codex's local sandbox.
+A supplied bearer token is placed in a generated runtime environment variable and Codex receives only the variable name through `bearer_token_env_var` in `config.toml`.
 
-## Approval Prompts and Autonomous Mode
+Managed MCP entries are reversible. If App management replaces a same-name user-defined server, the previous user configuration is restored when App management for that server is removed.
 
-`codex_approval_policy` controls whether Codex asks before running actions:
+## Environment Variables
 
-| Option | Codex setting | Behavior |
-|--------|---------------|----------|
-| `on-request` | `approval_policy = "on-request"` | Codex asks when it decides approval is needed |
-| `untrusted` | `approval_policy = "untrusted"` | Trusted read-style commands run, higher-risk commands ask |
-| `never` | `approval_policy = "never"` | Codex does not ask for approval before actions |
+Additional environment variables can be configured explicitly:
 
-For autonomous operation, set:
+```yaml
+environment_variables:
+  - name: EXAMPLE_TENANT
+    value: home
+```
+
+Variable names are validated. Values are available to the Codex runtime, so only configure credentials intended for Codex or its MCP servers.
+
+## Models and Access
+
+`default_model` controls only the startup default. Use `/model` inside Codex to switch during a session.
+
+`codex_permissions` maps as follows:
+
+| Option | Codex setting |
+| --- | --- |
+| `workspace` | `workspace-write` |
+| `full_access` | `danger-full-access` |
+
+`codex_approval_policy` supports `on-request`, `untrusted`, and `never`.
+
+For autonomous operation you may deliberately combine:
 
 ```yaml
 codex_permissions: full_access
 codex_approval_policy: never
 ```
 
-This is intentionally explicit. `full_access` removes the local sandbox and `never` removes action approval prompts. Only use both when you are comfortable letting Codex run commands inside the App container without per-action confirmation.
-
-## Home Assistant MCP
-
-When `enable_mcp` is `true`, the App registers a `homeassistant` MCP server in Codex. This lets Codex query entities, inspect state, read Home Assistant information, and call services through MCP tools.
-
-The Supervisor token is not exported into the interactive shell. It is written to a protected runtime file and passed only through the helper path used by `hass-mcp`.
-
-Disable MCP if you only want a terminal and file-editing workflow.
+This removes the local Codex sandbox and per-action approval prompts inside the resources exposed to the App.
 
 ## Persistence
 
-The persistent Codex home is:
+Codex user state is stored under:
 
 ```text
 /data/codex-home/users/anonymous/.codex
 ```
 
-That location stores Codex login state, generated user config, logs, and the generated Home Assistant `AGENTS.md`.
-
-Project-specific Codex configuration belongs here:
+Project-specific Codex configuration belongs in:
 
 ```text
 /homeassistant/.codex/config.toml
 ```
 
-Project-specific instructions belong here:
+Project instructions belong in:
 
 ```text
 /homeassistant/AGENTS.md
 ```
 
-Codex loads project config only after the project is trusted.
+Codex project configuration is loaded only for trusted projects.
 
 ## Session Persistence
 
-Session persistence is off by default because first-time authentication is usually simpler without tmux.
+With `session_persistence: true`, ttyd attaches to a tmux session. Browser refreshes and disconnects can then reattach to the same terminal process.
 
-After Codex is authenticated, enable `session_persistence` if you want browser refreshes and disconnects to reattach to the same tmux session.
-
-If an Add-on update or restart ends the active terminal process, the Codex
-conversation itself remains in the persistent Codex home. Reopen it from the
-terminal with:
+Codex conversations themselves survive independently and can be reopened with:
 
 ```bash
-cd /homeassistant
 codex resume
 ```
 
-Choose the previous conversation interactively, or resume a specific session
-with `codex resume <session-id>`. The session files are stored below
-`/data/codex-home/users/anonymous/.codex/sessions/`.
-
-Useful tmux keys:
-
-| Key | Action |
-|-----|--------|
-| `Ctrl+b d` | Detach and leave work running |
-| `Ctrl+b [` | Enter scroll/copy mode |
-| `q` | Exit scroll/copy mode |
-
-If copying text behaves oddly while tmux is active, hold `Ctrl+Shift` while selecting text.
+Useful tmux controls include `Ctrl+b [` for copy mode and `q` to leave copy mode. The mobile `PgUp` and `PgDn` controls are also mapped to tmux copy-mode navigation.
 
 ## Codex CLI Updates
 
-The image installs a pinned Codex CLI version during the image build. Runtime
-npm updates are intentionally disabled. New Codex CLI versions are delivered
-through new Home Assistant App versions published to this repository.
+The Codex CLI is pinned during image build. Runtime npm updates are intentionally disabled.
 
-The `default_model` dropdown is generated from the visible, API-supported
-models reported by `codex debug models --bundled`. The automatic CLI update
-workflow refreshes this list when the Codex CLI catalog changes. Account-level
-availability can still vary by ChatGPT plan or rollout.
+A scheduled GitHub Actions workflow checks for new `@openai/codex` releases, updates the image pin and model catalog, increments the App version, and publishes a new GHCR image. Home Assistant **Auto update** can install those App releases automatically.
 
-To update Codex, open the Home Assistant Add-on Store and install the available
-Codex update. Home Assistant's App **Auto update** setting can install future
-published App versions automatically.
+## Migration
 
-### iOS terminal behavior
+This repository is maintained independently from the repository it originally derived from. A matching `codex` slug does not guarantee that Home Assistant treats two repository entries as one installation or assigns them the same data directory.
 
-The App enables ttyd/xterm options for Safari-compatible canvas rendering,
-terminal-local scrolling, and text selection. iOS may still restrict native
-clipboard access inside the Home Assistant WebView. On desktop browsers,
-selected text is copied automatically after the selection is released. The
-legacy copy fallback and keyboard shortcuts remain available when Clipboard
-API access is denied.
-
-In desktop browsers, use `Ctrl+Shift+C` to copy a selected terminal range and
-`Ctrl+Shift+V` to paste. The right mouse button is handled by ttyd in some
-browser contexts; holding `Shift` exposes the browser's native context menu.
-
-The repository checks npm daily for a new `@openai/codex` release. When one is
-available, GitHub Actions updates `main`, updates the image pin, increments the
-App patch version, and publishes the new image.
-
-## Home Assistant App Updates
-
-Home Assistant App updates are separate from Codex CLI updates.
-
-The App version comes from `codex/config.yaml`. When a new version is pushed to this repository, the GitHub Actions workflow publishes matching images to:
-
-```text
-ghcr.io/canetlotw/ha-codex:<version>
-```
-
-Home Assistant then sees the higher version and pulls the matching prebuilt image. Enable **Auto update** on the Codex App page if you want Home Assistant to install those App updates automatically.
-
-If a new version does not appear immediately, open the Add-on Store and run **Check for updates** from the menu. Home Assistant may cache custom repository metadata briefly.
+Read [../MIGRATION.md](../MIGRATION.md) before moving an existing installation between repositories.
 
 ## Troubleshooting
 
-### The terminal opens but Codex is not authenticated
+### MCP remains enabled after switching it off
 
-Run:
+Save `enable_mcp: false` and restart the App. Current versions preserve the explicit false value and remove the managed bundled MCP entry.
 
-```bash
-codex login --device-auth
-```
+### An additional MCP server does not appear
 
-Use the displayed URL and one-time code from another browser, then return to Home Assistant.
-
-### Codex starts but exits immediately
-
-Type `shell` at the retry prompt to enter a diagnostic shell, then run:
-
-```bash
-codex --version
-codex
-```
-
-Check the App log for startup validation errors.
-
-### `config.toml` mentions `[projects./homeassistant]`
-
-Older App versions could write an invalid project table after Codex trusted `/homeassistant`. Version `0.2.12` repairs that automatically before Codex starts.
-
-If you are already at a shell prompt, run:
-
-```bash
-codex
-```
-
-The shell launcher repairs the managed config before starting Codex. If the file was invalid, the old copy is kept beside it as `config.toml.invalid.bak`.
-
-### `config.toml` mentions `tui.model_availability_nux`
-
-Some Codex CLI versions changed the expected type of this UI state value. If an older saved config stores it as a table/map, newer Codex versions refuse to start.
-
-Version `0.2.13` removes that incompatible UI state automatically and keeps the previous file as `config.toml.repaired.bak`.
-
-### MCP is missing
-
-1. Confirm `enable_mcp` is `true`.
-2. Restart the App after changing the option.
-3. In Codex, check whether the `homeassistant` MCP server appears.
-4. Check the App log for `hass-mcp` or Supervisor token errors.
+Check that its name is unique, its URL begins with `http://` or `https://`, and the App was restarted after changing options.
 
 ### Project config is ignored
 
-1. Confirm the file is `/homeassistant/.codex/config.toml`.
-2. Trust `/homeassistant` in Codex.
-3. Restart Codex after changing project-level config.
+Confirm the file is `/homeassistant/.codex/config.toml` and that `/homeassistant` is trusted by Codex.
 
-### Startup is slow
+### Terminal output disappears when Codex redraws
 
-Runtime CLI updates are disabled. Install a newer Home Assistant App image when
-an updated Codex CLI is needed. Keep `session_persistence` off until
-authentication is complete.
+The managed web session disables the alternate screen. If the behavior persists, verify that you are using the Codex session opened automatically by the App rather than a separately launched CLI with custom TUI settings.
 
-## Upstream Codex References
+## References
 
 - [Codex CLI](https://developers.openai.com/codex/cli)
 - [Codex authentication](https://developers.openai.com/codex/auth)
-- [Codex config basics](https://developers.openai.com/codex/config-basic)
-- [Codex config reference](https://developers.openai.com/codex/config-reference)
+- [Codex configuration](https://developers.openai.com/codex/config-basic)
+- [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+- [Codex MCP](https://developers.openai.com/codex/mcp)
 
 ## Support
 
 - [Repository](https://github.com/CaneTLOTW/ha-codex)
 - [Issues](https://github.com/CaneTLOTW/ha-codex/issues)
-- [Home Assistant Community](https://community.home-assistant.io/)
