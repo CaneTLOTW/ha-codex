@@ -1,0 +1,61 @@
+diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
+--- a/html/src/components/terminal/index.tsx
++++ b/html/src/components/terminal/index.tsx
+@@ -69,6 +69,17 @@ export class Terminal extends Component<Props, State> {
+                     {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
+                     {this.renderModifier('Ctrl', ctrl, 'ctrl')}
+                     {this.renderModifier('Alt', alt, 'alt')}
++                    <button
++                        type="button"
++                        tabIndex={-1}
++                        class="mobile-key"
++                        aria-label="Paste from clipboard (Ctrl Shift V)"
++                        onPointerDown={event => this.pressPaste(event)}
++                        onClick={event => this.clickPaste(event)}
++                    >
++                        {'\u21e7Ctrl V'}
++                    </button>
+                     {mobileKeys.slice(2).map(this.renderMobileKey)}
+                 </nav>
+                 <Modal show={modal}>
+@@ -118,6 +129,17 @@ export class Terminal extends Component<Props, State> {
+         if (event.detail === 0) this.toggleModifier(modifier);
+     }
+ 
++    private pressPaste(event: PointerEvent) {
++        event.preventDefault();
++        void this.xterm.pasteFromClipboard();
++    }
++
++    private clickPaste(event: MouseEvent) {
++        if (event.detail === 0) {
++            void this.xterm.pasteFromClipboard();
++        }
++    }
++
+     private toggleModifier(modifier: 'ctrl' | 'alt') {
+         this.setState(state => ({ [modifier]: !state[modifier] }));
+         this.xterm.focus();
+@@ -126,6 +148,21 @@ export class Xterm {
+         }
+     }
+ 
++    @bind
++    public async pasteFromClipboard() {
++        if (!navigator.clipboard?.readText) {
++            this.overlayAddon?.showOverlay('Paste unavailable', 800);
++            return;
++        }
++
++        try {
++            const text = await navigator.clipboard.readText();
++            if (text) this.sendData(text);
++        } catch (e) {
++            console.warn('[ttyd] clipboard paste unavailable', e);
++            this.overlayAddon?.showOverlay('Paste unavailable', 800);
++        }
++    }
++
+     @bind
+     public async refreshToken() {
+         try {
