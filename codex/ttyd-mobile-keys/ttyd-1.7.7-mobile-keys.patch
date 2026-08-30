@@ -242,13 +242,15 @@ index b643f92..b978b33 100644
      ) {}
 
      dispose() {
-@@ -122,6 +123,27 @@ export class Xterm {
+@@ -122,6 +123,29 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
 +    @bind
 +    public focus() {
-+        this.terminal?.focus();
++        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
++            this.terminal?.focus();
++        }
 +    }
 +
 +    @bind
@@ -270,7 +272,7 @@ index b643f92..b978b33 100644
      @bind
      public async refreshToken() {
          try {
-@@ -173,7 +195,7 @@ export class Xterm {
+@@ -173,7 +197,7 @@ export class Xterm {
                  }
              })
          );
@@ -358,3 +360,14 @@ index 0f9244b..9de6188 100644
 +    border-color: #89dceb;
 +  }
 +}
+diff --git a/html/src/template.html b/html/src/template.html
+--- a/html/src/template.html
++++ b/html/src/template.html
+@@ -3,6 +3,7 @@
+ <head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
++    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+     <title><%= htmlWebpackPlugin.options.title %></title>
+     <link inline rel="icon" type="image/png" href="favicon.png">
