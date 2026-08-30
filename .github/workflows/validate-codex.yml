@@ -66,8 +66,11 @@ jobs:
       - name: Validate ttyd patches against 1.7.7
         run: |
           git clone --depth 1 --branch 1.7.7 https://github.com/tsl0922/ttyd.git /tmp/ttyd-1.7.7
-          git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
-          git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch"
+          git -C /tmp/ttyd-1.7.7 apply "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+          git -C /tmp/ttyd-1.7.7 apply "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch"
+          git -C /tmp/ttyd-1.7.7 apply "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-focus.patch"
+          git -C /tmp/ttyd-1.7.7 apply "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-clipboard.patch"
+          git -C /tmp/ttyd-1.7.7 diff --check
 
       - name: Diff whitespace check
         run: git diff --check origin/main...HEAD
