@@ -1,0 +1,84 @@
+name: Validate Codex App
+
+on:
+  pull_request:
+    paths:
+      - "codex/**"
+      - "repository.yaml"
+      - "MIGRATION.md"
+      - "README.md"
+      - ".github/workflows/validate-codex.yml"
+  push:
+    branches:
+      - "feat/**"
+    paths:
+      - "codex/**"
+      - "repository.yaml"
+      - "MIGRATION.md"
+      - "README.md"
+      - ".github/workflows/validate-codex.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install validation dependencies
+        run: python -m pip install --disable-pip-version-check pyyaml
+
+      - name: Python regression tests
+        run: python -m unittest discover -s codex/tests -v
+
+      - name: Shell syntax
+        run: |
+          bash -n codex/rootfs/usr/local/bin/codex-start
+          bash -n codex/rootfs/usr/local/bin/codex-session
+          bash -n codex/rootfs/usr/local/bin/codex-shell
+
+      - name: Parse Home Assistant YAML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          paths = [
+              Path("repository.yaml"),
+              Path("codex/build.yaml"),
+              Path("codex/config.yaml"),
+              *sorted(Path("codex/translations").glob("*.yaml")),
+          ]
+          for path in paths:
+              with path.open("r", encoding="utf-8") as handle:
+                  yaml.safe_load(handle)
+              print(f"parsed {path}")
+          PY
+
+      - name: Validate ttyd mobile patch against 1.7.7
+        run: |
+          git clone --depth 1 --branch 1.7.7 https://github.com/tsl0922/ttyd.git /tmp/ttyd-1.7.7
+          git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+
+      - name: Diff whitespace check
+        run: git diff --check "${{ github.event.pull_request.base.sha || github.event.before }}" HEAD || git diff --check HEAD^
+
+  build-amd64:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build amd64 App image
+        run: |
+          docker build \
+            --build-arg BUILD_ARCH=amd64 \
+            --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21 \
+            -t ha-codex-validation \
+            codex
