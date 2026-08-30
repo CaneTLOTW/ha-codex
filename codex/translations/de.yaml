@@ -1,0 +1,71 @@
+configuration:
+  enable_mcp:
+    name: Home-Assistant-MCP aktivieren
+    description: >-
+      Aktiviert den mitgelieferten Home-Assistant-MCP-Server, damit Codex
+      Entitäten abfragen und Dienste aufrufen kann.
+  terminal_font_size:
+    name: Terminal-Schriftgröße
+    description: >-
+      Schriftgröße des Web-Terminals in Pixeln (10-24).
+  terminal_theme:
+    name: Terminal-Design
+    description: >-
+      Helles oder dunkles Farbschema für das Web-Terminal.
+  working_directory:
+    name: Arbeitsverzeichnis
+    description: >-
+      Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
+      direkten Zugriff auf die Home-Assistant-Konfiguration.
+  session_persistence:
+    name: Sitzung beibehalten
+    description: >-
+      Hält die Web-Terminal-Sitzung mit tmux über Browser-Neuladen und
+      Verbindungsabbrüche hinweg aktiv.
+  default_model:
+    name: Standardmodell
+    description: >-
+      Modell, mit dem Codex standardmäßig startet. Während einer Sitzung kann
+      das Modell weiterhin mit /model gewechselt werden.
+  codex_permissions:
+    name: Codex-Zugriff
+    description: >-
+      Workspace erlaubt normale Projektarbeit. Vollzugriff entspricht
+      danger-full-access und entfernt lokale Codex-Sandbox-Beschränkungen.
+  codex_approval_policy:
+    name: Codex-Bestätigungsrichtlinie
+    description: >-
+      Legt fest, wann Codex vor Aktionen nachfragt: on-request, untrusted oder
+      never.
+  mcp_servers:
+    name: Zusätzliche MCP-Server
+    description: >-
+      Verwaltet zusätzliche entfernte Streamable-HTTP-MCP-Server. Jeder Server
+      benötigt einen eindeutigen Namen und eine HTTP(S)-URL. Ein optionaler
+      Bearer-Token wird nicht im Klartext in config.toml geschrieben, sondern
+      der Codex-Prozessumgebung bereitgestellt.
+    fields:
+      name:
+        name: Name
+        description: Eindeutiger MCP-Servername. homeassistant ist reserviert.
+      url:
+        name: URL
+        description: Streamable-HTTP-MCP-Endpunkt mit http:// oder https://.
+      bearer_token:
+        name: Bearer-Token
+        description: Optionaler Bearer-Token zur Anmeldung an diesem MCP-Server.
+  environment_variables:
+    name: Umgebungsvariablen
+    description: >-
+      Zusätzliche Umgebungsvariablen für Codex-Sitzungen. Werte werden in den
+      Home-Assistant-App-Optionen gespeichert; daher nur Zugangsdaten
+      hinterlegen, die für Codex oder seine MCP-Server bestimmt sind.
+    fields:
+      name:
+        name: Name
+        description: Name der Umgebungsvariable, zum Beispiel EXAMPLE_TENANT.
+      value:
+        name: Wert
+        description: Wert, der der Codex-Prozessumgebung bereitgestellt wird.
+network:
+  7681/tcp: Web-Terminal (ttyd)
