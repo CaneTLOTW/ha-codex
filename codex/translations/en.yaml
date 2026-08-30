@@ -2,46 +2,69 @@ configuration:
   enable_mcp:
     name: Enable Home Assistant MCP
     description: >-
-      Enable the Home Assistant MCP server for direct entity and service
-      interaction from Codex. Allows Codex to query states, call services,
-      and interact with your smart home.
+      Enable the bundled Home Assistant MCP server for direct entity and
+      service interaction from Codex.
   terminal_font_size:
     name: Terminal Font Size
     description: >-
       Font size for the web terminal in pixels (10-24).
-      Adjust for readability on your display.
   terminal_theme:
     name: Terminal Theme
     description: >-
-      Color theme for the web terminal.
-      Choose 'dark' for dark backgrounds or 'light' for light backgrounds.
+      Choose the dark or light color theme for the web terminal.
   working_directory:
     name: Working Directory
     description: >-
-      The default working directory when Codex starts.
-      Use /homeassistant for direct access to HA configuration files.
+      Default working directory when Codex starts. Use /homeassistant for
+      direct access to Home Assistant configuration files.
   session_persistence:
     name: Session Persistence
     description: >-
-      Enable tmux session persistence. When enabled, your terminal session
-      survives browser refreshes and disconnects. Leave disabled for the
-      smoothest first sign-in flow, then enable for long-running work.
+      Keep the web terminal session in tmux across browser refreshes and
+      disconnects.
   default_model:
     name: Default Model
     description: >-
-      Persistent startup model for Codex. The App starts with gpt-5.6-sol,
-      and users can still switch models during a session with /model.
+      Persistent startup model for Codex. Users can still switch models during
+      a session with /model.
   codex_permissions:
     name: Codex Access Level
     description: >-
-      Default local sandbox profile for Codex. Workspace allows normal
-      Home Assistant project work. Full access maps to sandbox danger-full-access
-      and removes local sandbox restrictions.
+      Workspace enables normal project work. Full access maps to
+      danger-full-access and removes local Codex sandbox restrictions.
   codex_approval_policy:
     name: Codex Approval Policy
     description: >-
-      Controls when Codex asks before running actions. Use on-request for
-      interactive safety, untrusted to ask for non-trusted commands, or never
-      for autonomous execution without approval prompts.
+      Controls when Codex asks before running actions: on-request, untrusted,
+      or never.
+  mcp_servers:
+    name: Additional MCP Servers
+    description: >-
+      Manage additional remote Streamable HTTP MCP servers. Each server needs
+      a unique name and HTTP(S) URL; an optional bearer token is kept out of
+      config.toml and supplied through the Codex process environment.
+    fields:
+      name:
+        name: Name
+        description: Unique MCP server name. The name homeassistant is reserved.
+      url:
+        name: URL
+        description: Streamable HTTP MCP endpoint beginning with http:// or https://.
+      bearer_token:
+        name: Bearer Token
+        description: Optional bearer token used to authenticate to this MCP server.
+  environment_variables:
+    name: Environment Variables
+    description: >-
+      Additional environment variables supplied to Codex sessions. Values are
+      stored in Home Assistant App options, so only add credentials intended
+      for Codex or its MCP servers.
+    fields:
+      name:
+        name: Name
+        description: Environment variable name, for example EXAMPLE_TENANT.
+      value:
+        name: Value
+        description: Value supplied to the Codex process environment.
 network:
   7681/tcp: Web Terminal (ttyd)
