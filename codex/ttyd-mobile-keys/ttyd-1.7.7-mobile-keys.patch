@@ -2,12 +2,14 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 index b42bf15..39ab09c 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,15 +11,38 @@ interface Props extends XtermOptions {
+@@ -11,15 +11,41 @@ interface Props extends XtermOptions {
 
  interface State {
      modal: boolean;
 +    ctrl: boolean;
 +    alt: boolean;
++    shift: boolean;
++    shiftLock: boolean;
  }
 
 +interface MobileKey {
@@ -21,6 +23,7 @@ index b42bf15..39ab09c 100644
 +const mobileKeys: MobileKey[] = [
 +    { label: 'Esc', ariaLabel: 'Escape', value: '\x1b' },
 +    { label: 'Tab', ariaLabel: 'Tab', value: '\t' },
++    { label: 'Enter', ariaLabel: 'Enter', value: '\r' },
 +    { label: '\u2190', ariaLabel: 'Left arrow', value: '\x1b[D', arrow: 'D' },
 +    { label: '\u2193', ariaLabel: 'Down arrow', value: '\x1b[B', arrow: 'B' },
 +    { label: '\u2191', ariaLabel: 'Up arrow', value: '\x1b[A', arrow: 'A' },
@@ -37,17 +40,17 @@ index b42bf15..39ab09c 100644
      constructor(props: Props) {
          super();
 -        this.xterm = new Xterm(props, this.showModal);
-+        this.state = { modal: false, ctrl: false, alt: false };
++        this.state = { modal: false, ctrl: false, alt: false, shift: false, shiftLock: false };
 +        this.xterm = new Xterm(props, this.showModal, this.transformInput);
      }
 
      async componentDidMount() {
-@@ -32,9 +55,33 @@ export class Terminal extends Component<Props, State> {
+@@ -32,9 +58,26 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
 -    render({ id }: Props, { modal }: State) {
-+    render({ id }: Props, { modal, ctrl, alt }: State) {
++    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock }: State) {
          return (
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
 +            <div id={id}>
@@ -63,22 +66,15 @@ index b42bf15..39ab09c 100644
 +                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
 +                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
 +                    {this.renderModifier('Alt', alt, 'alt')}
-+                    <button
-+                        type="button"
-+                        tabIndex={-1}
-+                        class="mobile-key"
-+                        aria-label="Paste from clipboard (Ctrl Shift V)"
-+                        onPointerDown={event => this.pressPaste(event)}
-+                        onClick={event => this.clickPaste(event)}
-+                    >
-+                        {'\u21e7Ctrl V'}
-+                    </button>
++                    {this.renderModifier('Shift', shift, 'shift')}
++                    {this.renderShiftLock(shiftLock)}
++                    {this.renderKeyboardDismiss()}
 +                    {mobileKeys.slice(2).map(this.renderMobileKey)}
 +                </nav>
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +92,149 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +88,208 @@ export class Terminal extends Component<Props, State> {
          );
      }
 
@@ -98,7 +94,7 @@ index b42bf15..39ab09c 100644
 +        );
 +    }
 +
-+    private renderModifier(label: string, active: boolean, modifier: 'ctrl' | 'alt') {
++    private renderModifier(label: string, active: boolean, modifier: 'ctrl' | 'alt' | 'shift') {
 +        return (
 +            <button
 +                type="button"
@@ -114,6 +110,37 @@ index b42bf15..39ab09c 100644
 +        );
 +    }
 +
++    private renderShiftLock(active: boolean) {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
++                aria-label="Shift lock"
++                aria-pressed={active}
++                onPointerDown={this.pressShiftLock}
++                onClick={this.clickShiftLock}
++            >
++                {'\u21ea'}
++            </button>
++        );
++    }
++
++    private renderKeyboardDismiss() {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class="mobile-key"
++                aria-label="Hide software keyboard"
++                onPointerDown={this.pressKeyboardDismiss}
++                onClick={this.clickKeyboardDismiss}
++            >
++                {'Kbd\u2193'}
++            </button>
++        );
++    }
++
 +    private pressMobileKey(event: PointerEvent, key: MobileKey) {
 +        event.preventDefault();
 +        this.sendMobileKey(key);
@@ -123,52 +150,71 @@ index b42bf15..39ab09c 100644
 +        if (event.detail === 0) this.sendMobileKey(key);
 +    }
 +
-+    private pressModifier(event: PointerEvent, modifier: 'ctrl' | 'alt') {
++    private pressModifier(event: PointerEvent, modifier: 'ctrl' | 'alt' | 'shift') {
 +        event.preventDefault();
 +        this.toggleModifier(modifier);
 +    }
 +
-+    private clickModifier(event: MouseEvent, modifier: 'ctrl' | 'alt') {
++    private clickModifier(event: MouseEvent, modifier: 'ctrl' | 'alt' | 'shift') {
 +        if (event.detail === 0) this.toggleModifier(modifier);
 +    }
 +
-+    private pressPaste(event: PointerEvent) {
++    @bind
++    private pressShiftLock(event: PointerEvent) {
 +        event.preventDefault();
-+        void this.xterm.pasteFromClipboard();
++        this.toggleShiftLock();
 +    }
 +
-+    private clickPaste(event: MouseEvent) {
-+        if (event.detail === 0) {
-+            void this.xterm.pasteFromClipboard();
-+        }
++    @bind
++    private clickShiftLock(event: MouseEvent) {
++        if (event.detail === 0) this.toggleShiftLock();
 +    }
 +
-+    private toggleModifier(modifier: 'ctrl' | 'alt') {
++    @bind
++    private pressKeyboardDismiss(event: PointerEvent) {
++        event.preventDefault();
++        this.xterm.blur();
++    }
++
++    @bind
++    private clickKeyboardDismiss(event: MouseEvent) {
++        if (event.detail === 0) this.xterm.blur();
++    }
++
++    private toggleModifier(modifier: 'ctrl' | 'alt' | 'shift') {
 +        this.setState(state => ({ [modifier]: !state[modifier] }));
 +        this.xterm.focus();
 +    }
 +
++    private toggleShiftLock() {
++        this.setState(state => ({ shiftLock: !state.shiftLock, shift: false }));
++        this.xterm.focus();
++    }
++
 +    private sendMobileKey(key: MobileKey) {
-+        if (key.page) {
-+            this.clearModifiers();
-+            this.xterm.sendData(key.value || '');
-+            this.xterm.focus();
-+            return;
-+        }
-+
 +        let data = key.value || '';
-+        const { ctrl, alt } = this.state;
++        const { ctrl, alt, shift, shiftLock } = this.state;
++        const shifted = shift || shiftLock;
 +
-+        if (key.arrow && (ctrl || alt)) {
-+            const modifier = 1 + (alt ? 2 : 0) + (ctrl ? 4 : 0);
++        if (key.arrow && (ctrl || alt || shifted)) {
++            const modifier = this.modifierParameter(ctrl, alt, shifted);
 +            data = `\x1b[1;${modifier}${key.arrow}`;
-+            this.clearModifiers();
++            this.clearOneShotModifiers();
++        } else if (key.page && (ctrl || alt || shifted)) {
++            const modifier = this.modifierParameter(ctrl, alt, shifted);
++            const pageCode = key.page === 'up' ? '5' : '6';
++            data = `\x1b[${pageCode};${modifier}~`;
++            this.clearOneShotModifiers();
 +        } else {
 +            data = this.transformInput(data);
 +        }
 +
 +        this.xterm.sendData(data);
 +        this.xterm.focus();
++    }
++
++    private modifierParameter(ctrl: boolean, alt: boolean, shift: boolean) {
++        return 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
 +    }
 +
 +    @bind
@@ -201,12 +247,19 @@ index b42bf15..39ab09c 100644
 +
 +    @bind
 +    private transformInput(data: string) {
-+        const { ctrl, alt } = this.state;
-+        if (!ctrl && !alt) return data;
++        const { ctrl, alt, shift, shiftLock } = this.state;
++        const shifted = shift || shiftLock;
++        if (!ctrl && !alt && !shifted) return data;
 +
-+        let transformed = ctrl ? this.toControlCharacter(data) : data;
++        let transformed = data;
++        if (shifted && transformed === '\t') {
++            transformed = '\x1b[Z';
++        } else if (shifted && transformed.length === 1 && /[a-z]/.test(transformed)) {
++            transformed = transformed.toUpperCase();
++        }
++        if (ctrl) transformed = this.toControlCharacter(transformed);
 +        if (alt) transformed = `\x1b${transformed}`;
-+        this.clearModifiers();
++        this.clearOneShotModifiers();
 +        return transformed;
 +    }
 +
@@ -221,8 +274,10 @@ index b42bf15..39ab09c 100644
 +        return data;
 +    }
 +
-+    private clearModifiers() {
-+        if (this.state.ctrl || this.state.alt) this.setState({ ctrl: false, alt: false });
++    private clearOneShotModifiers() {
++        if (this.state.ctrl || this.state.alt || this.state.shift) {
++            this.setState({ ctrl: false, alt: false, shift: false });
++        }
 +    }
 +
      @bind
@@ -242,7 +297,7 @@ index b643f92..b978b33 100644
      ) {}
 
      dispose() {
-@@ -122,6 +123,29 @@ export class Xterm {
+@@ -122,6 +123,18 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
@@ -254,25 +309,14 @@ index b643f92..b978b33 100644
 +    }
 +
 +    @bind
-+    public async pasteFromClipboard() {
-+        if (!navigator.clipboard?.readText) {
-+            this.overlayAddon?.showOverlay('Paste unavailable', 800);
-+            return;
-+        }
-+
-+        try {
-+            const text = await navigator.clipboard.readText();
-+            if (text) this.sendData(text);
-+        } catch (e) {
-+            console.warn('[ttyd] clipboard paste unavailable', e);
-+            this.overlayAddon?.showOverlay('Paste unavailable', 800);
-+        }
++    public blur() {
++        this.terminal?.blur();
 +    }
 +
      @bind
      public async refreshToken() {
          try {
-@@ -173,7 +197,7 @@ export class Xterm {
+@@ -173,7 +186,7 @@ export class Xterm {
                  }
              })
          );
@@ -285,7 +329,7 @@ diff --git a/html/src/style/index.scss b/html/src/style/index.scss
 index 0f9244b..9de6188 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,74 @@ body {
+@@ -7,12 +7,70 @@ body {
  }
 
  #terminal-container {
@@ -319,35 +363,31 @@ index 0f9244b..9de6188 100644
 +
 +  .mobile-keys {
 +    box-sizing: border-box;
-+    display: flex;
++    display: grid;
 +    flex: 0 0 auto;
++    grid-template-columns: repeat(7, minmax(0, 1fr));
++    grid-template-rows: repeat(2, 38px);
 +    gap: 6px;
 +    width: 100%;
-+    overflow-x: auto;
++    overflow: hidden;
 +    padding: 5px max(6px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom))
 +      max(6px, env(safe-area-inset-left));
 +    background: #181825;
 +    border-top: 1px solid #45475a;
-+    scrollbar-width: none;
-+    -webkit-overflow-scrolling: touch;
-+  }
-+
-+  .mobile-keys::-webkit-scrollbar {
-+    display: none;
 +  }
 +
 +  .mobile-key {
 +    box-sizing: border-box;
-+    flex: 0 0 auto;
-+    min-width: 44px;
++    width: 100%;
++    min-width: 0;
 +    height: 38px;
 +    margin: 0;
-+    padding: 0 10px;
++    padding: 0 3px;
 +    border: 1px solid #585b70;
 +    border-radius: 7px;
 +    color: #cdd6f4;
 +    background: #313244;
-+    font: 600 15px/1 Monaco,Consolas,monospace;
++    font: 600 13px/1 Monaco, Consolas, monospace;
 +    touch-action: manipulation;
 +    user-select: none;
 +    -webkit-tap-highlight-color: transparent;
