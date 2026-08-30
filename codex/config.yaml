@@ -20,12 +20,15 @@ auth_api: true
 hassio_api: true
 hassio_role: manager
 map:
-  - homeassistant_config:rw
-  - ssl:ro
-  - share:rw
-  - media:rw
-  - addon_config:rw
-  - backup:ro
+  - type: homeassistant_config
+    read_only: false
+    path: /homeassistant
+  - type: ssl
+  - type: share
+    read_only: false
+  - type: media
+    read_only: false
+  - type: backup
 options:
   enable_mcp: true
   terminal_font_size: 14
