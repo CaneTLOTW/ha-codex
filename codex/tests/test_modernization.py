@@ -18,6 +18,23 @@ OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 
 
 class ModernizationTests(unittest.TestCase):
+    def run_merge(self, config, managed, enable_mcp="false"):
+        return subprocess.run(
+            [
+                sys.executable,
+                MERGE,
+                config,
+                "gpt-5.6-sol",
+                enable_mcp,
+                "workspace",
+                "on-request",
+                managed,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
     def test_explicit_mcp_false_is_preserved(self):
         start_text = START.read_text(encoding="utf-8")
         self.assertIn("enable_mcp=\"$(jq -r '.enable_mcp' /data/options.json)\"", start_text)
@@ -94,25 +111,42 @@ class ModernizationTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    MERGE,
-                    config,
-                    "gpt-5.6-sol",
-                    "false",
-                    "workspace",
-                    "on-request",
-                    managed,
-                ],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            result = self.run_merge(config, managed)
             self.assertEqual(result.returncode, 0, result.stderr)
             parsed = tomllib.loads(config.read_text(encoding="utf-8"))
             self.assertNotIn("homeassistant", parsed["mcp_servers"])
             self.assertEqual(parsed["mcp_servers"]["example"]["url"], "https://mcp.example.test/mcp")
+
+    def test_remote_mcp_restores_previous_same_name_user_server(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / "config.toml"
+            managed = root / "mcp.json"
+            config.write_text(
+                '[mcp_servers.example]\ncommand = "old-mcp"\nargs = ["--user-config"]\n',
+                encoding="utf-8",
+            )
+            managed.write_text(
+                json.dumps([{"name": "example", "url": "https://managed.example.test/mcp"}]),
+                encoding="utf-8",
+            )
+
+            managed_result = self.run_merge(config, managed)
+            self.assertEqual(managed_result.returncode, 0, managed_result.stderr)
+            managed_config = tomllib.loads(config.read_text(encoding="utf-8"))
+            self.assertEqual(
+                managed_config["mcp_servers"]["example"]["url"],
+                "https://managed.example.test/mcp",
+            )
+            self.assertNotIn("command", managed_config["mcp_servers"]["example"])
+
+            managed.write_text("[]\n", encoding="utf-8")
+            restore_result = self.run_merge(config, managed)
+            self.assertEqual(restore_result.returncode, 0, restore_result.stderr)
+            restored = tomllib.loads(config.read_text(encoding="utf-8"))
+            self.assertEqual(restored["mcp_servers"]["example"]["command"], "old-mcp")
+            self.assertEqual(restored["mcp_servers"]["example"]["args"], ["--user-config"])
+            self.assertNotIn("url", restored["mcp_servers"]["example"])
 
 
 if __name__ == "__main__":
