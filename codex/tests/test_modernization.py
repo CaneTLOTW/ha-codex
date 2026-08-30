@@ -14,6 +14,7 @@ MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
 DOCKERFILE = CODEX_DIR / "Dockerfile"
 MOBILE_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+IOS_VIEWPORT_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch"
 OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 
 
@@ -40,13 +41,25 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("enable_mcp=\"$(jq -r '.enable_mcp' /data/options.json)\"", start_text)
         self.assertNotIn(".enable_mcp // true", start_text)
 
-    def test_mobile_terminal_patch_is_canonical(self):
+    def test_mobile_terminal_patch_is_canonical_and_served(self):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+        start_text = START.read_text(encoding="utf-8")
         patch = MOBILE_PATCH.read_text(encoding="utf-8")
+        viewport_patch = IOS_VIEWPORT_PATCH.read_text(encoding="utf-8")
+
         self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch", dockerfile)
+        self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch", dockerfile)
         self.assertIn("mobile-keys", patch)
         self.assertIn("Scroll one page up", patch)
         self.assertIn("transformInput", patch)
+        self.assertIn('meta name="viewport"', viewport_patch)
+        self.assertIn("width=device-width", viewport_patch)
+        self.assertIn("yarn inline", dockerfile)
+        self.assertIn(
+            "install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html",
+            dockerfile,
+        )
+        self.assertIn("--index /usr/share/ttyd/mobile-index.html", start_text)
         self.assertIn("bind -n PPage copy-mode", dockerfile)
         self.assertFalse(OLD_PATCH.exists())
 
