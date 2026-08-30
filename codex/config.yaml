@@ -16,7 +16,6 @@ ingress_stream: true
 panel_icon: mdi:code-braces
 panel_title: Codex
 homeassistant_api: true
-auth_api: true
 hassio_api: true
 hassio_role: manager
 map:
