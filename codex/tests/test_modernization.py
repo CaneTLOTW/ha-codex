@@ -14,9 +14,6 @@ MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
 DOCKERFILE = CODEX_DIR / "Dockerfile"
 MOBILE_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
-IOS_VIEWPORT_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch"
-IOS_FOCUS_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-focus.patch"
-IOS_CLIPBOARD_PATCH = CODEX_DIR / "ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-clipboard.patch"
 OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 
 
@@ -47,23 +44,21 @@ class ModernizationTests(unittest.TestCase):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
         start_text = START.read_text(encoding="utf-8")
         patch = MOBILE_PATCH.read_text(encoding="utf-8")
-        viewport_patch = IOS_VIEWPORT_PATCH.read_text(encoding="utf-8")
-        focus_patch = IOS_FOCUS_PATCH.read_text(encoding="utf-8")
-        clipboard_patch = IOS_CLIPBOARD_PATCH.read_text(encoding="utf-8")
 
-        self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch", dockerfile)
-        self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-ios-viewport.patch", dockerfile)
-        self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-focus.patch", dockerfile)
-        self.assertIn("ttyd-mobile-keys/ttyd-1.7.7-ios-toolbar-clipboard.patch", dockerfile)
+        self.assertEqual(dockerfile.count("ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"), 1)
+        self.assertNotIn("ttyd-1.7.7-ios-viewport.patch", dockerfile)
+        self.assertNotIn("ttyd-1.7.7-ios-toolbar-focus.patch", dockerfile)
+        self.assertNotIn("ttyd-1.7.7-ios-toolbar-clipboard.patch", dockerfile)
         self.assertIn("mobile-keys", patch)
         self.assertIn("Scroll one page up", patch)
         self.assertIn("transformInput", patch)
-        self.assertIn('meta name="viewport"', viewport_patch)
-        self.assertIn("width=device-width", viewport_patch)
-        self.assertIn("matchMedia", focus_patch)
-        self.assertIn("pointer: coarse", focus_patch)
-        self.assertIn("Paste from clipboard (Ctrl Shift V)", clipboard_patch)
-        self.assertIn("navigator.clipboard.readText()", clipboard_patch)
+        self.assertIn('meta name="viewport"', patch)
+        self.assertIn("width=device-width", patch)
+        self.assertIn("viewport-fit=cover", patch)
+        self.assertIn("matchMedia", patch)
+        self.assertIn("pointer: coarse", patch)
+        self.assertIn("Paste from clipboard (Ctrl Shift V)", patch)
+        self.assertIn("navigator.clipboard.readText()", patch)
         self.assertIn("yarn inline", dockerfile)
         self.assertIn(
             "install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html",
