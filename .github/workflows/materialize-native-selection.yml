@@ -26,13 +26,21 @@ jobs:
           set -euo pipefail
           expected_head="de025aa1d004b79f8ce68cdd05e587164d65fdbe"
           test "$(git rev-parse HEAD)" = "$expected_head"
-          git fetch origin pr1-native-selection-payload
-          git show origin/pr1-native-selection-payload:codex/ttyd-mobile-keys/.native-selection-patch.gz.b64 \
+
+          # Use the already byte-verified payload commit, not the later transport attempt.
+          git show d464b2a6cfb8cb5c3c916795363ae41d9f5d1301:codex/ttyd-mobile-keys/.native-selection-patch.gz.b64 \
             | base64 --decode \
             | gzip --decompress \
             > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
-          echo "39dff0483667f2589de24011ea900fc1d742373a3bd5c5b7a0ae28ba8224c193  codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch" | sha256sum --check
+
+          # Normalize only empty unified-diff context lines (single SP -> empty line).
+          sed -i 's/^ $//' codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+
+          echo "ef3a9de60a7fa9822c8a730f675467baaad3a29a21704ae55ddf4a27a49b2c14  codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch" | sha256sum --check
           git diff --check
+
+          git clone --depth 1 --branch 1.7.7 https://github.com/tsl0922/ttyd.git /tmp/ttyd-1.7.7
+          git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
 
       - name: Commit exact patch to feature branch
         shell: bash
