@@ -1,7 +1,8 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
+index b42bf15..141877f 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,15 +11,49 @@
+@@ -11,15 +11,49 @@ interface Props extends XtermOptions {
 
  interface State {
      modal: boolean;
@@ -11,7 +12,7 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +    shiftLock: boolean;
 +    selectionMode: boolean;
  }
-+
+
 +interface MobileKey {
 +    label: string;
 +    ariaLabel: string;
@@ -31,7 +32,7 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +    { label: 'PgUp', ariaLabel: 'Scroll one page up', value: '\x1b[5~', page: 'up' },
 +    { label: 'PgDn', ariaLabel: 'Scroll one page down', value: '\x1b[6~', page: 'down' },
 +];
-
++
  export class Terminal extends Component<Props, State> {
      private container: HTMLElement;
      private xterm: Xterm;
@@ -52,15 +53,14 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
      }
 
      async componentDidMount() {
-@@ -32,9 +66,27 @@
+@@ -32,9 +66,28 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
 -    render({ id }: Props, { modal }: State) {
--        return (
--            <div id={id} ref={c => (this.container = c as HTMLElement)}>
 +    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
-+        return (
+         return (
+-            <div id={id} ref={c => (this.container = c as HTMLElement)}>
 +            <div id={id}>
 +                <div
 +                    class="terminal-viewport"
@@ -79,14 +79,16 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +                    {this.renderSelectionMode(selectionMode)}
 +                    {this.renderKeyboardDismiss()}
 +                    {mobileKeys.slice(2).map(this.renderMobileKey)}
++                    {this.renderKeyboardShow()}
 +                </nav>
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -46,6 +98,244 @@
+@@ -45,6 +98,276 @@ export class Terminal extends Component<Props, State> {
+         );
      }
 
-     @bind
++    @bind
 +    private renderMobileKey(key: MobileKey) {
 +        return (
 +            <button
@@ -165,6 +167,21 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +        );
 +    }
 +
++    private renderKeyboardShow() {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class="mobile-key"
++                aria-label="Show software keyboard"
++                onPointerDown={this.pressKeyboardShow}
++                onClick={this.clickKeyboardShow}
++            >
++                {'Kbd\u2191'}
++            </button>
++        );
++    }
++
 +    private pressMobileKey(event: PointerEvent, key: MobileKey) {
 +        event.preventDefault();
 +        this.sendMobileKey(key);
@@ -214,6 +231,17 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +    @bind
 +    private clickKeyboardDismiss(event: MouseEvent) {
 +        if (event.detail === 0) this.xterm.blur();
++    }
++
++    @bind
++    private pressKeyboardShow(event: PointerEvent) {
++        event.preventDefault();
++        this.xterm.showKeyboard();
++    }
++
++    @bind
++    private clickKeyboardShow(event: MouseEvent) {
++        if (event.detail === 0) this.xterm.showKeyboard();
 +    }
 +
 +    private toggleModifier(modifier: 'ctrl' | 'alt' | 'shift') {
@@ -294,6 +322,7 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +        const { ctrl, alt, shift, shiftLock } = this.state;
 +        const shifted = shift || shiftLock;
 +        if (!ctrl && !alt && !shifted) return data;
++        if (!this.isModifierInput(data)) return data;
 +
 +        let transformed = data;
 +        if (shifted && transformed === '\t') {
@@ -305,6 +334,11 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +        if (alt) transformed = `\x1b${transformed}`;
 +        this.clearOneShotModifiers();
 +        return transformed;
++    }
++
++    private isModifierInput(data: string) {
++        if (data === '\t' || data === '\r' || data === '\x7f') return true;
++        return data.length === 1 && data !== '\x1b';
 +    }
 +
 +    private toControlCharacter(data: string) {
@@ -324,14 +358,14 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +        }
 +    }
 +
-+    @bind
+     @bind
      showModal() {
          this.setState({ modal: true });
-     }
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
+index b643f92..2460ab2 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -74,6 +74,25 @@
+@@ -74,6 +74,25 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
      return toDisposable(() => target.removeEventListener(type, listener));
  }
 
@@ -357,7 +391,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +115,20 @@
+@@ -96,13 +115,20 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -380,12 +414,10 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 
      dispose() {
          for (const d of this.disposables) {
-@@ -120,6 +146,30 @@
-     @bind
-     public sendFile(files: FileList) {
+@@ -122,6 +148,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
-+    }
-+
+     }
+
 +    @bind
 +    public focus() {
 +        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
@@ -399,6 +431,11 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +    }
 +
 +    @bind
++    public showKeyboard() {
++        this.terminal?.focus();
++    }
++
++    @bind
 +    public toggleNativeSelection(): boolean {
 +        if (!this.nativeSelectionCapable || !this.terminal?.element) {
 +            this.overlayAddon?.showOverlay('Selection unavailable', 800);
@@ -408,10 +445,12 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +        this.nativeSelectionMode = !this.nativeSelectionMode;
 +        this.applyNativeSelectionState();
 +        return this.nativeSelectionMode;
-     }
-
++    }
++
      @bind
-@@ -149,6 +199,8 @@
+     public async refreshToken() {
+         try {
+@@ -149,6 +204,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -420,14 +459,14 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,7 +212,60 @@
+@@ -160,9 +217,62 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
 +        this.installNativeTouchSelection();
          fitAddon.fit();
-+    }
-+
+     }
+
 +    private installNativeTouchSelection() {
 +        if (!this.nativeSelectionCapable || !this.terminal.element) return;
 +
@@ -478,10 +517,12 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +        this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
 +        if (this.nativeSelectionMode) this.terminal.blur();
 +        this.fitAddon.fit();
-     }
-
++    }
++
      @bind
-@@ -173,7 +278,7 @@
+     private initListeners() {
+         const { terminal, fitAddon, overlayAddon, register, sendData } = this;
+@@ -173,7 +283,7 @@ export class Xterm {
                  }
              })
          );
@@ -490,7 +531,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -379,7 +484,8 @@
+@@ -379,7 +489,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
@@ -501,9 +542,10 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
                  case 'disableLeaveAlert':
                      if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
+index 0f9244b..8f0b8d1 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,111 @@
+@@ -7,12 +7,111 @@ body {
  }
 
  #terminal-container {
@@ -616,6 +658,7 @@ diff --git a/html/src/style/index.scss b/html/src/style/index.scss
 +  }
 +}
 diff --git a/html/src/template.html b/html/src/template.html
+index e710c09..6cde839 100644
 --- a/html/src/template.html
 +++ b/html/src/template.html
 @@ -3,6 +3,7 @@

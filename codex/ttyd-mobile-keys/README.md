@@ -5,11 +5,15 @@ The Codex App builds ttyd 1.7.7 from source and applies one canonical
 building the customized frontend. No patch-on-patch chain is used.
 
 The mobile toolbar adds `Esc`, `Tab`, `Enter`, one-shot `Ctrl`, `Alt`, and
-`Shift`, persistent Shift Lock, arrow keys, `PgUp`/`PgDn`, a keyboard-dismiss
-button, and an explicit `Sel` mode. On narrow/touch layouts the controls are
+`Shift`, persistent Shift Lock, arrow keys, `PgUp`/`PgDn`, explicit keyboard
+show/hide buttons, and a `Sel` mode. On narrow/touch layouts the controls are
 shown as a fixed two-row grid so the toolbar itself does not need horizontal
 scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
 navigation when session persistence is enabled.
+
+One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch
+reporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/
+`Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.
 
 ## iOS selection mode
 
