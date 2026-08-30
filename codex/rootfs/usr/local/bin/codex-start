@@ -12,7 +12,7 @@ fi
 theme="$(jq -r '.terminal_theme // "dark"' /data/options.json)"
 session_persist="$(jq -r '.session_persistence // false' /data/options.json)"
 work_dir="$(jq -r '.working_directory // "/homeassistant"' /data/options.json)"
-enable_mcp="$(jq -r '.enable_mcp // true' /data/options.json)"
+enable_mcp="$(jq -r '.enable_mcp' /data/options.json)"
 default_model="$(jq -r '.default_model // ""' /data/options.json)"
 codex_permissions="$(jq -r '.codex_permissions // "workspace"' /data/options.json)"
 codex_approval_policy="$(jq -r '.codex_approval_policy // "on-request"' /data/options.json)"
