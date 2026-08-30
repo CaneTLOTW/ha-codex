@@ -18,11 +18,11 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
                      {mobileKeys.slice(2).map(this.renderMobileKey)}
                  </nav>
                  <Modal show={modal}>
-@@ -116,6 +126,17 @@ export class Terminal extends Component<Props, State> {
+@@ -116,3 +126,14 @@ export class Terminal extends Component<Props, State> {
      private clickModifier(event: MouseEvent, modifier: 'ctrl' | 'alt') {
          if (event.detail === 0) this.toggleModifier(modifier);
      }
- 
++
 +    private pressPaste(event: PointerEvent) {
 +        event.preventDefault();
 +        void this.xterm.pasteFromClipboard();
@@ -33,21 +33,17 @@ diff --git a/html/src/components/terminal/index.tsx b/html/src/components/termin
 +            void this.xterm.pasteFromClipboard();
 +        }
 +    }
-+
-     private toggleModifier(modifier: 'ctrl' | 'alt') {
-         this.setState(state => ({ [modifier]: !state[modifier] }));
-         this.xterm.focus();
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -123,9 +123,25 @@ export class Xterm {
+@@ -123,6 +123,22 @@ export class Xterm {
      @bind
      public focus() {
          if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
              this.terminal?.focus();
          }
      }
- 
++
 +    @bind
 +    public async pasteFromClipboard() {
 +        if (!navigator.clipboard?.readText) {
@@ -63,6 +59,3 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 +            this.overlayAddon?.showOverlay('Paste unavailable', 800);
 +        }
 +    }
-+
-     @bind
-     public async refreshToken() {
