@@ -1,0 +1,46 @@
+name: Materialize native selection patch
+
+on:
+  push:
+    branches:
+      - pr1-native-selection-payload
+    paths:
+      - ".github/workflows/materialize-native-selection.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/upstream-mobile-mcp-modernization
+          fetch-depth: 0
+
+      - name: Verify target and materialize canonical patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_head="de025aa1d004b79f8ce68cdd05e587164d65fdbe"
+          test "$(git rev-parse HEAD)" = "$expected_head"
+          git fetch origin pr1-native-selection-payload
+          git show origin/pr1-native-selection-payload:codex/ttyd-mobile-keys/.native-selection-patch.gz.b64 \
+            | base64 --decode \
+            | gzip --decompress \
+            > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+          echo "39dff0483667f2589de24011ea900fc1d742373a3bd5c5b7a0ae28ba8224c193  codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch" | sha256sum --check
+          git diff --check
+
+      - name: Commit exact patch to feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: add native iOS terminal selection mode"
+          git push origin HEAD:feat/upstream-mobile-mcp-modernization
