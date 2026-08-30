@@ -27,6 +27,8 @@ export CODEX_PERMISSIONS="$codex_permissions"
 export CODEX_APPROVAL_POLICY="$codex_approval_policy"
 export CODEX_HA_URL="http://supervisor/core"
 export CODEX_SUPERVISOR_TOKEN_FILE="/tmp/codex/ha-token"
+export CODEX_MCP_CONFIG="$CODEX_MANAGED_ROOT/mcp-servers.json"
+export CODEX_MCP_ENVIRONMENT="$CODEX_MANAGED_ROOT/mcp-environment.json"
 
 mkdir -p \
   "$CODEX_STATE_ROOT/users" \
@@ -34,6 +36,15 @@ mkdir -p \
   /tmp/codex
 
 chmod 700 /tmp/codex
+
+/usr/local/bin/codex-prepare-mcp \
+  /data/options.json \
+  "$CODEX_MCP_CONFIG" \
+  "$CODEX_MCP_ENVIRONMENT"
+chown 0:0 "$CODEX_MCP_CONFIG"
+chown 22000:0 "$CODEX_MCP_ENVIRONMENT"
+chmod 644 "$CODEX_MCP_CONFIG"
+chmod 600 "$CODEX_MCP_ENVIRONMENT"
 
 if [[ -d /homeassistant/.codex-home && ! -d "$CODEX_STATE_ROOT/legacy-global-home" ]]; then
   cp -a /homeassistant/.codex-home "$CODEX_STATE_ROOT/legacy-global-home"
@@ -101,6 +112,8 @@ When users mention `/config/...`, translate to `/homeassistant/...`
 
 Use the `homeassistant` MCP server to query entities and call services when MCP is enabled. The Supervisor token stays outside the interactive shell and is only available through the privileged `hass-mcp` helper path.
 
+Additional remote MCP servers configured in the App options are also managed in `~/.codex/config.toml`. Bearer-token values and explicitly configured environment variables are supplied to the Codex process environment instead of being written as plaintext values into `config.toml`.
+
 ## Reading Home Assistant Logs
 
 **Log levels (from most to least verbose):**
@@ -111,35 +124,24 @@ Use the `homeassistant` MCP server to query entities and call services when MCP 
 
 **Commands to read logs:**
 ```bash
-# View recent logs (ha CLI)
 ha core logs 2>&1 | tail -100
-
-# Filter by keyword
 ha core logs 2>&1 | grep -i keyword
-
-# Filter errors only
 ha core logs 2>&1 | grep -iE "(error|exception)"
-
-# Alternative: read log file directly
 tail -100 /homeassistant/home-assistant.log
 ```
-
-**To enable debug logging for an integration**, add to `configuration.yaml`:
-```yaml
-logger:
-  default: info
-  logs:
-    custom_components.YOUR_INTEGRATION: debug
-```
-
-**Key insight:** `_LOGGER.debug()` calls are invisible unless the logger level is set to debug. Use `_LOGGER.info()` or `_LOGGER.warning()` for logs that should always appear.
 EOF
 
 validate_home="$CODEX_MANAGED_ROOT/validate-home"
 rm -rf "$validate_home"
 mkdir -p "$validate_home"
 trap 'rm -rf "$validate_home"' EXIT
-/usr/local/bin/codex-merge-config "${validate_home}/config.toml" "$default_model" "$enable_mcp" "$codex_permissions" "$codex_approval_policy"
+/usr/local/bin/codex-merge-config \
+  "${validate_home}/config.toml" \
+  "$default_model" \
+  "$enable_mcp" \
+  "$codex_permissions" \
+  "$codex_approval_policy" \
+  "$CODEX_MCP_CONFIG"
 if CODEX_HOME="$validate_home" codex debug prompt-input --help >/dev/null 2>&1; then
   CODEX_HOME="$validate_home" codex debug prompt-input "startup validation" >/dev/null
 else
@@ -147,10 +149,10 @@ else
 fi
 if [[ "$enable_mcp" == "true" ]]; then
   CODEX_HOME="$validate_home" codex mcp get homeassistant >/dev/null
-  echo "[INFO] Home Assistant MCP configured for Codex home"
+  echo '[INFO] Bundled MCP server registered: "homeassistant" (voska/hass-mcp)'
 else
   CODEX_HOME="$validate_home" codex mcp list >/dev/null
-  echo "[INFO] Home Assistant MCP disabled"
+  echo '[INFO] Bundled MCP server disabled: "homeassistant"'
 fi
 rm -rf "$validate_home"
 trap - EXIT
@@ -162,6 +164,7 @@ else
 fi
 
 exec ttyd \
+  --debug 3 \
   --port 7681 \
   --writable \
   --ping-interval 30 \
