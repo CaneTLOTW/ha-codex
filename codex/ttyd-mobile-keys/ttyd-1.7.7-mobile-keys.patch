@@ -1,8 +1,7 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..39ab09c 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,15 +11,41 @@ interface Props extends XtermOptions {
+@@ -11,15 +11,49 @@
 
  interface State {
      modal: boolean;
@@ -10,8 +9,9 @@ index b42bf15..39ab09c 100644
 +    alt: boolean;
 +    shift: boolean;
 +    shiftLock: boolean;
++    selectionMode: boolean;
  }
-
++
 +interface MobileKey {
 +    label: string;
 +    ariaLabel: string;
@@ -31,7 +31,7 @@ index b42bf15..39ab09c 100644
 +    { label: 'PgUp', ariaLabel: 'Scroll one page up', value: '\x1b[5~', page: 'up' },
 +    { label: 'PgDn', ariaLabel: 'Scroll one page down', value: '\x1b[6~', page: 'down' },
 +];
-+
+
  export class Terminal extends Component<Props, State> {
      private container: HTMLElement;
      private xterm: Xterm;
@@ -40,19 +40,27 @@ index b42bf15..39ab09c 100644
      constructor(props: Props) {
          super();
 -        this.xterm = new Xterm(props, this.showModal);
-+        this.state = { modal: false, ctrl: false, alt: false, shift: false, shiftLock: false };
++        this.state = {
++            modal: false,
++            ctrl: false,
++            alt: false,
++            shift: false,
++            shiftLock: false,
++            selectionMode: false,
++        };
 +        this.xterm = new Xterm(props, this.showModal, this.transformInput);
      }
 
      async componentDidMount() {
-@@ -32,9 +58,26 @@ export class Terminal extends Component<Props, State> {
+@@ -32,9 +66,27 @@
          this.xterm.dispose();
      }
 
 -    render({ id }: Props, { modal }: State) {
-+    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock }: State) {
-         return (
+-        return (
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
++    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
++        return (
 +            <div id={id}>
 +                <div
 +                    class="terminal-viewport"
@@ -68,17 +76,17 @@ index b42bf15..39ab09c 100644
 +                    {this.renderModifier('Alt', alt, 'alt')}
 +                    {this.renderModifier('Shift', shift, 'shift')}
 +                    {this.renderShiftLock(shiftLock)}
++                    {this.renderSelectionMode(selectionMode)}
 +                    {this.renderKeyboardDismiss()}
 +                    {mobileKeys.slice(2).map(this.renderMobileKey)}
 +                </nav>
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +88,208 @@ export class Terminal extends Component<Props, State> {
-         );
+@@ -46,6 +98,244 @@
      }
 
-+    @bind
+     @bind
 +    private renderMobileKey(key: MobileKey) {
 +        return (
 +            <button
@@ -122,6 +130,22 @@ index b42bf15..39ab09c 100644
 +                onClick={this.clickShiftLock}
 +            >
 +                {'\u21ea'}
++            </button>
++        );
++    }
++
++    private renderSelectionMode(active: boolean) {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
++                aria-label="Native text selection and paste mode"
++                aria-pressed={active}
++                onPointerDown={this.pressSelectionMode}
++                onClick={this.clickSelectionMode}
++            >
++                Sel
 +            </button>
 +        );
 +    }
@@ -171,6 +195,17 @@ index b42bf15..39ab09c 100644
 +    }
 +
 +    @bind
++    private pressSelectionMode(event: PointerEvent) {
++        event.preventDefault();
++        this.toggleSelectionMode();
++    }
++
++    @bind
++    private clickSelectionMode(event: MouseEvent) {
++        if (event.detail === 0) this.toggleSelectionMode();
++    }
++
++    @bind
 +    private pressKeyboardDismiss(event: PointerEvent) {
 +        event.preventDefault();
 +        this.xterm.blur();
@@ -189,6 +224,12 @@ index b42bf15..39ab09c 100644
 +    private toggleShiftLock() {
 +        this.setState(state => ({ shiftLock: !state.shiftLock, shift: false }));
 +        this.xterm.focus();
++    }
++
++    private toggleSelectionMode() {
++        const selectionMode = this.xterm.toggleNativeSelection();
++        this.touchStartY = undefined;
++        this.setState({ selectionMode, ctrl: false, alt: false, shift: false });
 +    }
 +
 +    private sendMobileKey(key: MobileKey) {
@@ -219,16 +260,19 @@ index b42bf15..39ab09c 100644
 +
 +    @bind
 +    private startTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
 +        if (event.touches.length === 1) this.touchStartY = event.touches[0].clientY;
 +    }
 +
 +    @bind
 +    private continueTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
 +        if (this.touchStartY !== undefined && event.touches.length === 1) event.preventDefault();
 +    }
 +
 +    @bind
 +    private finishTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
 +        if (this.touchStartY === undefined || event.changedTouches.length !== 1) return;
 +
 +        const distance = event.changedTouches[0].clientY - this.touchStartY;
@@ -280,27 +324,68 @@ index b42bf15..39ab09c 100644
 +        }
 +    }
 +
-     @bind
++    @bind
      showModal() {
          this.setState({ modal: true });
+     }
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..b978b33 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -101,7 +101,8 @@ export class Xterm {
+@@ -74,6 +74,25 @@
+     return toDisposable(() => target.removeEventListener(type, listener));
+ }
+
++function addCapturedEventListener(
++    target: EventTarget,
++    type: string,
++    listener: EventListener,
++    passive = false
++): IDisposable {
++    target.addEventListener(type, listener, { capture: true, passive });
++    return toDisposable(() => target.removeEventListener(type, listener, true));
++}
++
++function shouldUseNativeTouchSelection(targetWindow: Window): boolean {
++    const navigator = targetWindow.navigator as Navigator & { maxTouchPoints?: number };
++    const appleTouchDevice =
++        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
++        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1);
++    const coarsePointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? true;
++    return appleTouchDevice && coarsePointer;
++}
++
+ export class Xterm {
+     private disposables: IDisposable[] = [];
+     private textEncoder = new TextEncoder();
+@@ -96,13 +115,20 @@
+     private resizeOverlay = true;
+     private reconnect = true;
+     private doReconnect = true;
++    private parent?: HTMLElement;
++    private requestedRenderer: RendererType = 'canvas';
++    private nativeSelectionCapable = false;
++    private nativeSelectionMode = false;
+
+     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
      constructor(
          private options: XtermOptions,
 -        private sendCb: () => void
+-    ) {}
 +        private sendCb: () => void,
 +        private transformInput: (data: string) => string = data => data
-     ) {}
++    ) {
++        this.requestedRenderer = options.clientOptions.rendererType;
++    }
 
      dispose() {
-@@ -122,6 +123,18 @@ export class Xterm {
+         for (const d of this.disposables) {
+@@ -120,6 +146,30 @@
+     @bind
+     public sendFile(files: FileList) {
          this.zmodemAddon?.sendFile(files);
-     }
-
++    }
++
 +    @bind
 +    public focus() {
 +        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
@@ -313,10 +398,90 @@ index b643f92..b978b33 100644
 +        this.terminal?.blur();
 +    }
 +
++    @bind
++    public toggleNativeSelection(): boolean {
++        if (!this.nativeSelectionCapable || !this.terminal?.element) {
++            this.overlayAddon?.showOverlay('Selection unavailable', 800);
++            return false;
++        }
++
++        this.nativeSelectionMode = !this.nativeSelectionMode;
++        this.applyNativeSelectionState();
++        return this.nativeSelectionMode;
+     }
+
      @bind
-     public async refreshToken() {
-         try {
-@@ -173,7 +186,7 @@ export class Xterm {
+@@ -149,6 +199,8 @@
+     @bind
+     public open(parent: HTMLElement) {
+         this.terminal = new Terminal(this.options.termOptions);
++        this.parent = parent;
++        this.nativeSelectionCapable = shouldUseNativeTouchSelection(window);
+         const { terminal, fitAddon, overlayAddon } = this;
+         window.term = terminal as TtydTerminal;
+         window.term.fit = () => {
+@@ -160,7 +212,60 @@
+         terminal.loadAddon(new WebLinksAddon());
+
+         terminal.open(parent);
++        this.installNativeTouchSelection();
+         fitAddon.fit();
++    }
++
++    private installNativeTouchSelection() {
++        if (!this.nativeSelectionCapable || !this.terminal.element) return;
++
++        const terminalElement = this.terminal.element;
++        const guardTouchGesture = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const target = event.target as Element | null;
++            if (!target?.closest('.xterm-rows, .xterm-helper-textarea')) return;
++            event.stopPropagation();
++        };
++
++        for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
++            this.register(addCapturedEventListener(terminalElement, type, guardTouchGesture, true));
++        }
++
++        const textarea = this.terminal.textarea;
++        if (!textarea) return;
++
++        const pasteHandler = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const pasteEvent = event as ClipboardEvent;
++            if (pasteEvent.clipboardData) {
++                // xterm's normal paste handler will consume clipboardData. Prevent the
++                // browser from inserting the same text into the helper textarea again.
++                pasteEvent.preventDefault();
++            }
++        };
++        this.register(addCapturedEventListener(textarea, 'paste', pasteHandler));
++
++        const inputFallback = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const inputEvent = event as InputEvent;
++            if (inputEvent.inputType !== 'insertFromPaste' || !textarea.value) return;
++
++            const text = textarea.value;
++            textarea.value = '';
++            this.terminal.paste(text);
++            inputEvent.preventDefault();
++            inputEvent.stopPropagation();
++        };
++        this.register(addCapturedEventListener(textarea, 'input', inputFallback));
++    }
++
++    private applyNativeSelectionState() {
++        const terminalElement = this.terminal.element;
++        terminalElement?.classList.toggle('ttyd-native-touch-selection', this.nativeSelectionMode);
++        this.parent?.classList.toggle('ttyd-native-touch-selection-host', this.nativeSelectionMode);
++        this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
++        if (this.nativeSelectionMode) this.terminal.blur();
++        this.fitAddon.fit();
+     }
+
+     @bind
+@@ -173,7 +278,7 @@
                  }
              })
          );
@@ -325,11 +490,20 @@ index b643f92..b978b33 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
+@@ -379,7 +484,8 @@
+         for (const [key, value] of Object.entries(prefs)) {
+             switch (key) {
+                 case 'rendererType':
+-                    this.setRendererType(value);
++                    this.requestedRenderer = value;
++                    this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
+                     break;
+                 case 'disableLeaveAlert':
+                     if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
-index 0f9244b..9de6188 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,70 @@ body {
+@@ -7,12 +7,111 @@
  }
 
  #terminal-container {
@@ -361,13 +535,54 @@ index 0f9244b..9de6188 100644
 +    overscroll-behavior: contain;
 +  }
 +
++  .terminal-viewport.ttyd-native-touch-selection-host,
++  .terminal-viewport.ttyd-native-touch-selection-host .xterm {
++    touch-action: auto;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-screen,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows * {
++    -webkit-user-select: text !important;
++    user-select: text !important;
++    -webkit-touch-callout: default;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows {
++    pointer-events: auto !important;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows span {
++    display: inline !important;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-helper-textarea {
++    min-width: 80px !important;
++    min-height: 32px !important;
++    z-index: 10 !important;
++    opacity: 1 !important;
++    background: transparent !important;
++    color: transparent !important;
++    -webkit-text-fill-color: transparent !important;
++    caret-color: transparent !important;
++    outline: none;
++    text-shadow: none;
++    -webkit-appearance: none;
++    appearance: none;
++    -webkit-user-select: text;
++    user-select: text;
++    -webkit-touch-callout: default;
++    pointer-events: auto;
++  }
++
 +  .mobile-keys {
 +    box-sizing: border-box;
 +    display: grid;
 +    flex: 0 0 auto;
-+    grid-template-columns: repeat(7, minmax(0, 1fr));
++    grid-template-columns: repeat(8, minmax(0, 1fr));
 +    grid-template-rows: repeat(2, 38px);
-+    gap: 6px;
++    gap: 5px;
 +    width: 100%;
 +    overflow: hidden;
 +    padding: 5px max(6px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom))
@@ -382,12 +597,12 @@ index 0f9244b..9de6188 100644
 +    min-width: 0;
 +    height: 38px;
 +    margin: 0;
-+    padding: 0 3px;
++    padding: 0 2px;
 +    border: 1px solid #585b70;
 +    border-radius: 7px;
 +    color: #cdd6f4;
 +    background: #313244;
-+    font: 600 13px/1 Monaco, Consolas, monospace;
++    font: 600 12px/1 Monaco, Consolas, monospace;
 +    touch-action: manipulation;
 +    user-select: none;
 +    -webkit-tap-highlight-color: transparent;
