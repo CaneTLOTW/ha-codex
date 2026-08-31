@@ -168,7 +168,13 @@ jobs:
           PY
 
           git -C /tmp/ttyd-work diff --no-ext-diff -- . > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
-          sed -i -E 's/^\+[[:space:]]+$/+/' codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch')
+          lines = p.read_text().splitlines()
+          lines = ['+' if line.startswith('+') and not line.startswith('+++') and line[1:].strip() == '' else line for line in lines]
+          p.write_text('\n'.join(lines) + '\n')
+          PY
           test -s codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
 
           rm -rf /tmp/ttyd-check
