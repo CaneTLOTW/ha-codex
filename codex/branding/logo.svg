@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 100" role="img" aria-labelledby="title desc">
+  <title id="title">ha-codex logo</title>
+  <desc id="desc">Horizontal original terminal automation logo for the Home Assistant App presentation.</desc>
+  <rect x="6" y="10" width="80" height="80" rx="20" fill="#111827" stroke="#2DD4BF" stroke-width="4"/>
+  <path d="M24 38 L37 50 L24 63" fill="none" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M43 63 H59" fill="none" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round"/>
+  <path d="M58 31 L70 25 M58 31 L72 40 M58 31 L54 44" fill="none" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="58" cy="31" r="4.5" fill="#2DD4BF"/>
+  <circle cx="70" cy="25" r="3.8" fill="#99F6E4"/>
+  <circle cx="72" cy="40" r="3.8" fill="#99F6E4"/>
+  <circle cx="54" cy="44" r="3.8" fill="#99F6E4"/>
+  <text x="101" y="49" font-family="DejaVu Sans, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="1.2" fill="#111827">HA CODEX</text>
+  <text x="102" y="70" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.8" fill="#475569">TERMINAL AUTOMATION</text>
+</svg>
