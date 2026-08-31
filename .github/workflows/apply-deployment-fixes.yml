@@ -78,16 +78,8 @@ jobs:
                   raise SystemExit(f"expected text not found in {path}: {old[:80]!r}")
               p.write_text(text.replace(old, new, 1))
 
-          replace_once(
-              "codex/Dockerfile",
-              "        7z \\\n        dig \\",
-              "        7z \\\n        ha-readonly \\\n        dig \\",
-          )
-          replace_once(
-              "codex/Dockerfile",
-              "    /usr/local/bin/hass-mcp-wrapper \\\n    /usr/local/bin/hass-mcp-root-helper \\",
-              "    /usr/local/bin/hass-mcp-wrapper \\\n    /usr/local/bin/hass-mcp-root-helper \\\n    /usr/local/bin/ha-readonly \\\n    /usr/local/bin/ha-readonly-root-helper \\",
-          )
+          replace_once("codex/Dockerfile", "        7z \\\n        dig \\", "        7z \\\n        ha-readonly \\\n        dig \\")
+          replace_once("codex/Dockerfile", "    /usr/local/bin/hass-mcp-wrapper \\\n    /usr/local/bin/hass-mcp-root-helper \\", "    /usr/local/bin/hass-mcp-wrapper \\\n    /usr/local/bin/hass-mcp-root-helper \\\n    /usr/local/bin/ha-readonly \\\n    /usr/local/bin/ha-readonly-root-helper \\")
 
           start = Path("codex/rootfs/usr/local/bin/codex-start")
           text = start.read_text()
@@ -123,12 +115,10 @@ jobs:
           consts = '''HA_READONLY = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly"\nHA_READONLY_ROOT = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly-root-helper"\nSUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"\n'''
           if "HA_READONLY =" not in text:
               text = text.replace(const_anchor, const_anchor + consts, 1)
-
           mobile_anchor = "        self.assertFalse(OLD_PATCH.exists())\n"
           mobile_extra = '''        # Desktop xterm drag-selection must not be clipped by the mobile layout wrapper.\n        self.assertNotIn("+    min-height: 0;\\n+    overflow: hidden;\\n+  }\\n+  .terminal {", patch)\n        self.assertIn("+@media (hover: none), (pointer: coarse), (max-width: 768px) {\\n+  .terminal-viewport {\\n+    overflow: hidden;", patch)\n'''
           if "Desktop xterm drag-selection" not in text:
               text = text.replace(mobile_anchor, mobile_anchor + mobile_extra, 1)
-
           method_anchor = "    def test_web_session_keeps_scrollback(self):\n"
           method = '''    def test_readonly_ha_helper_and_agent_guidance(self):\n        root = HA_READONLY_ROOT.read_text(encoding="utf-8")\n        wrapper = HA_READONLY.read_text(encoding="utf-8")\n        sudoers = SUDOERS.read_text(encoding="utf-8")\n        start_text = START.read_text(encoding="utf-8")\n        dockerfile = DOCKERFILE.read_text(encoding="utf-8")\n\n        self.assertIn("ha-readonly-root-helper", wrapper)\n        self.assertIn('[[ $# -eq 2 ]] || deny', root)\n        self.assertIn('[[ "$1" == "core" ]] || deny', root)\n        self.assertIn("info|check|logs", root)\n        self.assertIn("SUPERVISOR_TOKEN=", root)\n        self.assertIn("exec /usr/local/bin/ha", root)\n        self.assertIn("ha-readonly-root-helper", sudoers)\n        self.assertIn("ha-readonly core info", start_text)\n        self.assertIn("ha-readonly core check", start_text)\n        self.assertIn("ha-readonly core logs", start_text)\n        self.assertIn("Supervisor token is intentionally removed", start_text)\n        self.assertIn("ha-readonly", dockerfile)\n\n'''
           if "def test_readonly_ha_helper_and_agent_guidance" not in text:
@@ -142,8 +132,7 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/ttyd-work
           mkdir -p /tmp/ttyd-work
-          curl -fsSL https://github.com/tsl0922/ttyd/archive/refs/tags/1.7.7.tar.gz \
-            | tar -xz -C /tmp/ttyd-work --strip-components=1
+          curl -fsSL https://github.com/tsl0922/ttyd/archive/refs/tags/1.7.7.tar.gz | tar -xz -C /tmp/ttyd-work --strip-components=1
           git -C /tmp/ttyd-work init -q
           git -C /tmp/ttyd-work config user.name baseline
           git -C /tmp/ttyd-work config user.email baseline@example.invalid
@@ -171,16 +160,21 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path('codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch')
-          lines = p.read_text().splitlines()
-          lines = ['+' if line.startswith('+') and not line.startswith('+++') and line[1:].strip() == '' else line for line in lines]
-          p.write_text('\n'.join(lines) + '\n')
+          out = []
+          for line in p.read_text().splitlines():
+              if line.strip() == '':
+                  out.append('')
+              elif line[0] in '+-' and line[1:].strip() == '':
+                  out.append(line[0])
+              else:
+                  out.append(line.rstrip())
+          p.write_text('\n'.join(out) + '\n')
           PY
           test -s codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
 
           rm -rf /tmp/ttyd-check
           mkdir -p /tmp/ttyd-check
-          curl -fsSL https://github.com/tsl0922/ttyd/archive/refs/tags/1.7.7.tar.gz \
-            | tar -xz -C /tmp/ttyd-check --strip-components=1
+          curl -fsSL https://github.com/tsl0922/ttyd/archive/refs/tags/1.7.7.tar.gz | tar -xz -C /tmp/ttyd-check --strip-components=1
           git -C /tmp/ttyd-check apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
 
       - name: Validate changes before commit
