@@ -2,35 +2,46 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Run OpenAI Codex from the Home Assistant sidebar.
+Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned Home Assistant App.
 
-This repository is a compatible fork of the original
-[kecksdigital/codex-hass](https://github.com/kecksdigital/codex-hass) App. It
-keeps the original `codex` add-on slug and persistent paths while carrying a
-different image update strategy; see [MIGRATION.md](MIGRATION.md) for the
-changes and upgrade path.
+This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
 
-This repository publishes one Home Assistant App: `Codex`. It gives you a browser terminal inside Home Assistant, starts in your Home Assistant configuration directory, and can optionally connect Codex to Home Assistant through MCP.
+## Mobile console
 
-## Why This Fork
+<img src="docs/images/ios-mobile-terminal.webp" alt="Codex running in Home Assistant Companion on iOS with the two-row mobile terminal toolbar" width="320">
 
-The original App can leave Codex unusable after a runtime npm update: writable
-Home Assistant mounts are not executable, while the image-installed CLI cannot
-be replaced by the unprivileged terminal user. This fork installs a pinned
-Codex CLI in the image, disables runtime npm updates, and keeps the `codex`
-slug, App options, and persistent state paths so an existing installation can
-upgrade in place.
+The maintained ttyd frontend is validated on-device with Home Assistant Companion on iOS. The current two-row toolbar provides `Enter`, arrows, `Sel`, `PgUp`/`PgDn`, `Esc`, `Tab`, one-shot `Ctrl`/`Alt`/`Shift`, Shift Lock (`⇪`), and explicit keyboard show/hide controls. `Sel` temporarily enables a DOM-backed native-selection path so iOS text selection, Copy, and Paste work without relying on programmatic clipboard reads.
 
-Read [MIGRATION.md](MIGRATION.md) before switching repositories. It explains
-the exact changes, backup-first upgrade steps, and rollback path.
+Known-good `0.4.0` mobile runtime: **Codex CLI `0.151.0`**, **`gpt-5.6-sol`** (tested with medium reasoning), working directory **`/homeassistant`**, Home Assistant Companion on iPhone. The screenshot is a metadata-stripped repository copy of the final runtime test.
+
+## Project Status
+
+This project started from the original [`kecksdigital/codex-hass`](https://github.com/kecksdigital/codex-hass) codebase but is now maintained as an **independent repository**.
+
+The original upstream `main` has not received a commit since **May 30, 2026**, while fixes and feature pull requests remain open. It currently appears to be unmaintained. Useful upstream contributions are reviewed and selectively ported here rather than treating upstream `main` as the release source.
+
+This repository does **not** claim repository-level or installation-level drop-in compatibility merely because both Apps use the `codex` slug. Home Assistant can assign different repository/App data identities. If you are moving an existing installation from another repository, read [MIGRATION.md](MIGRATION.md) and verify the actual App data directories before copying anything.
+
+## Why This Repository
+
+The original App could become unusable after a runtime npm update because writable Home Assistant mounts are not executable under the App security model, while the unprivileged terminal user cannot safely replace the image-installed CLI.
+
+This repository therefore:
+
+- pins the Codex CLI into the published container image;
+- delivers CLI updates as normal Home Assistant App releases;
+- keeps runtime npm updates out of the startup path;
+- builds and tests a customized ttyd frontend for Home Assistant mobile use;
+- maintains the Home Assistant MCP configuration without overwriting unrelated user settings;
+- supports additional remote Streamable HTTP MCP servers and explicit Codex environment variables.
 
 ## Install
 
 [![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCaneTLOTW%2Fha-codex)
 
-Manual install:
+Manual installation:
 
-1. Open **Settings** -> **Add-ons** -> **Add-on Store** in Home Assistant.
+1. Open **Settings → Apps → App Store** in Home Assistant.
 2. Open **Repositories** from the three-dot menu.
 3. Add `https://github.com/CaneTLOTW/ha-codex`.
 4. Install **Codex**.
@@ -39,67 +50,69 @@ Manual install:
 ## What You Get
 
 - OpenAI Codex CLI running in Home Assistant.
-- A web terminal served through Home Assistant ingress.
-- Prebuilt GHCR images for faster installs and Home Assistant updates.
+- Prebuilt `amd64` and `aarch64` GHCR images.
 - Direct access to `/homeassistant`, `/share`, and `/media`.
 - Read-only access to `/ssl` and `/backup`.
-- Optional Home Assistant MCP integration for entity lookup and service calls.
-- Persistent Codex auth and settings under `/data/codex-home`.
-- Home Assistant options for model default, sandbox access, MCP, terminal theme, and session persistence.
+- Bundled Home Assistant MCP integration for entity lookup and service calls.
+- Optional additional remote Streamable HTTP MCP servers.
+- Optional environment variables for Codex/MCP sessions.
+- Persistent Codex authentication and settings under `/data/codex-home`.
+- Model, sandbox, approval, MCP, terminal theme, and session-persistence controls in the Home Assistant UI.
+- Touch-friendly two-row mobile terminal controls with `Enter`, `Esc`, `Tab`, one-shot modifiers, Shift Lock, arrows, `Sel`, page navigation, and keyboard controls.
+- Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
+- Mobile swipe navigation and tmux copy-mode page navigation.
+- Web-terminal Codex sessions that preserve output in xterm scrollback.
 
 ## Authentication
 
-Codex authentication happens inside the terminal. Home Assistant does not store your OpenAI API key, ChatGPT session, or Codex access token in App options.
+Codex authentication happens inside the terminal. Home Assistant does not need to store your OpenAI API key, ChatGPT session, or Codex access token in App options.
 
-On first launch, Codex prompts you to sign in. The Codex CLI supports ChatGPT sign-in for subscription access and API-key sign-in for usage-based access. On headless or remote systems, use the Codex device-code login option if the normal browser callback flow cannot complete.
+Credentials that you explicitly configure for an additional MCP server or as an environment variable are stored in Home Assistant App options and made available only to the Codex runtime environment. MCP bearer-token values are referenced from Codex configuration through generated environment-variable names rather than being written directly into `config.toml`.
 
 ## Defaults
 
-- Model: `gpt-5.6-sol` by default; the available choices are maintained from the bundled Codex CLI catalog.
-- Access: `workspace`
-- Approval policy: `on-request`
-- Session persistence: off for a cleaner first sign-in; Codex conversations
-  can be restored after an App restart with `codex resume`
-- MCP: on
-- Codex CLI updates: delivered through new Home Assistant App versions, not by npm at runtime.
+- Model: `gpt-5.6-sol`; the selectable model list is maintained from the bundled Codex CLI catalog.
+- Access: `workspace`.
+- Approval policy: `on-request`.
+- Session persistence: off by default; previous Codex conversations remain available through `codex resume`.
+- Bundled Home Assistant MCP: on.
+- Codex CLI updates: delivered through Home Assistant App versions, not runtime npm updates.
 
-Use `full_access` only when you want Codex to run with broad local access inside the App container.
-Use `codex_approval_policy: never` only when you want autonomous execution without per-action approval prompts.
+Use `full_access` only when broad local access inside the App container is intended. Use `codex_approval_policy: never` only when autonomous execution without per-action approval prompts is intended.
 
 ## Updates
 
-Home Assistant updates the Codex App when this repository publishes a higher version in `codex/config.yaml`.
+A scheduled GitHub Actions workflow checks for newer `@openai/codex` releases. A new CLI version updates the image pin, increments the Home Assistant App version, and publishes new multi-architecture images.
 
-A daily GitHub Actions check updates `main` when npm publishes a newer
-`@openai/codex` release. It updates the image pin, increments the App patch
-version, and starts the image publication workflow.
-
-The App uses prebuilt images from GitHub Container Registry:
+The App uses:
 
 ```text
 ghcr.io/canetlotw/ha-codex:<version>
 ```
 
-> **Automatic updates:** Enable **Auto update** on the Codex App page in Home
-> Assistant. Home Assistant then installs newly published App versions
-> automatically. Codex CLI updates are included in these App versions; runtime
-> npm updates are not used.
+Enable **Auto update** on the Codex App page if Home Assistant should install newly published App versions automatically.
 
 ## Documentation
 
-Read the full usage guide in [codex/README.md](codex/README.md).
+- [Home Assistant App documentation](codex/DOCS.md)
+- [Detailed repository guide](codex/README.md)
+- [Migration notes](MIGRATION.md)
+- [ttyd mobile-control implementation notes](codex/ttyd-mobile-keys/README.md)
 
-Useful upstream docs:
+Useful Codex documentation:
 
 - [Codex CLI](https://developers.openai.com/codex/cli)
 - [Codex authentication](https://developers.openai.com/codex/auth)
 - [Codex configuration](https://developers.openai.com/codex/config-basic)
 - [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+- [Codex MCP configuration](https://developers.openai.com/codex/mcp)
 
-## Support
+## Support and Contributions
 
 - [Issues](https://github.com/CaneTLOTW/ha-codex/issues)
-- [Home Assistant Community](https://community.home-assistant.io/)
+- [Pull requests](https://github.com/CaneTLOTW/ha-codex/pulls)
+
+Bug fixes and focused improvements are welcome. Contributions from the original repository are reviewed for compatibility with this repository's image-pinned update model and current Home Assistant App architecture.
 
 ## License
 

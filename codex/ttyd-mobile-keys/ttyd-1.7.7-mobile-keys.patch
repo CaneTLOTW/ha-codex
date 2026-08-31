@@ -1,0 +1,736 @@
+diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
+index b42bf15..8963313 100644
+--- a/html/src/components/terminal/index.tsx
++++ b/html/src/components/terminal/index.tsx
+@@ -11,18 +11,53 @@ interface Props extends XtermOptions {
+
+ interface State {
+     modal: boolean;
++    ctrl: boolean;
++    alt: boolean;
++    shift: boolean;
++    shiftLock: boolean;
++    selectionMode: boolean;
+ }
+
++interface MobileKey {
++    label: string;
++    ariaLabel: string;
++    value?: string;
++    arrow?: string;
++    page?: 'up' | 'down';
++}
++
++const mobileKeys: MobileKey[] = [
++    { label: 'Esc', ariaLabel: 'Escape', value: '\x1b' },
++    { label: 'Tab', ariaLabel: 'Tab', value: '\t' },
++    { label: 'Enter', ariaLabel: 'Enter', value: '\r' },
++    { label: '\u2190', ariaLabel: 'Left arrow', value: '\x1b[D', arrow: 'D' },
++    { label: '\u2193', ariaLabel: 'Down arrow', value: '\x1b[B', arrow: 'B' },
++    { label: '\u2191', ariaLabel: 'Up arrow', value: '\x1b[A', arrow: 'A' },
++    { label: '\u2192', ariaLabel: 'Right arrow', value: '\x1b[C', arrow: 'C' },
++    { label: 'PgUp', ariaLabel: 'Scroll one page up', value: '\x1b[5~', page: 'up' },
++    { label: 'PgDn', ariaLabel: 'Scroll one page down', value: '\x1b[6~', page: 'down' },
++];
++
+ export class Terminal extends Component<Props, State> {
+     private container: HTMLElement;
+     private xterm: Xterm;
++    private touchStartY?: number;
+
+     constructor(props: Props) {
+         super();
+-        this.xterm = new Xterm(props, this.showModal);
++        this.state = {
++            modal: false,
++            ctrl: false,
++            alt: false,
++            shift: false,
++            shiftLock: false,
++            selectionMode: false,
++        };
++        this.xterm = new Xterm(props, this.showModal, this.transformInput);
+     }
+
+     async componentDidMount() {
++        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);
+         await this.xterm.refreshToken();
+         this.xterm.open(this.container);
+         this.xterm.connect();
+@@ -32,9 +67,30 @@ export class Terminal extends Component<Props, State> {
+         this.xterm.dispose();
+     }
+
+-    render({ id }: Props, { modal }: State) {
++    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
+         return (
+-            <div id={id} ref={c => (this.container = c as HTMLElement)}>
++            <div id={id}>
++                <div
++                    class="terminal-viewport"
++                    ref={c => (this.container = c as HTMLElement)}
++                    onTouchStart={this.startTouchScroll}
++                    onTouchMove={this.continueTouchScroll}
++                    onTouchEnd={this.finishTouchScroll}
++                    onTouchCancel={this.cancelTouchScroll}
++                />
++                <nav class="mobile-keys" aria-label="Terminal special keys">
++                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
++                    {this.renderSelectionMode(selectionMode)}
++                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
++                    {this.renderKeyboardShow()}
++                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
++                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
++                    {this.renderModifier('Alt', alt, 'alt')}
++                    {this.renderModifier('Shift', shift, 'shift')}
++                    {this.renderShiftLock(shiftLock)}
++                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
++                    {this.renderKeyboardDismiss()}
++                </nav>
+                 <Modal show={modal}>
+                     <label class="file-label">
+                         <input onChange={this.sendFile} class="file-input" type="file" multiple />
+@@ -45,6 +101,276 @@ export class Terminal extends Component<Props, State> {
+         );
+     }
+
++    @bind
++    private renderMobileKey(key: MobileKey) {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class="mobile-key"
++                aria-label={key.ariaLabel}
++                onPointerDown={event => this.pressMobileKey(event, key)}
++                onClick={event => this.clickMobileKey(event, key)}
++            >
++                {key.label}
++            </button>
++        );
++    }
++
++    private renderModifier(label: string, active: boolean, modifier: 'ctrl' | 'alt' | 'shift') {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
++                aria-label={label}
++                aria-pressed={active}
++                onPointerDown={event => this.pressModifier(event, modifier)}
++                onClick={event => this.clickModifier(event, modifier)}
++            >
++                {label}
++            </button>
++        );
++    }
++
++    private renderShiftLock(active: boolean) {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
++                aria-label="Shift lock"
++                aria-pressed={active}
++                onPointerDown={this.pressShiftLock}
++                onClick={this.clickShiftLock}
++            >
++                {'\u21ea'}
++            </button>
++        );
++    }
++
++    private renderSelectionMode(active: boolean) {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
++                aria-label="Native text selection and paste mode"
++                aria-pressed={active}
++                onPointerDown={this.pressSelectionMode}
++                onClick={this.clickSelectionMode}
++            >
++                Sel
++            </button>
++        );
++    }
++
++    private renderKeyboardDismiss() {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class="mobile-key"
++                aria-label="Hide software keyboard"
++                onPointerDown={this.pressKeyboardDismiss}
++                onClick={this.clickKeyboardDismiss}
++            >
++                {'Kbd\u2193'}
++            </button>
++        );
++    }
++
++    private renderKeyboardShow() {
++        return (
++            <button
++                type="button"
++                tabIndex={-1}
++                class="mobile-key"
++                aria-label="Show software keyboard"
++                onPointerDown={this.pressKeyboardShow}
++                onClick={this.clickKeyboardShow}
++            >
++                {'Kbd\u2191'}
++            </button>
++        );
++    }
++
++    private pressMobileKey(event: PointerEvent, key: MobileKey) {
++        event.preventDefault();
++        this.sendMobileKey(key);
++    }
++
++    private clickMobileKey(event: MouseEvent, key: MobileKey) {
++        if (event.detail === 0) this.sendMobileKey(key);
++    }
++
++    private pressModifier(event: PointerEvent, modifier: 'ctrl' | 'alt' | 'shift') {
++        event.preventDefault();
++        this.toggleModifier(modifier);
++    }
++
++    private clickModifier(event: MouseEvent, modifier: 'ctrl' | 'alt' | 'shift') {
++        if (event.detail === 0) this.toggleModifier(modifier);
++    }
++
++    @bind
++    private pressShiftLock(event: PointerEvent) {
++        event.preventDefault();
++        this.toggleShiftLock();
++    }
++
++    @bind
++    private clickShiftLock(event: MouseEvent) {
++        if (event.detail === 0) this.toggleShiftLock();
++    }
++
++    @bind
++    private pressSelectionMode(event: PointerEvent) {
++        event.preventDefault();
++        this.toggleSelectionMode();
++    }
++
++    @bind
++    private clickSelectionMode(event: MouseEvent) {
++        if (event.detail === 0) this.toggleSelectionMode();
++    }
++
++    @bind
++    private pressKeyboardDismiss(event: PointerEvent) {
++        event.preventDefault();
++        this.xterm.blur();
++    }
++
++    @bind
++    private clickKeyboardDismiss(event: MouseEvent) {
++        if (event.detail === 0) this.xterm.blur();
++    }
++
++    @bind
++    private pressKeyboardShow(event: PointerEvent) {
++        event.preventDefault();
++        this.xterm.showKeyboard();
++    }
++
++    @bind
++    private clickKeyboardShow(event: MouseEvent) {
++        if (event.detail === 0) this.xterm.showKeyboard();
++    }
++
++    private toggleModifier(modifier: 'ctrl' | 'alt' | 'shift') {
++        this.setState(state => ({ [modifier]: !state[modifier] }));
++        this.xterm.focus();
++    }
++
++    private toggleShiftLock() {
++        this.setState(state => ({ shiftLock: !state.shiftLock, shift: false }));
++        this.xterm.focus();
++    }
++
++    private toggleSelectionMode() {
++        const selectionMode = this.xterm.toggleNativeSelection();
++        this.touchStartY = undefined;
++        this.setState({ selectionMode, ctrl: false, alt: false, shift: false });
++    }
++
++    private sendMobileKey(key: MobileKey) {
++        let data = key.value || '';
++        const { ctrl, alt, shift, shiftLock } = this.state;
++        const shifted = shift || shiftLock;
++
++        if (key.arrow && (ctrl || alt || shifted)) {
++            const modifier = this.modifierParameter(ctrl, alt, shifted);
++            data = `\x1b[1;${modifier}${key.arrow}`;
++            this.clearOneShotModifiers();
++        } else if (key.page && (ctrl || alt || shifted)) {
++            const modifier = this.modifierParameter(ctrl, alt, shifted);
++            const pageCode = key.page === 'up' ? '5' : '6';
++            data = `\x1b[${pageCode};${modifier}~`;
++            this.clearOneShotModifiers();
++        } else {
++            data = this.transformInput(data);
++        }
++
++        this.xterm.sendData(data);
++        this.xterm.focus();
++    }
++
++    private modifierParameter(ctrl: boolean, alt: boolean, shift: boolean) {
++        return 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
++    }
++
++    @bind
++    private startTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
++        if (event.touches.length === 1) this.touchStartY = event.touches[0].clientY;
++    }
++
++    @bind
++    private continueTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
++        if (this.touchStartY !== undefined && event.touches.length === 1) event.preventDefault();
++    }
++
++    @bind
++    private finishTouchScroll(event: TouchEvent) {
++        if (this.state.selectionMode) return;
++        if (this.touchStartY === undefined || event.changedTouches.length !== 1) return;
++
++        const distance = event.changedTouches[0].clientY - this.touchStartY;
++        this.touchStartY = undefined;
++        if (Math.abs(distance) < 32) return;
++
++        const page = distance > 0 ? 'up' : 'down';
++        const key = mobileKeys.find(candidate => candidate.page === page);
++        if (key) this.sendMobileKey(key);
++    }
++
++    @bind
++    private cancelTouchScroll() {
++        this.touchStartY = undefined;
++    }
++
++    @bind
++    private transformInput(data: string) {
++        const { ctrl, alt, shift, shiftLock } = this.state;
++        const shifted = shift || shiftLock;
++        if (!ctrl && !alt && !shifted) return data;
++        if (!this.isModifierInput(data)) return data;
++
++        let transformed = data;
++        if (shifted && transformed === '\t') {
++            transformed = '\x1b[Z';
++        } else if (shifted && transformed.length === 1 && /[a-z]/.test(transformed)) {
++            transformed = transformed.toUpperCase();
++        }
++        if (ctrl) transformed = this.toControlCharacter(transformed);
++        if (alt) transformed = `\x1b${transformed}`;
++        this.clearOneShotModifiers();
++        return transformed;
++    }
++
++    private isModifierInput(data: string) {
++        if (data === '\t' || data === '\r' || data === '\x7f') return true;
++        return data.length === 1 && data !== '\x1b';
++    }
++
++    private toControlCharacter(data: string) {
++        if (data.length !== 1) return data;
++
++        const code = data.charCodeAt(0);
++        if (code >= 64 && code <= 95) return String.fromCharCode(code - 64);
++        if (code >= 97 && code <= 122) return String.fromCharCode(code - 96);
++        if (data === ' ') return '\x00';
++        if (data === '?') return '\x7f';
++        return data;
++    }
++
++    private clearOneShotModifiers() {
++        if (this.state.ctrl || this.state.alt || this.state.shift) {
++            this.setState({ ctrl: false, alt: false, shift: false });
++        }
++    }
++
+     @bind
+     showModal() {
+         this.setState({ modal: true });
+diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
+index b643f92..cf75422 100644
+--- a/html/src/components/terminal/xterm/index.ts
++++ b/html/src/components/terminal/xterm/index.ts
+@@ -74,6 +74,25 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
+     return toDisposable(() => target.removeEventListener(type, listener));
+ }
+
++function addCapturedEventListener(
++    target: EventTarget,
++    type: string,
++    listener: EventListener,
++    passive = false
++): IDisposable {
++    target.addEventListener(type, listener, { capture: true, passive });
++    return toDisposable(() => target.removeEventListener(type, listener, true));
++}
++
++function shouldUseNativeTouchSelection(targetWindow: Window): boolean {
++    const navigator = targetWindow.navigator as Navigator & { maxTouchPoints?: number };
++    const appleTouchDevice =
++        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
++        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1);
++    const coarsePointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? true;
++    return appleTouchDevice && coarsePointer;
++}
++
+ export class Xterm {
+     private disposables: IDisposable[] = [];
+     private textEncoder = new TextEncoder();
+@@ -96,13 +115,21 @@ export class Xterm {
+     private resizeOverlay = true;
+     private reconnect = true;
+     private doReconnect = true;
++    private manualReconnectPending = false;
++    private parent?: HTMLElement;
++    private requestedRenderer: RendererType = 'canvas';
++    private nativeSelectionCapable = false;
++    private nativeSelectionMode = false;
+
+     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
+
+     constructor(
+         private options: XtermOptions,
+-        private sendCb: () => void
+-    ) {}
++        private sendCb: () => void,
++        private transformInput: (data: string) => string = data => data
++    ) {
++        this.requestedRenderer = options.clientOptions.rendererType;
++    }
+
+     dispose() {
+         for (const d of this.disposables) {
+@@ -122,6 +149,35 @@ export class Xterm {
+         this.zmodemAddon?.sendFile(files);
+     }
+
++    @bind
++    public focus() {
++        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
++            this.terminal?.focus();
++        }
++    }
++
++    @bind
++    public blur() {
++        this.terminal?.blur();
++    }
++
++    @bind
++    public showKeyboard() {
++        this.terminal?.focus();
++    }
++
++    @bind
++    public toggleNativeSelection(): boolean {
++        if (!this.nativeSelectionCapable || !this.terminal?.element) {
++            this.overlayAddon?.showOverlay('Selection unavailable', 800);
++            return false;
++        }
++
++        this.nativeSelectionMode = !this.nativeSelectionMode;
++        this.applyNativeSelectionState();
++        return this.nativeSelectionMode;
++    }
++
+     @bind
+     public async refreshToken() {
+         try {
+@@ -149,6 +205,8 @@ export class Xterm {
+     @bind
+     public open(parent: HTMLElement) {
+         this.terminal = new Terminal(this.options.termOptions);
++        this.parent = parent;
++        this.nativeSelectionCapable = shouldUseNativeTouchSelection(window);
+         const { terminal, fitAddon, overlayAddon } = this;
+         window.term = terminal as TtydTerminal;
+         window.term.fit = () => {
+@@ -160,9 +218,62 @@ export class Xterm {
+         terminal.loadAddon(new WebLinksAddon());
+
+         terminal.open(parent);
++        this.installNativeTouchSelection();
+         fitAddon.fit();
+     }
+
++    private installNativeTouchSelection() {
++        if (!this.nativeSelectionCapable || !this.terminal.element) return;
++
++        const terminalElement = this.terminal.element;
++        const guardTouchGesture = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const target = event.target as Element | null;
++            if (!target?.closest('.xterm-rows, .xterm-helper-textarea')) return;
++            event.stopPropagation();
++        };
++
++        for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
++            this.register(addCapturedEventListener(terminalElement, type, guardTouchGesture, true));
++        }
++
++        const textarea = this.terminal.textarea;
++        if (!textarea) return;
++
++        const pasteHandler = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const pasteEvent = event as ClipboardEvent;
++            if (pasteEvent.clipboardData) {
++                // xterm's normal paste handler will consume clipboardData. Prevent the
++                // browser from inserting the same text into the helper textarea again.
++                pasteEvent.preventDefault();
++            }
++        };
++        this.register(addCapturedEventListener(textarea, 'paste', pasteHandler));
++
++        const inputFallback = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const inputEvent = event as InputEvent;
++            if (inputEvent.inputType !== 'insertFromPaste' || !textarea.value) return;
++
++            const text = textarea.value;
++            textarea.value = '';
++            this.terminal.paste(text);
++            inputEvent.preventDefault();
++            inputEvent.stopPropagation();
++        };
++        this.register(addCapturedEventListener(textarea, 'input', inputFallback));
++    }
++
++    private applyNativeSelectionState() {
++        const terminalElement = this.terminal.element;
++        terminalElement?.classList.toggle('ttyd-native-touch-selection', this.nativeSelectionMode);
++        this.parent?.classList.toggle('ttyd-native-touch-selection-host', this.nativeSelectionMode);
++        this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
++        if (this.nativeSelectionMode) this.terminal.blur();
++        this.fitAddon.fit();
++    }
++
+     @bind
+     private initListeners() {
+         const { terminal, fitAddon, overlayAddon, register, sendData } = this;
+@@ -173,7 +284,7 @@ export class Xterm {
+                 }
+             })
+         );
+-        register(terminal.onData(data => sendData(data)));
++        register(terminal.onData(data => sendData(this.transformInput(data))));
+         register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
+         register(
+             terminal.onResize(({ cols, rows }) => {
+@@ -223,7 +334,10 @@ export class Xterm {
+     @bind
+     public sendData(data: string | Uint8Array) {
+         const { socket, textEncoder } = this;
+-        if (socket?.readyState !== WebSocket.OPEN) return;
++        if (socket?.readyState !== WebSocket.OPEN) {
++            if (typeof data === 'string' && data === '\r') this.requestManualReconnect();
++            return;
++        }
+
+         if (typeof data === 'string') {
+             const payload = new Uint8Array(data.length * 3 + 1);
+@@ -238,6 +352,15 @@ export class Xterm {
+         }
+     }
+
++    @bind
++    private requestManualReconnect() {
++        if (this.manualReconnectPending) return;
++        if (this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN) return;
++        this.manualReconnectPending = true;
++        this.overlayAddon.showOverlay('Reconnecting...');
++        this.refreshToken().then(() => this.connect());
++    }
++
+     @bind
+     public connect() {
+         this.socket = new WebSocket(this.options.wsUrl, ['tty']);
+@@ -253,6 +376,7 @@ export class Xterm {
+     @bind
+     private onSocketOpen() {
+         console.log('[ttyd] websocket connection opened');
++        this.manualReconnectPending = false;
+
+         const { textEncoder, terminal, overlayAddon } = this;
+         const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
+@@ -274,6 +398,7 @@ export class Xterm {
+     @bind
+     private onSocketClose(event: CloseEvent) {
+         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
++        this.manualReconnectPending = false;
+
+         const { refreshToken, connect, doReconnect, overlayAddon } = this;
+         overlayAddon.showOverlay('Connection Closed');
+@@ -289,8 +414,7 @@ export class Xterm {
+                 const event = e.domEvent;
+                 if (event.key === 'Enter') {
+                     keyDispose.dispose();
+-                    overlayAddon.showOverlay('Reconnecting...');
+-                    refreshToken().then(connect);
++                    this.requestManualReconnect();
+                 }
+             });
+             overlayAddon.showOverlay('Press ⏎ to Reconnect');
+@@ -379,7 +503,8 @@ export class Xterm {
+         for (const [key, value] of Object.entries(prefs)) {
+             switch (key) {
+                 case 'rendererType':
+-                    this.setRendererType(value);
++                    this.requestedRenderer = value;
++                    this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
+                     break;
+                 case 'disableLeaveAlert':
+                     if (value) {
+diff --git a/html/src/style/index.scss b/html/src/style/index.scss
+index 0f9244b..5cd7fc2 100644
+--- a/html/src/style/index.scss
++++ b/html/src/style/index.scss
+@@ -7,12 +7,115 @@ body {
+ }
+
+ #terminal-container {
++  display: flex;
++  flex-direction: column;
+   width: auto;
+   height: 100%;
+   margin: 0 auto;
+   padding: 0;
++  .terminal-viewport {
++    flex: 1 1 auto;
++    min-height: 0;
++    overflow: hidden;
++  }
+   .terminal {
+     padding: 5px;
+     height: calc(100% - 10px);
+   }
+ }
++
++.mobile-keys {
++  display: none;
++}
++
++@media (hover: none), (pointer: coarse), (max-width: 768px) {
++  .terminal-viewport,
++  .terminal-viewport .xterm {
++    touch-action: none;
++    overscroll-behavior: contain;
++  }
++
++  .terminal-viewport.ttyd-native-touch-selection-host,
++  .terminal-viewport.ttyd-native-touch-selection-host .xterm {
++    touch-action: auto;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-screen,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows * {
++    -webkit-user-select: text !important;
++    user-select: text !important;
++    -webkit-touch-callout: default;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows {
++    pointer-events: auto !important;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows span {
++    display: inline !important;
++  }
++
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-helper-textarea {
++    min-width: 80px !important;
++    min-height: 32px !important;
++    z-index: 10 !important;
++    opacity: 1 !important;
++    background: transparent !important;
++    color: transparent !important;
++    -webkit-text-fill-color: transparent !important;
++    caret-color: transparent !important;
++    outline: none;
++    text-shadow: none;
++    -webkit-appearance: none;
++    appearance: none;
++    -webkit-user-select: text;
++    user-select: text;
++    -webkit-touch-callout: default;
++    pointer-events: auto;
++  }
++
++  .mobile-keys {
++    box-sizing: border-box;
++    display: grid;
++    flex: 0 0 auto;
++    grid-template-columns: repeat(8, minmax(0, 1fr));
++    grid-template-rows: repeat(2, 38px);
++    gap: 5px;
++    width: 100%;
++    overflow: hidden;
++    padding: 5px max(6px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom))
++      max(6px, env(safe-area-inset-left));
++    background: #181825;
++    border-top: 1px solid #45475a;
++  }
++
++  html.ttyd-embedded .mobile-keys {
++    padding-bottom: 5px;
++  }
++
++  .mobile-key {
++    box-sizing: border-box;
++    width: 100%;
++    min-width: 0;
++    height: 38px;
++    margin: 0;
++    padding: 0 2px;
++    border: 1px solid #585b70;
++    border-radius: 7px;
++    color: #cdd6f4;
++    background: #313244;
++    font: 600 12px/1 Monaco, Consolas, monospace;
++    touch-action: manipulation;
++    user-select: none;
++    -webkit-tap-highlight-color: transparent;
++  }
++
++  .mobile-key:active,
++  .mobile-key.is-active {
++    color: #11111b;
++    background: #89dceb;
++    border-color: #89dceb;
++  }
++}
+diff --git a/html/src/template.html b/html/src/template.html
+index e710c09..6cde839 100644
+--- a/html/src/template.html
++++ b/html/src/template.html
+@@ -3,6 +3,7 @@
+ <head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
++    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+     <title><%= htmlWebpackPlugin.options.title %></title>
+     <link inline rel="icon" type="image/png" href="favicon.png">

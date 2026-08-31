@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21
 FROM ${BUILD_FROM}
 
@@ -50,7 +51,7 @@ RUN apk add --no-cache \
 ARG BUILD_ARCH
 ARG CODEX_VERSION=0.151.0
 ARG TTYD_VERSION=1.7.7
-COPY ttyd-selection-clipboard.patch /tmp/ttyd-selection-clipboard.patch
+COPY ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch /tmp/ttyd-mobile-keys.patch
 RUN apk add --no-cache --virtual .ttyd-build-deps \
         build-base \
         cmake \
@@ -65,17 +66,18 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && mkdir -p /tmp/ttyd-build \
     && curl -fsSL "https://github.com/tsl0922/ttyd/archive/refs/tags/${TTYD_VERSION}.tar.gz" \
         | tar -xz -C /tmp/ttyd-build --strip-components=1 \
-    && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-selection-clipboard.patch \
+    && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-mobile-keys.patch \
     && cd /tmp/ttyd-build/html \
     && npm install --global corepack@0.31.0 \
     && corepack enable \
     && yarn install --immutable \
     && yarn inline \
+    && install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html \
     && cd /tmp/ttyd-build \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --parallel 2 \
     && install -m 0755 build/ttyd /usr/bin/ttyd \
-    && rm -rf /tmp/ttyd-build /tmp/ttyd-selection-clipboard.patch \
+    && rm -rf /tmp/ttyd-build /tmp/ttyd-mobile-keys.patch \
     && apk del .ttyd-build-deps
 
 RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION} \
@@ -105,12 +107,13 @@ RUN chmod +x \
     /usr/local/bin/hass-mcp-wrapper \
     /usr/local/bin/hass-mcp-root-helper \
     /usr/local/bin/codex-merge-config \
+    /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \
     /usr/local/bin/codex-session \
     /usr/local/bin/codex-start \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 
-RUN cat > /etc/tmux.conf << 'EOF'
+COPY <<'EOF' /etc/tmux.conf
 set -g history-limit 5000
 set -ga terminal-overrides ',xterm*:smcup@:rmcup@'
 set -g mouse on
@@ -119,11 +122,17 @@ set -s set-clipboard on
 set -g allow-passthrough on
 bind -n WheelUpPane if-shell -F -t = "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -M' 'select-pane -t=; copy-mode -e; send-keys -M'"
 bind -n WheelDownPane select-pane -t= \; send-keys -M
+bind -n PPage copy-mode -e \; send-keys -X page-up
+bind -n NPage if-shell -F -t = "#{pane_in_mode}" "send-keys -X page-down" "send-keys NPage"
+bind -T copy-mode PPage send-keys -X page-up
+bind -T copy-mode NPage send-keys -X page-down
+bind -T copy-mode-vi PPage send-keys -X page-up
+bind -T copy-mode-vi NPage send-keys -X page-down
 EOF
 
 RUN ln -sf /etc/tmux.conf /root/.tmux.conf
 
-RUN cat > /etc/codex.bashrc << 'EOF'
+COPY <<'EOF' /etc/codex.bashrc
 export TERM=xterm-256color
 export LANG=C.UTF-8
 export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"

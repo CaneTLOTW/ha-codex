@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-08-30
+
+### Added
+- Add touch-friendly mobile terminal controls based on the upstream ttyd 1.7.7 mobile-controls work: `Esc`, `Tab`, one-shot `Ctrl`/`Alt`, arrow keys, `PgUp`, `PgDn`, and vertical swipe navigation.
+- Add tmux page-navigation bindings and keep managed web-session output in xterm scrollback by disabling Codex's alternate screen for the App session.
+- Add managed remote Streamable HTTP MCP servers with reversible merge behavior for pre-existing same-name user configuration.
+- Add explicit Codex session environment variables and bearer-token environment indirection so bearer values are not written directly into `config.toml`.
+- Add German Home Assistant App translations and current English translations for all managed options.
+- Add `DOCS.md` for Home Assistant App documentation and a pull-request validation workflow covering Python tests, shell syntax, YAML parsing, ttyd patch applicability, and an amd64 image build.
+
+### Fixed
+- Preserve an explicit `enable_mcp: false` option instead of treating `false` as the default `true`; disabling the bundled MCP server now reliably removes the App-managed `homeassistant` entry.
+
+### Changed
+- Replace the earlier mixed touch/automatic-selection-copy ttyd patch with a clean ttyd 1.7.7 mobile-controls patch; desktop clipboard and selection behavior are left to ttyd/xterm rather than coupled to mobile gestures.
+- Use the current structured Home Assistant App mount schema and explicitly map `homeassistant_config` to `/homeassistant`; remove the unused `addon_config` mount.
+- Document this repository as independently maintained rather than claiming cross-repository drop-in compatibility based on the shared `codex` slug.
+- Rewrite migration guidance around actual Home Assistant repository/App data identities instead of assuming an in-place repository switch.
+
 ## [0.3.15] - 2026-08-29
 
 ### Changed
@@ -151,7 +170,7 @@ All notable changes to this project will be documented in this file.
 ## [0.2.9] - 2026-05-24
 
 ### Changed
-- Rewrote Codex documentation as a standalone Home Assistant App guide with first-run authentication, model, access, MCP, persistence, and update guidance
+- Rewrote the Codex documentation as a standalone Home Assistant App guide with first-run authentication, model, access, MCP, persistence, and update guidance
 - Changed new installs to start with `session_persistence` disabled for a cleaner first sign-in flow
 - Reduced tmux history, ttyd client count, and ttyd scrollback for safer startup on smaller Home Assistant systems
 - Increased healthcheck startup grace and capped Node heap usage to improve reliability during heavier Codex CLI starts

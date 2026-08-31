@@ -1,6 +1,6 @@
 name: Codex
 description: OpenAI Codex App for Home Assistant with terminal access, model controls, and optional Home Assistant MCP integration
-version: "0.3.15"
+version: "0.4.0"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
@@ -16,16 +16,18 @@ ingress_stream: true
 panel_icon: mdi:code-braces
 panel_title: Codex
 homeassistant_api: true
-auth_api: true
 hassio_api: true
 hassio_role: manager
 map:
-  - homeassistant_config:rw
-  - ssl:ro
-  - share:rw
-  - media:rw
-  - addon_config:rw
-  - backup:ro
+  - type: homeassistant_config
+    read_only: false
+    path: /homeassistant
+  - type: ssl
+  - type: share
+    read_only: false
+  - type: media
+    read_only: false
+  - type: backup
 options:
   enable_mcp: true
   terminal_font_size: 14
@@ -35,6 +37,8 @@ options:
   default_model: "gpt-5.6-sol"
   codex_permissions: workspace
   codex_approval_policy: on-request
+  mcp_servers: []
+  environment_variables: []
 schema:
   enable_mcp: bool
   terminal_font_size: int(10,24)
@@ -44,5 +48,12 @@ schema:
   default_model: list(gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna|gpt-5.5|gpt-5.2)
   codex_permissions: list(workspace|full_access)
   codex_approval_policy: list(on-request|never|untrusted)
+  mcp_servers:
+    - name: str
+      url: url
+      bearer_token: password?
+  environment_variables:
+    - name: str
+      value: password
 environment:
   TERM: xterm-256color

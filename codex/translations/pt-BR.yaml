@@ -2,47 +2,69 @@ configuration:
   enable_mcp:
     name: Habilitar MCP do Home Assistant
     description: >-
-      Habilita o servidor MCP do Home Assistant para interação direta com
-      entidades e serviços pelo Codex. Permite que o Codex consulte estados,
-      chame serviços e interaja com sua casa inteligente.
+      Habilita o servidor MCP incluído do Home Assistant para interação direta
+      com entidades e serviços pelo Codex.
   terminal_font_size:
-    name: Tamanho da Fonte do Terminal
+    name: Tamanho da fonte do terminal
     description: >-
       Tamanho da fonte do terminal web em pixels (10-24).
-      Ajuste para melhor legibilidade no seu monitor.
   terminal_theme:
-    name: Tema do Terminal
+    name: Tema do terminal
     description: >-
-      Tema de cores do terminal web.
-      Escolha 'dark' para fundo escuro ou 'light' para fundo claro.
+      Escolha o tema claro ou escuro para o terminal web.
   working_directory:
-    name: Diretório de Trabalho
+    name: Diretório de trabalho
     description: >-
-      O diretório padrão quando o Codex inicia.
-      Use /homeassistant para acesso direto aos arquivos de configuração do HA.
+      Diretório padrão quando o Codex inicia. Use /homeassistant para acesso
+      direto à configuração do Home Assistant.
   session_persistence:
-    name: Persistência de Sessão
+    name: Persistência da sessão
     description: >-
-      Habilita persistência de sessão via tmux. Quando habilitado, sua sessão
-      do terminal sobrevive a atualizações do navegador e desconexões.
-      Deixe desabilitado para o primeiro login e habilite para trabalhos de
-      longa duração.
+      Mantém a sessão do terminal web via tmux entre recarregamentos e
+      desconexões do navegador.
   default_model:
-    name: Modelo Padrão
+    name: Modelo padrão
     description: >-
-      Modelo persistente inicial para o Codex. A App inicia com gpt-5.6-sol,
-      e os usuários ainda podem trocar o modelo durante a sessão com /model.
+      Modelo persistente de inicialização do Codex. O modelo ainda pode ser
+      alterado durante a sessão com /model.
   codex_permissions:
-    name: Nível de Acesso do Codex
+    name: Nível de acesso do Codex
     description: >-
-      Perfil de sandbox local padrão para o Codex. Workspace permite o
-      trabalho normal no projeto do Home Assistant. Full access usa
-      sandbox danger-full-access e remove restrições locais de sandbox.
+      Workspace permite trabalho normal no projeto. Full access usa
+      danger-full-access e remove as restrições locais do sandbox.
   codex_approval_policy:
-    name: Política de Aprovação do Codex
+    name: Política de aprovação do Codex
     description: >-
-      Controla quando o Codex pede aprovação antes de executar ações. Use
-      on-request para segurança interativa, untrusted para pedir aprovação em
-      comandos não confiáveis, ou never para execução autônoma sem avisos.
+      Controla quando o Codex pede confirmação: on-request, untrusted ou never.
+  mcp_servers:
+    name: Servidores MCP adicionais
+    description: >-
+      Gerencia servidores MCP remotos Streamable HTTP. Cada servidor precisa de
+      um nome exclusivo e uma URL HTTP(S). O bearer token opcional é fornecido
+      por uma variável de ambiente em vez de ser gravado diretamente em
+      config.toml.
+    fields:
+      name:
+        name: Nome
+        description: Nome exclusivo do servidor MCP. homeassistant é reservado.
+      url:
+        name: URL
+        description: Endpoint MCP Streamable HTTP iniciado por http:// ou https://.
+      bearer_token:
+        name: Bearer token
+        description: Token opcional para autenticação neste servidor MCP.
+  environment_variables:
+    name: Variáveis de ambiente
+    description: >-
+      Variáveis adicionais disponibilizadas às sessões do Codex. Os valores são
+      armazenados nas opções do App do Home Assistant; adicione apenas
+      credenciais destinadas ao Codex ou aos seus servidores MCP.
+    fields:
+      name:
+        name: Nome
+        description: Nome da variável de ambiente, por exemplo EXAMPLE_TENANT.
+      value:
+        name: Valor
+        description: Valor fornecido ao ambiente do processo do Codex.
 network:
-  7681/tcp: Terminal Web (ttyd)
+  7681/tcp: Terminal web (ttyd)

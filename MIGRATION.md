@@ -1,48 +1,49 @@
-# Migration To CaneTLOTW HA Codex
+# Migrating to CaneTLOTW/ha-codex
 
-## Source
+This repository originated from `kecksdigital/codex-hass`, but it is now maintained independently.
 
-This is a compatible fork of the original add-on:
+A matching Home Assistant App slug (`codex`) does **not** guarantee that two different App repositories are treated as the same installation. Home Assistant can assign repository-specific App identities and different persistent data directories. Do not assume that adding this repository will perform an in-place upgrade of an App installed from another repository.
 
-```text
-https://github.com/kecksdigital/codex-hass
+## Before migrating
+
+1. Create a full Home Assistant backup.
+2. Keep the old Codex App installed until the new installation has been verified.
+3. Record the old App's important settings.
+4. Add `https://github.com/CaneTLOTW/ha-codex` under **Settings → Apps → App Store → Repositories**.
+5. Install and start the new Codex App once so Home Assistant creates its data directory.
+6. Check whether your previous Codex authentication and state are already visible. If not, use the host-level procedure below.
+
+## Why a host-level copy can be necessary
+
+Codex authentication, sessions, and generated user configuration are stored in the App's persistent data area. If Home Assistant created a new data identity for this repository, the old and new Apps can have separate directories even though both use the `codex` slug.
+
+The exact HAOS Supervisor paths and generated App identifiers are installation-specific. Discover them; never copy example identifiers from documentation.
+
+## HAOS debug SSH
+
+Host-level Supervisor data is not available from a normal App terminal. On Home Assistant OS, use the HAOS debug SSH service on port `22222` when host-level access is required.
+
+After configuring an authorized key through the HAOS `CONFIG` import mechanism, connect with:
+
+```sh
+ssh -i /path/to/haos_debug -p 22222 root@<home-assistant-host>
 ```
 
-The original project remains the upstream source for the add-on structure and
-the existing `codex` data layout. This repository adds the image-pinned CLI
-update fix described below.
+## Discover the App data directories
 
-Add this repository to Home Assistant under Settings -> Apps -> App Store ->
-Repositories:
-
-```text
-https://github.com/CaneTLOTW/ha-codex
-```
-
-The add-on keeps the existing slug `codex`, so Home Assistant can treat version
-`0.3.3` as an update of the existing Codex App. The published image is:
-
-```text
-ghcr.io/canetlotw/ha-codex:0.3.3
-```
-
-## Installation-specific paths
-
-The Home Assistant OS data directory and the hash prefix of an App data
-directory are installation-specific. Do not copy the example container or
-directory names from another system. Find the actual Codex data directories on
-the HAOS host first:
+Stop both Codex Apps before copying data, then search the Supervisor data tree:
 
 ```sh
 find /mnt/data/supervisor -type d -name '*_codex' -print
 ```
 
-After identifying the old and new directories, assign their real paths and
-validate them before copying:
+Inspect every result and identify the source belonging to the old repository and the target belonging to `CaneTLOTW/ha-codex`.
+
+Assign the real paths:
 
 ```sh
-OLD_DIR="/mnt/data/supervisor/<actual-data-path>/<old-id>_codex"
-NEW_DIR="/mnt/data/supervisor/<actual-data-path>/<new-id>_codex"
+OLD_DIR="/mnt/data/supervisor/<actual-old-codex-data-directory>"
+NEW_DIR="/mnt/data/supervisor/<actual-new-codex-data-directory>"
 
 test -d "$OLD_DIR" || { echo "Old Codex directory not found"; exit 1; }
 test -d "$NEW_DIR" || { echo "New Codex directory not found"; exit 1; }
@@ -51,137 +52,11 @@ test "$OLD_DIR" != "$NEW_DIR" || { echo "Source and target are identical"; exit 
 printf 'Source: %s\nTarget: %s\n' "$OLD_DIR" "$NEW_DIR"
 ```
 
-Stop both Codex Apps before copying. Container names are also dynamic, so use
-the running-container list only as a check:
+Do not continue until the printed paths have been checked manually.
 
-```sh
-docker ps --format '{{.Names}}\t{{.Image}}' | grep -i codex || true
-```
+## Back up the new target
 
-The source and target values must be checked manually before running any
-cleanup or copy command. Keep the target backup until the new App has been
-verified.
-
-## Enable HAOS debug SSH access
-
-The normal terminal SSH connection reaches only the App container. Access to
-the Supervisor and App data directories requires the Home Assistant OS debug
-SSH service on port `22222`.
-
-### Create an SSH key on Windows
-
-Run these commands in PowerShell. The private key remains on the Windows PC:
-
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.ssh"
-ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\haos_debug"
-```
-
-This creates `haos_debug` and `haos_debug.pub`. Never copy the private
-`haos_debug` file to HAOS.
-
-### Prepare the `CONFIG` device
-
-HAOS imports the public key from a partition or device named `CONFIG`. Create a
-file named exactly `authorized_keys` in its root directory. It must contain the
-complete public key on one line and must not have a `.pub` or `.txt` suffix.
-
-Replace the drive letter in `$configRoot` with the mounted `CONFIG` device:
-
-```powershell
-$configRoot = "E:\"
-$publicKey = (Get-Content "$env:USERPROFILE\.ssh\haos_debug.pub" -Raw).Trim()
-$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText(
-  (Join-Path $configRoot "authorized_keys"),
-  "$publicKey`n",
-  $utf8NoBom
-)
-```
-
-The `CONFIG` device can be a USB drive or a virtual disk attached to the HAOS
-VM. FAT, ext4, and NTFS are supported by HAOS.
-
-### Import the key and connect to HAOS
-
-Open the HAOS VM console and run this at the `ha >` prompt:
-
-```text
-os import
-```
-
-The full form is also valid:
-
-```sh
-ha os import
-```
-
-If required, reboot HAOS with the `CONFIG` device attached. Then connect from
-PowerShell. Use the actual HAOS IP address or hostname; do not copy an example
-address from this document:
-
-```powershell
-$haosHost = Read-Host "HAOS host IP or hostname"
-ssh -i "$env:USERPROFILE\.ssh\haos_debug" -p 22222 root@$haosHost
-```
-
-At the first connection, confirm the host key. A successful session should
-return `root` for:
-
-```sh
-whoami
-pwd
-```
-
-For WinSCP, use SCP first with port `22222`, user `root`, no password, and the
-private key `haos_debug`. The actual HAOS data path is discovered in the next
-section and must not be assumed from another installation.
-
-## Optional full host-level data migration
-
-Use this procedure only when the new App received a different data directory
-and the existing Codex state is not visible after the repository migration.
-The procedure copies the complete App data directory, including hidden files,
-SSH configuration, authentication state, and Codex sessions.
-
-The HAOS host address is installation-specific. Set it once in PowerShell and
-use the variable instead of copying an example address:
-
-```powershell
-$haosHost = Read-Host "HAOS host IP or hostname"
-ssh -i "$env:USERPROFILE\.ssh\haos_debug" -p 22222 root@$haosHost
-```
-
-On the HAOS host, stop both Codex Apps through the Home Assistant UI. Do not
-refer to a fixed Docker container name; verify dynamically that no Codex
-container is still running:
-
-```sh
-docker ps --format '{{.Names}}\t{{.Image}}' | grep -i codex || true
-```
-
-Find the actual data directories. The parent path and hash prefix can differ
-between installations:
-
-```sh
-find /mnt/data/supervisor -type d -name '*_codex' -print
-```
-
-Assign the paths from that output. Replace only the values inside the quotes:
-
-```sh
-OLD_DIR="/mnt/data/supervisor/<actual-data-path>/<old-id>_codex"
-NEW_DIR="/mnt/data/supervisor/<actual-data-path>/<new-id>_codex"
-
-test -d "$OLD_DIR" || { echo "Old Codex directory not found"; exit 1; }
-test -d "$NEW_DIR" || { echo "New Codex directory not found"; exit 1; }
-test "$OLD_DIR" != "$NEW_DIR" || { echo "Source and target are identical"; exit 1; }
-
-printf 'Source: %s\nTarget: %s\n' "$OLD_DIR" "$NEW_DIR"
-```
-
-Create a recoverable backup of the new directory before replacing its
-contents:
+Before replacing any target data:
 
 ```sh
 BACKUP_DIR="${NEW_DIR}.backup-before-migration-$(date +%Y%m%d-%H%M%S)"
@@ -189,16 +64,20 @@ cp -a "$NEW_DIR" "$BACKUP_DIR"
 du -sh "$NEW_DIR" "$BACKUP_DIR"
 ```
 
-Only after checking the printed source, target, and backup paths, replace the
-target contents and copy the old state. The `/.` suffix preserves hidden files
-without creating an additional source directory below the target:
+Keep this backup until the migrated App has been accepted.
+
+## Copy the old persistent state
+
+With both Apps stopped and the paths verified:
 
 ```sh
 find "$NEW_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 cp -a "$OLD_DIR"/. "$NEW_DIR"/
 ```
 
-Verify the result before starting the new App:
+The `/.` suffix preserves hidden files such as Codex authentication and configuration data.
+
+Verify before starting the new App:
 
 ```sh
 du -sh "$OLD_DIR" "$NEW_DIR"
@@ -207,47 +86,38 @@ find "$OLD_DIR" -type f | wc -l
 find "$NEW_DIR" -type f | wc -l
 ```
 
-Start only the new Codex App from the Home Assistant UI. Keep the backup and
-the old App stopped until authentication, GitHub SSH access, Codex sessions,
-and the working directory have been checked. If the migration must be
-reverted, stop the new App, move its directory aside, and restore the backup
-directory after validating both paths again.
+## Acceptance checks
 
-## What Changed
+Start only the new App and verify:
 
-- Codex CLI `0.146.1` is installed while the image is built.
-- iOS terminal scrolling and selection use documented ttyd/xterm client
-  options; native clipboard access may still be restricted by the HA WebView.
-- Desktop browsers automatically copy selected terminal text; keyboard
-  shortcuts remain available as a fallback.
-- Codex conversations remain available after an App restart or update and can
-  be restored with `codex resume` or `codex resume <session-id>`.
-- Runtime npm updates are disabled; the App no longer writes into `/usr/local`
-  during startup.
-- The image-installed executable is preferred over stale user-level launchers
-  under `/data/codex-home/users/anonymous/.local/bin`.
-- Existing App options, the `codex` slug, and the persistent Codex state paths
-  remain compatible.
+- Codex authentication works.
+- Previous conversations are visible through `codex resume` where expected.
+- `/homeassistant` is accessible.
+- Git/GitHub credentials or SSH state needed by your workflows still work.
+- The bundled Home Assistant MCP server follows the `enable_mcp` option.
+- Additional managed MCP servers start correctly if configured.
+- Mobile/desktop terminal interaction behaves as expected.
 
-## Upgrade
+Only remove the old App data or the migration backup after these checks pass.
 
-1. Create a full Home Assistant backup.
-2. Stop the old Codex App, but do not uninstall it.
-3. Add the repository URL above and refresh the App Store.
-4. Install the `0.3.1` update for the existing Codex App.
-5. Start the App and verify the CLI version with `codex --version`.
-6. Verify that `/homeassistant` files, login state, MCP, and the working
-   directory are available.
-7. On the Codex App page, enable Home Assistant's **Auto update** option if
-   future published App images should install automatically.
+## What differs from the original repository
 
-Do not run `npm install -g @openai/codex` inside the App. Future Codex CLI
-updates are published as new App image versions.
+This repository intentionally diverges from the original project in several areas:
 
-Home Assistant's **Auto update** option is the supported automation for future
-Codex App versions and the Codex CLI versions included in them.
+- Codex CLI releases are pinned into App images and delivered through normal Home Assistant App updates instead of runtime npm updates.
+- The selectable model list follows the bundled Codex CLI catalog.
+- The ttyd frontend is built from source with maintained mobile terminal controls.
+- The bundled Home Assistant MCP configuration can be disabled reliably.
+- Additional remote Streamable HTTP MCP servers and explicit Codex environment variables can be managed from App options.
+- Documentation, translations, tests, and release maintenance are handled independently here.
+
+These differences are why migration is documented as a cross-repository migration rather than as a guaranteed in-place update.
 
 ## Rollback
 
-If the upgrade fails, stop the new App and restore the Home Assistant backup.
-Keep the old App data until the new image and authentication have been checked.
+If validation fails:
+
+1. Stop the new App.
+2. Restore the new App's pre-migration backup if you want to retry it.
+3. Start the old App again, or restore the full Home Assistant backup if necessary.
+4. Keep all source data until the rollback has been verified.
