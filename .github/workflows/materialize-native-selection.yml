@@ -1,4 +1,4 @@
-name: Finalize mobile keyboard ergonomics
+name: Reorder mobile toolbar for iOS ergonomics
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  finalize:
+  reorder:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout target feature branch
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected_head="1da1546893bc8aec3366261bfe112f2c69c3b7f7"
+          expected_head="6df5c5bf7742acfc54d65db48df8e6e555d63712"
           test "$(git rev-parse HEAD)" = "$expected_head"
 
           rm -rf /tmp/ttyd-1.7.7
@@ -34,54 +34,37 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          root = Path('/tmp/ttyd-1.7.7')
-          terminal = root / 'html/src/components/terminal/index.tsx'
-          xterm = root / 'html/src/components/terminal/xterm/index.ts'
-
+          terminal = Path('/tmp/ttyd-1.7.7/html/src/components/terminal/index.tsx')
           text = terminal.read_text()
 
-          old = """                    {this.renderKeyboardDismiss()}\n                    {mobileKeys.slice(2).map(this.renderMobileKey)}\n"""
-          new = """                    {this.renderKeyboardDismiss()}\n                    {mobileKeys.slice(2).map(this.renderMobileKey)}\n                    {this.renderKeyboardShow()}\n"""
+          old = """                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
+                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
+                    {this.renderModifier('Alt', alt, 'alt')}
+                    {this.renderModifier('Shift', shift, 'shift')}
+                    {this.renderShiftLock(shiftLock)}
+                    {this.renderSelectionMode(selectionMode)}
+                    {this.renderKeyboardDismiss()}
+                    {mobileKeys.slice(2).map(this.renderMobileKey)}
+                    {this.renderKeyboardShow()}
+"""
+          new = """                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
+                    {this.renderSelectionMode(selectionMode)}
+                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
+                    {this.renderKeyboardShow()}
+                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
+                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
+                    {this.renderModifier('Alt', alt, 'alt')}
+                    {this.renderModifier('Shift', shift, 'shift')}
+                    {this.renderShiftLock(shiftLock)}
+                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
+                    {this.renderKeyboardDismiss()}
+"""
           if old not in text:
-              raise SystemExit('toolbar insertion anchor not found')
-          text = text.replace(old, new, 1)
-
-          old = """    private renderKeyboardDismiss() {\n        return (\n            <button\n                type=\"button\"\n                tabIndex={-1}\n                class=\"mobile-key\"\n                aria-label=\"Hide software keyboard\"\n                onPointerDown={this.pressKeyboardDismiss}\n                onClick={this.clickKeyboardDismiss}\n            >\n                {'Kbd\\u2193'}\n            </button>\n        );\n    }\n\n"""
-          new = old + """    private renderKeyboardShow() {\n        return (\n            <button\n                type=\"button\"\n                tabIndex={-1}\n                class=\"mobile-key\"\n                aria-label=\"Show software keyboard\"\n                onPointerDown={this.pressKeyboardShow}\n                onClick={this.clickKeyboardShow}\n            >\n                {'Kbd\\u2191'}\n            </button>\n        );\n    }\n\n"""
-          if old not in text:
-              raise SystemExit('keyboard render anchor not found')
-          text = text.replace(old, new, 1)
-
-          old = """    @bind\n    private clickKeyboardDismiss(event: MouseEvent) {\n        if (event.detail === 0) this.xterm.blur();\n    }\n\n    private toggleModifier(modifier: 'ctrl' | 'alt' | 'shift') {\n"""
-          new = """    @bind\n    private clickKeyboardDismiss(event: MouseEvent) {\n        if (event.detail === 0) this.xterm.blur();\n    }\n\n    @bind\n    private pressKeyboardShow(event: PointerEvent) {\n        event.preventDefault();\n        this.xterm.showKeyboard();\n    }\n\n    @bind\n    private clickKeyboardShow(event: MouseEvent) {\n        if (event.detail === 0) this.xterm.showKeyboard();\n    }\n\n    private toggleModifier(modifier: 'ctrl' | 'alt' | 'shift') {\n"""
-          if old not in text:
-              raise SystemExit('keyboard handler anchor not found')
-          text = text.replace(old, new, 1)
-
-          old = """        if (!ctrl && !alt && !shifted) return data;\n\n        let transformed = data;\n"""
-          new = """        if (!ctrl && !alt && !shifted) return data;\n        if (!this.isModifierInput(data)) return data;\n\n        let transformed = data;\n"""
-          if old not in text:
-              raise SystemExit('modifier guard anchor not found')
-          text = text.replace(old, new, 1)
-
-          old = """    private toControlCharacter(data: string) {\n"""
-          new = """    private isModifierInput(data: string) {\n        if (data === '\\t' || data === '\\r' || data === '\\x7f') return true;\n        return data.length === 1 && data !== '\\x1b';\n    }\n\n    private toControlCharacter(data: string) {\n"""
-          if old not in text:
-              raise SystemExit('modifier helper anchor not found')
-          text = text.replace(old, new, 1)
-          terminal.write_text(text)
-
-          text = xterm.read_text()
-          old = """    @bind\n    public blur() {\n        this.terminal?.blur();\n    }\n\n    @bind\n    public toggleNativeSelection(): boolean {\n"""
-          new = """    @bind\n    public blur() {\n        this.terminal?.blur();\n    }\n\n    @bind\n    public showKeyboard() {\n        this.terminal?.focus();\n    }\n\n    @bind\n    public toggleNativeSelection(): boolean {\n"""
-          if old not in text:
-              raise SystemExit('xterm keyboard anchor not found')
-          text = text.replace(old, new, 1)
-          xterm.write_text(text)
+              raise SystemExit('current toolbar render block not found')
+          terminal.write_text(text.replace(old, new, 1))
           PY
 
           git -C /tmp/ttyd-1.7.7 diff --no-ext-diff > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
-          # Repository whitespace policy: normalize empty unified-diff context rows.
           sed -i 's/^ $//' codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
 
           git -C /tmp/ttyd-1.7.7 reset --hard HEAD
@@ -96,22 +79,25 @@ jobs:
 
           tests = Path('codex/tests/test_modernization.py')
           text = tests.read_text()
-          old = """        self.assertIn(\"Hide software keyboard\", patch)\n        self.assertIn(\"public blur()\", patch)\n"""
-          new = """        self.assertIn(\"Hide software keyboard\", patch)\n        self.assertIn(\"Show software keyboard\", patch)\n        self.assertIn(\"public blur()\", patch)\n        self.assertIn(\"public showKeyboard()\", patch)\n        self.assertIn(\"if (!this.isModifierInput(data)) return data;\", patch)\n"""
-          if old not in text:
-              raise SystemExit('test anchor not found')
-          tests.write_text(text.replace(old, new, 1))
+          anchor = """        self.assertIn(\"public showKeyboard()\", patch)\n        self.assertIn(\"if (!this.isModifierInput(data)) return data;\", patch)\n"""
+          replacement = anchor + """        self.assertIn(\"mobileKeys.slice(2, 7).map(this.renderMobileKey)\", patch)\n        self.assertIn(\"mobileKeys.slice(7, 8).map(this.renderMobileKey)\", patch)\n        self.assertIn(\"mobileKeys.slice(8, 9).map(this.renderMobileKey)\", patch)\n"""
+          if anchor not in text:
+              raise SystemExit('test toolbar anchor not found')
+          tests.write_text(text.replace(anchor, replacement, 1))
 
           readme = Path('codex/ttyd-mobile-keys/README.md')
           text = readme.read_text()
-          text = text.replace(
-              "`Shift`, persistent Shift Lock, arrow keys, `PgUp`/`PgDn`, a keyboard-dismiss\nbutton, and an explicit `Sel` mode.",
-              "`Shift`, persistent Shift Lock, arrow keys, `PgUp`/`PgDn`, explicit keyboard\nshow/hide buttons, and a `Sel` mode.",
-          )
-          marker = "scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode\nnavigation when session persistence is enabled.\n"
-          replacement = marker + "\nOne-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch\nreporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/\n`Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.\n"
+          marker = """scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
+navigation when session persistence is enabled.
+"""
+          replacement = marker + """
+The current mobile row order is intentionally optimized for iOS reachability:
+
+- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`
+- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`
+"""
           if marker not in text:
-              raise SystemExit('README anchor not found')
+              raise SystemExit('README row-order anchor not found')
           readme.write_text(text.replace(marker, replacement, 1))
           PY
 
@@ -127,5 +113,5 @@ jobs:
           git add codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch codex/tests/test_modernization.py codex/ttyd-mobile-keys/README.md
           git diff --cached --check
           git diff --cached --quiet && exit 0
-          git commit -m "fix: preserve mobile modifiers across focus taps"
+          git commit -m "fix: reorder mobile toolbar for iOS reachability"
           git push origin HEAD:feat/upstream-mobile-mcp-modernization
