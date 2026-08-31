@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: write
 
 concurrency:
@@ -26,11 +25,10 @@ jobs:
         id: version
         run: bash scripts/update-codex-version.sh
 
-      - name: Commit and publish update
+      - name: Commit update
         if: steps.version.outputs.changed == 'true'
         env:
           CODEX_VERSION: ${{ steps.version.outputs.codex_version }}
-          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -40,10 +38,6 @@ jobs:
           git add codex/Dockerfile codex/config.yaml codex/CHANGELOG.md
           git commit -m "chore: update Codex CLI to ${CODEX_VERSION}"
           git push origin HEAD:main
-          curl --fail-with-body --silent --show-error \
-            -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/publish-codex.yml/dispatches" \
-            --data '{"ref":"main"}'
+
+          # The main-branch push changes codex/** and therefore triggers
+          # publish-codex.yml exactly once through its normal push event.
