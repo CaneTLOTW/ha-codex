@@ -11,6 +11,11 @@ shown as a fixed two-row grid so the toolbar itself does not need horizontal
 scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
 navigation when session persistence is enabled.
 
+The current mobile row order is intentionally optimized for iOS reachability:
+
+- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`
+- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`
+
 One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch
 reporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/
 `Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.

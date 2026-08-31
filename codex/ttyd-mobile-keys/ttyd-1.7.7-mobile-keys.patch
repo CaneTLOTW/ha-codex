@@ -1,5 +1,5 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..141877f 100644
+index b42bf15..99f261e 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
 @@ -11,15 +11,49 @@ interface Props extends XtermOptions {
@@ -53,7 +53,7 @@ index b42bf15..141877f 100644
      }
 
      async componentDidMount() {
-@@ -32,9 +66,28 @@ export class Terminal extends Component<Props, State> {
+@@ -32,9 +66,30 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
@@ -71,20 +71,22 @@ index b42bf15..141877f 100644
 +                    onTouchCancel={this.cancelTouchScroll}
 +                />
 +                <nav class="mobile-keys" aria-label="Terminal special keys">
++                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
++                    {this.renderSelectionMode(selectionMode)}
++                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
++                    {this.renderKeyboardShow()}
 +                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
 +                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
 +                    {this.renderModifier('Alt', alt, 'alt')}
 +                    {this.renderModifier('Shift', shift, 'shift')}
 +                    {this.renderShiftLock(shiftLock)}
-+                    {this.renderSelectionMode(selectionMode)}
++                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
 +                    {this.renderKeyboardDismiss()}
-+                    {mobileKeys.slice(2).map(this.renderMobileKey)}
-+                    {this.renderKeyboardShow()}
 +                </nav>
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +98,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +100,276 @@ export class Terminal extends Component<Props, State> {
          );
      }
 
