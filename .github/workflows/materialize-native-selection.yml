@@ -1,17 +1,15 @@
-name: Reorder mobile toolbar for iOS ergonomics
+name: Finalize mobile toolbar reconnect and spacing
 
 on:
   push:
     branches:
       - pr1-native-selection-payload
-    paths:
-      - ".github/workflows/materialize-native-selection.yml"
 
 permissions:
   contents: write
 
 jobs:
-  reorder:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout target feature branch
@@ -34,9 +32,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          terminal = Path('/tmp/ttyd-1.7.7/html/src/components/terminal/index.tsx')
-          text = terminal.read_text()
+          root = Path('/tmp/ttyd-1.7.7/html/src')
+          terminal = root / 'components/terminal/index.tsx'
+          xterm = root / 'components/terminal/xterm/index.ts'
+          style = root / 'style/index.scss'
 
+          text = terminal.read_text()
           old_lines = [
               "                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}",
               "                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}",
@@ -64,8 +65,58 @@ jobs:
           old = "\n".join(old_lines) + "\n"
           new = "\n".join(new_lines) + "\n"
           if old not in text:
-              raise SystemExit('current toolbar render block not found')
+              raise SystemExit('toolbar render block not found')
+          text = text.replace(old, new, 1)
+
+          old = """    async componentDidMount() {\n        await this.xterm.refreshToken();\n"""
+          new = """    async componentDidMount() {\n        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);\n        await this.xterm.refreshToken();\n"""
+          if old not in text:
+              raise SystemExit('componentDidMount anchor not found')
           terminal.write_text(text.replace(old, new, 1))
+
+          text = xterm.read_text()
+          old = """    private doReconnect = true;\n    private parent?: HTMLElement;\n"""
+          new = """    private doReconnect = true;\n    private manualReconnectPending = false;\n    private parent?: HTMLElement;\n"""
+          if old not in text:
+              raise SystemExit('reconnect field anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """    public sendData(data: string | Uint8Array) {\n        const { socket, textEncoder } = this;\n        if (socket?.readyState !== WebSocket.OPEN) return;\n\n"""
+          new = """    public sendData(data: string | Uint8Array) {\n        const { socket, textEncoder } = this;\n        if (socket?.readyState !== WebSocket.OPEN) {\n            if (typeof data === 'string' && data === '\\r') this.requestManualReconnect();\n            return;\n        }\n\n"""
+          if old not in text:
+              raise SystemExit('sendData anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """    @bind\n    public connect() {\n"""
+          new = """    @bind\n    private requestManualReconnect() {\n        if (this.manualReconnectPending) return;\n        if (this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN) return;\n        this.manualReconnectPending = true;\n        this.overlayAddon.showOverlay('Reconnecting...');\n        this.refreshToken().then(() => this.connect());\n    }\n\n    @bind\n    public connect() {\n"""
+          if old not in text:
+              raise SystemExit('connect anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """    private onSocketOpen() {\n        console.log('[ttyd] websocket connection opened');\n\n"""
+          new = """    private onSocketOpen() {\n        console.log('[ttyd] websocket connection opened');\n        this.manualReconnectPending = false;\n\n"""
+          if old not in text:
+              raise SystemExit('socket open anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """    private onSocketClose(event: CloseEvent) {\n        console.log(`[ttyd] websocket connection closed with code: ${event.code}`);\n\n"""
+          new = """    private onSocketClose(event: CloseEvent) {\n        console.log(`[ttyd] websocket connection closed with code: ${event.code}`);\n        this.manualReconnectPending = false;\n\n"""
+          if old not in text:
+              raise SystemExit('socket close anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """                if (event.key === 'Enter') {\n                    keyDispose.dispose();\n                    overlayAddon.showOverlay('Reconnecting...');\n                    refreshToken().then(connect);\n                }\n"""
+          new = """                if (event.key === 'Enter') {\n                    keyDispose.dispose();\n                    this.requestManualReconnect();\n                }\n"""
+          if old not in text:
+              raise SystemExit('physical reconnect anchor not found')
+          xterm.write_text(text.replace(old, new, 1))
+
+          text = style.read_text()
+          old = """    border-top: 1px solid #45475a;\n  }\n\n  .mobile-key {\n"""
+          new = """    border-top: 1px solid #45475a;\n  }\n\n  html.ttyd-embedded .mobile-keys {\n    padding-bottom: 5px;\n  }\n\n  .mobile-key {\n"""
+          if old not in text:
+              raise SystemExit('mobile key style anchor not found')
+          style.write_text(text.replace(old, new, 1))
           PY
 
           git -C /tmp/ttyd-1.7.7 diff --no-ext-diff > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
@@ -73,7 +124,7 @@ jobs:
           git -C /tmp/ttyd-1.7.7 reset --hard HEAD
           git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
 
-      - name: Extend regression contract and docs
+      - name: Update regression contract and docs
         shell: bash
         run: |
           set -euo pipefail
@@ -82,19 +133,27 @@ jobs:
 
           tests = Path('codex/tests/test_modernization.py')
           text = tests.read_text()
-          anchor = '        self.assertIn("public showKeyboard()", patch)\n        self.assertIn("if (!this.isModifierInput(data)) return data;", patch)\n'
-          replacement = anchor + '        self.assertIn("mobileKeys.slice(2, 7).map(this.renderMobileKey)", patch)\n        self.assertIn("mobileKeys.slice(7, 8).map(this.renderMobileKey)", patch)\n        self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", patch)\n'
+          anchor = '        self.assertIn("if (!this.isModifierInput(data)) return data;", patch)\n'
+          extra = (
+              '        self.assertIn("mobileKeys.slice(2, 7).map(this.renderMobileKey)", patch)\n'
+              '        self.assertIn("mobileKeys.slice(7, 8).map(this.renderMobileKey)", patch)\n'
+              '        self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", patch)\n'
+              '        self.assertIn("requestManualReconnect", patch)\n'
+              '        self.assertIn("data === \'\\\\r\'", patch)\n'
+              '        self.assertIn("ttyd-embedded", patch)\n'
+              '        self.assertIn("padding-bottom: 5px", patch)\n'
+          )
           if anchor not in text:
-              raise SystemExit('test toolbar anchor not found')
-          tests.write_text(text.replace(anchor, replacement, 1))
+              raise SystemExit('test anchor not found')
+          tests.write_text(text.replace(anchor, anchor + extra, 1))
 
           readme = Path('codex/ttyd-mobile-keys/README.md')
           text = readme.read_text()
-          marker = "scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode\nnavigation when session persistence is enabled.\n"
-          rows = "\nThe current mobile row order is intentionally optimized for iOS reachability:\n\n- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`\n"
+          marker = "One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch\nreporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/\n`Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.\n"
+          addition = """\nThe mobile row order is optimized for iOS reachability:\n\n- row 1: `Enter`, left, down, up, right, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, Shift Lock, `PgDn`, `Kbd↓`\n\nWhen ttyd is disconnected, the toolbar `Enter` uses the same manual reconnect path as a physical Enter key instead of trying to write to the closed WebSocket. In embedded Home Assistant ingress, the toolbar also avoids adding a second iOS bottom safe-area inset because the parent panel already reserves that space.\n"""
           if marker not in text:
-              raise SystemExit('README row-order anchor not found')
-          readme.write_text(text.replace(marker, marker + rows, 1))
+              raise SystemExit('README anchor not found')
+          readme.write_text(text.replace(marker, marker + addition, 1))
           PY
 
           git diff --check
@@ -109,5 +168,5 @@ jobs:
           git add codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch codex/tests/test_modernization.py codex/ttyd-mobile-keys/README.md
           git diff --cached --check
           git diff --cached --quiet && exit 0
-          git commit -m "fix: reorder mobile toolbar for iOS reachability"
+          git commit -m "fix: polish mobile toolbar reconnect and spacing"
           git push origin HEAD:feat/upstream-mobile-mcp-modernization
