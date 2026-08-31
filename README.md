@@ -28,7 +28,7 @@ This deliberately replaces runtime `npm install` updates. The running App does *
 
 ## Mobile console
 
-<img src="docs/images/ios-mobile-terminal.webp" alt="Codex running in Home Assistant Companion on iOS with the two-row mobile terminal toolbar" width="320">
+<img width="320" alt="image" src="https://github.com/user-attachments/assets/63e1a482-11e7-49f8-9dbd-026688e1aeba" />
 
 The maintained ttyd frontend is validated on-device with Home Assistant Companion on iOS. The current two-row toolbar provides `Enter`, arrows, `Sel`, `PgUp`/`PgDn`, `Esc`, `Tab`, one-shot `Ctrl`/`Alt`/`Shift`, Shift Lock (`⇪`), and explicit keyboard show/hide controls. `Sel` temporarily enables a DOM-backed native-selection path so iOS text selection, Copy, and Paste work without relying on programmatic clipboard reads.
 
