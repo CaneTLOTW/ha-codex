@@ -23,6 +23,21 @@ The App keeps Codex authentication and user configuration under `/data/codex-hom
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
 
+## Included command-line tools
+
+The App image includes common tools for troubleshooting and project work:
+
+- Python 3.13 (`python3`), Bash, Node.js and npm;
+- Git and GitHub CLI (`gh`);
+- OpenSSH **client** (`ssh`, `scp`, `sftp`), `curl` and OpenSSL;
+- `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find` and core utilities;
+- `nano`, `vim` and `tmux`;
+- p7zip / `7z`;
+- Home Assistant CLI (`ha`) and the bundled `hass-mcp` helper;
+- `bubblewrap`, ACL tooling and the customized ttyd web terminal.
+
+The image contains an SSH client, **not an SSH server**. It does not expose a separate inbound SSH service. Commands run inside the App container and remain subject to its AppArmor profile, mounted paths and selected Codex permission mode.
+
 ## App options
 
 ### Home Assistant MCP
@@ -97,9 +112,17 @@ Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
 Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 ```
 
-`Ctrl`, `Alt`, and `Shift` apply to the next eligible key; `⇪` keeps Shift locked. The arrow/page controls work without forcing the iOS software keyboard open. `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipe gestures perform page navigation. With tmux persistence enabled, `PgUp`/`PgDn` and swipe navigation use tmux copy mode.
+`Ctrl`, `Alt`, and `Shift` apply to the next eligible key; `⇪` keeps Shift locked. The arrow/page controls work without forcing the software keyboard open. `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipe gestures perform page navigation. With tmux persistence enabled, `PgUp`/`PgDn` and swipe navigation use tmux copy mode.
 
 On iOS, `Sel` temporarily enables a DOM-backed native-selection mode. Long-press/drag terminal output to use the native selection handles and Copy action. Native Paste at the prompt is routed through xterm and inserted once. Leave `Sel` to restore the normal renderer, swipe navigation, and terminal input behavior.
+
+### Android status / feedback requested
+
+The general toolbar and paging implementation uses generic browser pointer/touch events and is expected to work on Android, but it has **not yet been validated on a real Android Companion/browser runtime**.
+
+The current native `Sel` path is intentionally gated to Apple touch devices, so native selection/copy/paste through `Sel` is **not currently claimed for Android**.
+
+Please report Android results in [GitHub issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6), including device/Android version, Companion or browser version, toolbar/modifier behavior, paging/swipe, keyboard show/hide and copy/paste behavior.
 
 The managed web session disables Codex's alternate screen so output remains available in xterm scrollback. The mobile frontend is maintained as one source patch against clean ttyd 1.7.7; no separate xterm fork or patch-on-patch chain is used.
 
@@ -109,7 +132,7 @@ The `0.4.0` mobile path was validated with Home Assistant Companion on iPhone, C
 
 The Codex CLI is pinned into the App image. Runtime npm updates are intentionally not part of App startup.
 
-The repository automatically checks for a newer `@openai/codex` release every day. When a new CLI version or visible model-catalog change is found, the maintenance workflow refreshes the pinned CLI/model list, increments the Home Assistant App patch version, updates the changelog, and triggers signed `amd64`/`aarch64` image publishing plus the generic multi-architecture manifest.
+The repository automatically checks for a newer `@openai/codex` release every day. When a new CLI version or visible model-catalog change is found, the maintenance workflow refreshes the pinned CLI/model list, increments the Home Assistant App patch version, updates the changelog, and publishes signed `amd64`/`aarch64` images plus the generic multi-architecture manifest through the normal `codex/**` main-branch push trigger.
 
 The resulting Codex CLI update therefore arrives as a normal Home Assistant App update instead of changing the running container in place. Enable Home Assistant **Auto update** on the App page if newly published App versions should be installed automatically.
 
@@ -142,3 +165,7 @@ Use vertical swipes or the `PgUp`/`PgDn` controls. With session persistence enab
 ### Mobile selection/copy/paste on iOS
 
 Use `Sel` for native iOS selection/copy/paste. Disable it again for normal terminal interaction.
+
+### Android mobile behavior
+
+Android is still a requested test target. The generic toolbar/paging path should be tested now; the current native `Sel` path is Apple-only. Report results in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6).
