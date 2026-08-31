@@ -34,6 +34,14 @@ The maintained ttyd frontend is validated on-device with Home Assistant Companio
 
 Known-good `0.4.0` mobile runtime: **Codex CLI `0.151.0`**, **`gpt-5.6-sol`** (tested with medium reasoning), working directory **`/homeassistant`**, Home Assistant Companion on iPhone. The screenshot is a metadata-stripped repository copy of the final runtime test.
 
+### Android status
+
+The general mobile toolbar, pointer/touch buttons, modifiers, page navigation, keyboard controls, swipe paging and tmux integration are not Apple-specific and are **expected to work on Android**, but they have not yet been validated on a real Android Companion/browser runtime.
+
+The current native `Sel` selection/copy/paste path is different: it is intentionally enabled only for Apple touch devices in the maintained ttyd patch. Native `Sel` behavior is therefore **not currently claimed for Android**.
+
+Android testing and feedback are welcome in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6). Please include Android/device version, Companion or browser version and results for the toolbar, modifiers, paging/swipe, keyboard controls and copy/paste.
+
 ## Project Status
 
 This project started from the original [`kecksdigital/codex-hass`](https://github.com/kecksdigital/codex-hass) codebase but is now maintained as an **independent repository**.
@@ -87,6 +95,23 @@ This project is a **Home Assistant App** (formerly called an add-on), not a cust
 - Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
 - Mobile swipe navigation and tmux copy-mode page navigation.
 - Web-terminal Codex sessions that preserve output in xterm scrollback.
+
+## Bundled command-line tools
+
+The image intentionally includes a practical Home Assistant troubleshooting/development toolset alongside Codex:
+
+| Area | Included tools |
+| --- | --- |
+| Scripting/runtime | Python 3.13 (`python3`), Bash, Node.js, npm |
+| Source control | Git, GitHub CLI (`gh`) |
+| Remote/network | OpenSSH **client** (`ssh`/`scp`/`sftp`), `curl`, OpenSSL |
+| Data/search | `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find`/coreutils |
+| Editors/session | `nano`, `vim`, `tmux` |
+| Archives | `7z`/p7zip |
+| Home Assistant | Home Assistant CLI (`ha`), bundled `hass-mcp` helper |
+| Codex sandbox/support | `bubblewrap`, ACL tools and the customized ttyd terminal |
+
+The App includes an **SSH client, not an SSH server**; it does not expose a separate inbound SSH service. Tools run inside the App container and remain subject to the App's mounted paths, AppArmor profile and Codex permission mode.
 
 ## Languages
 
