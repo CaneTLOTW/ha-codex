@@ -14,7 +14,7 @@ For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS
 6. The App generates `~/.codex/AGENTS.md` with Home Assistant path and MCP guidance.
 7. The bundled `homeassistant` MCP server is added when `enable_mcp` is enabled.
 8. Additional remote Streamable HTTP MCP servers can be managed from App options.
-9. On touch devices and narrow screens, ttyd provides a two-row mobile key bar, native-selection mode, and page navigation.
+9. On touch devices and narrow screens, ttyd provides a two-row mobile key bar and page navigation; native `Sel` selection mode is currently Apple-specific.
 
 OpenAI authentication stays in Codex's persistent home. Credentials explicitly configured for remote MCP servers or environment variables are stored in Home Assistant App options and supplied to the Codex process environment.
 
@@ -50,6 +50,23 @@ Codex caches the login in its persistent home.
 
 When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.
 
+## Bundled command-line tools
+
+The published image includes a practical development and troubleshooting environment so Codex can do more than edit YAML:
+
+| Area | Included tools |
+| --- | --- |
+| Scripting/runtime | Python 3.13 (`python3`), Bash, Node.js, npm |
+| Source control | Git, GitHub CLI (`gh`) |
+| Remote/network | OpenSSH **client** (`ssh`/`scp`/`sftp`), `curl`, OpenSSL |
+| Data/search | `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find` and GNU/core utilities |
+| Editors/session | `nano`, `vim`, `tmux` |
+| Archives | p7zip / `7z` |
+| Home Assistant | Home Assistant CLI (`ha`), bundled `hass-mcp` helper |
+| Sandbox/support | `bubblewrap`, ACL tools, customized ttyd |
+
+The App contains an **SSH client only**. It does not run or expose an inbound SSH server. All commands execute inside the App container and are constrained by its AppArmor profile, mounted Home Assistant paths and the selected Codex permission mode.
+
 ## Mobile Terminal
 
 The App builds ttyd 1.7.7 from source with one canonical mobile-controls patch. On touch devices and narrow screens the toolbar is a fixed two-row grid:
@@ -62,6 +79,14 @@ Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 `Ctrl`, `Alt`, and `Shift` are one-shot modifiers; `⇪` is persistent Shift Lock. The arrow and page keys work without opening the software keyboard, while `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipes perform page navigation. With `session_persistence` enabled, `PgUp`/`PgDn` and swipes integrate with tmux copy mode.
 
 `Sel` is an opt-in iOS-native text-selection mode. It temporarily switches the terminal to DOM-rendered rows, enables native WebKit selection/callouts, and keeps xterm's helper textarea available for native Paste. This allows long-press selection, Copy, and Paste on iPhone/iPad without using `navigator.clipboard.readText()`. Leaving `Sel` restores the configured renderer and normal swipe/input behavior.
+
+### Android status
+
+The toolbar itself uses generic pointer/touch events and the paging/swipe path is not gated to Apple devices. Toolbar buttons, modifiers, page navigation, keyboard show/hide, swipe paging and tmux integration are therefore **expected to work on Android**, but this has not yet been verified on a real Android Home Assistant Companion/browser runtime.
+
+Native `Sel` mode is intentionally different: the maintained ttyd patch currently enables its native-touch selection path only for Apple touch devices. Android native selection/copy/paste through `Sel` is **not currently supported or claimed**.
+
+Android runtime feedback is requested in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6). A useful test report includes Android/device version, Home Assistant Companion or browser version, orientation, toolbar/modifier results, paging/swipe behavior, keyboard show/hide and copy/paste behavior.
 
 The managed web session starts Codex with `tui.alternate_screen="never"` so previous output remains available in xterm scrollback. Toolbar `Enter` also follows ttyd's manual reconnect path when the WebSocket is disconnected, and embedded Home Assistant ingress avoids adding a duplicate iOS bottom safe-area inset.
 
@@ -215,6 +240,10 @@ The managed web session disables the alternate screen. If the behavior persists,
 ### Mobile copy/paste is awkward on iOS
 
 Enable `Sel`, long-press terminal text for the native selection handles, then use the native Copy action. For Paste, use the native iOS Paste action at the prompt while `Sel` is active. Leave `Sel` when finished to restore normal terminal swipe/input behavior.
+
+### What about Android copy/paste?
+
+Android is still an explicit feedback/test area. The generic toolbar should be testable now, but the current native `Sel` path is Apple-only. Please report Android behavior in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6).
 
 ## References
 
