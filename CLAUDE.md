@@ -55,7 +55,9 @@ Follow the existing changelog format:
 
 The scheduled update workflow is a core repository feature and must remain operational.
 
-When a new `@openai/codex` release or visible model-catalog change is detected, `scripts/update-codex-version.sh` updates the pinned CLI version/model dropdown, increments the App patch version, updates the changelog, and the workflow commits the result to `main` before dispatching the image-publish workflow.
+When a new `@openai/codex` release or visible model-catalog change is detected, `scripts/update-codex-version.sh` updates the pinned CLI version/model dropdown, increments the App patch version, updates the changelog, and the workflow commits and pushes the result to `main`. That `codex/**` push is the **single** trigger for the image-publish workflow.
+
+Do not add a second explicit workflow dispatch after the push; that would duplicate the same release build. The update workflow needs only `contents: write` for its automated commit.
 
 Do not replace this with runtime `npm install` behavior. Codex CLI updates are delivered as reproducible Home Assistant App image releases.
 
