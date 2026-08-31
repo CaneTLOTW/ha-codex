@@ -14,7 +14,7 @@ For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS
 6. The App generates `~/.codex/AGENTS.md` with Home Assistant path and MCP guidance.
 7. The bundled `homeassistant` MCP server is added when `enable_mcp` is enabled.
 8. Additional remote Streamable HTTP MCP servers can be managed from App options.
-9. On touch devices and narrow screens, ttyd provides a mobile key bar and page navigation.
+9. On touch devices and narrow screens, ttyd provides a two-row mobile key bar, native-selection mode, and page navigation.
 
 OpenAI authentication stays in Codex's persistent home. Credentials explicitly configured for remote MCP servers or environment variables are stored in Home Assistant App options and supplied to the Codex process environment.
 
@@ -52,17 +52,22 @@ When documentation or a prompt refers to Home Assistant Core `/config`, use `/ho
 
 ## Mobile Terminal
 
-The App builds ttyd 1.7.7 from source with a dedicated mobile-controls patch. On touch devices and narrow screens the terminal shows:
+The App builds ttyd 1.7.7 from source with one canonical mobile-controls patch. On touch devices and narrow screens the toolbar is a fixed two-row grid:
 
 ```text
-Esc  Tab  Ctrl  Alt  ←  ↓  ↑  →  PgUp  PgDn
+Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
+Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 ```
 
-`Ctrl` and `Alt` are one-shot modifiers. Vertical swipes perform page navigation. With `session_persistence` enabled, page keys and swipes integrate with tmux copy mode.
+`Ctrl`, `Alt`, and `Shift` are one-shot modifiers; `⇪` is persistent Shift Lock. The arrow and page keys work without opening the software keyboard, while `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipes perform page navigation. With `session_persistence` enabled, `PgUp`/`PgDn` and swipes integrate with tmux copy mode.
 
-The managed web session starts Codex with `tui.alternate_screen="never"` so previous output remains available in xterm scrollback.
+`Sel` is an opt-in iOS-native text-selection mode. It temporarily switches the terminal to DOM-rendered rows, enables native WebKit selection/callouts, and keeps xterm's helper textarea available for native Paste. This allows long-press selection, Copy, and Paste on iPhone/iPad without using `navigator.clipboard.readText()`. Leaving `Sel` restores the configured renderer and normal swipe/input behavior.
 
-The earlier experimental custom touch/automatic-selection-copy patch is no longer part of the build. Desktop text selection, native browser context menus, and normal ttyd/xterm clipboard shortcuts remain available without mixing clipboard code into the mobile gesture implementation.
+The managed web session starts Codex with `tui.alternate_screen="never"` so previous output remains available in xterm scrollback. Toolbar `Enter` also follows ttyd's manual reconnect path when the WebSocket is disconnected, and embedded Home Assistant ingress avoids adding a duplicate iOS bottom safe-area inset.
+
+The mobile implementation is kept in `ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch`, applied directly to clean ttyd 1.7.7. There is no patch-on-patch chain or separate xterm fork. Desktop text selection, native browser context menus, and normal ttyd/xterm clipboard shortcuts remain separate from the mobile selection mode.
+
+The `0.4.0` mobile path was validated on-device with Home Assistant Companion on iPhone using Codex CLI `0.151.0`, `gpt-5.6-sol`, and `/homeassistant` as the working directory.
 
 ## App Options
 
@@ -206,6 +211,10 @@ Confirm the file is `/homeassistant/.codex/config.toml` and that `/homeassistant
 ### Terminal output disappears when Codex redraws
 
 The managed web session disables the alternate screen. If the behavior persists, verify that you are using the Codex session opened automatically by the App rather than a separately launched CLI with custom TUI settings.
+
+### Mobile copy/paste is awkward on iOS
+
+Enable `Sel`, long-press terminal text for the native selection handles, then use the native Copy action. For Paste, use the native iOS Paste action at the prompt while `Sel` is active. Leave `Sel` when finished to restore normal terminal swipe/input behavior.
 
 ## References
 
