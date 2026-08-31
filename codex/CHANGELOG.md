@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-08-31
+
+### Changed
+- Document Android mobile-terminal status explicitly: the generic toolbar/paging path is expected to work but still needs real-device feedback, while native `Sel` selection/copy/paste remains Apple-only for now.
+- Add a dedicated Android runtime feedback tracker and link it from repository and App documentation.
+- Document the command-line toolset included in the App image, including Python 3.13, Git/GitHub CLI, OpenSSH client, Home Assistant CLI, editors, search/data utilities, Node/npm, tmux and archive tooling.
+- Clarify that the image contains an outbound SSH client but does not expose an inbound SSH server.
+
 ## [0.4.1] - 2026-08-31
 
 ### Changed
