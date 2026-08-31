@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-08-31
+
+### Changed
+- Align App image packaging with current Home Assistant BuildKit guidance: use the supported multi-arch `base-python:3.13-alpine3.24` base directly from the Dockerfile and remove the legacy `build.yaml` path.
+- Update the composable Home Assistant builder actions to `2026.06.0`, publish current `io.hass.type=app` metadata, and keep signed `amd64`/`aarch64` images plus the generic multi-arch manifest.
+- Expand CI to reject legacy `build.yaml`, validate all App translation files against the current configuration schema, and build directly from the Dockerfile.
+- Document the automatic Codex CLI/model-catalog update pipeline, supported App UI languages, and the distinction between Home Assistant Apps and HACS.
+
 ## [0.4.0] - 2026-08-30
 
 ### Added
@@ -224,7 +232,7 @@ All notable changes to this project will be documented in this file.
 ## [0.2.4] - 2026-05-24
 
 ### Changed
-- Reduced nginx health-check log noise so Web UI proxy errors are easier to see in add-on logs
+- Reduced nginx health-check log noise so Web UI proxy errors are easier to see
 
 ## [0.2.3] - 2026-05-24
 

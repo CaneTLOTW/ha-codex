@@ -1,10 +1,31 @@
 # Codex App for Home Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Update Codex CLI](https://github.com/CaneTLOTW/ha-codex/actions/workflows/propose-codex-cli-update.yml/badge.svg)](https://github.com/CaneTLOTW/ha-codex/actions/workflows/propose-codex-cli-update.yml)
+[![Publish Codex App](https://github.com/CaneTLOTW/ha-codex/actions/workflows/publish-codex.yml/badge.svg)](https://github.com/CaneTLOTW/ha-codex/actions/workflows/publish-codex.yml)
 
 Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned Home Assistant App.
 
 This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
+
+## Automatic Codex CLI updates
+
+**Codex CLI updates are automated at the repository/image level.** This is a core architectural difference from the original project.
+
+A scheduled GitHub Actions workflow checks `@openai/codex` every day at **04:17 UTC**. When a newer Codex CLI release or a changed visible model catalog is detected, the repository automatically:
+
+1. reads the current model catalog from the new Codex CLI;
+2. updates the pinned `CODEX_VERSION` in the image build;
+3. refreshes the Home Assistant model dropdown from that catalog;
+4. increments the Home Assistant App patch version;
+5. adds the CLI update to the changelog;
+6. commits the update to `main`;
+7. dispatches the image-publish workflow;
+8. builds and publishes signed `amd64` and `aarch64` images plus the generic multi-architecture manifest.
+
+Home Assistant then sees the new App version through the normal App Store update mechanism. If **Auto update** is enabled for the Codex App, Home Assistant can install that newly published version automatically.
+
+This deliberately replaces runtime `npm install` updates. The running App does **not** modify its own Codex CLI installation; each Codex version is reproducibly built into a published container image and goes through the normal Home Assistant App release path.
 
 ## Mobile console
 
@@ -29,7 +50,7 @@ The original App could become unusable after a runtime npm update because writab
 This repository therefore:
 
 - pins the Codex CLI into the published container image;
-- delivers CLI updates as normal Home Assistant App releases;
+- **automatically detects new Codex CLI releases and publishes them as normal Home Assistant App versions**;
 - keeps runtime npm updates out of the startup path;
 - builds and tests a customized ttyd frontend for Home Assistant mobile use;
 - maintains the Home Assistant MCP configuration without overwriting unrelated user settings;
@@ -47,10 +68,15 @@ Manual installation:
 4. Install **Codex**.
 5. Start the App and open it from the sidebar.
 
+### HACS
+
+This project is a **Home Assistant App** (formerly called an add-on), not a custom integration. HACS does not manage Home Assistant Apps/add-ons, so this repository should be installed through the Home Assistant **App Store → Repositories** flow above, not through HACS.
+
 ## What You Get
 
 - OpenAI Codex CLI running in Home Assistant.
-- Prebuilt `amd64` and `aarch64` GHCR images.
+- Prebuilt `amd64` and `aarch64` GHCR images with a generic multi-architecture manifest.
+- Automated Codex CLI/model-catalog tracking and image publishing.
 - Direct access to `/homeassistant`, `/share`, and `/media`.
 - Read-only access to `/ssl` and `/backup`.
 - Bundled Home Assistant MCP integration for entity lookup and service calls.
@@ -62,6 +88,23 @@ Manual installation:
 - Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
 - Mobile swipe navigation and tmux copy-mode page navigation.
 - Web-terminal Codex sessions that preserve output in xterm scrollback.
+
+## Languages
+
+The Home Assistant App configuration UI currently ships translations for:
+
+- English (`en`)
+- German (`de`)
+- Spanish (`es`)
+- Brazilian Portuguese (`pt-BR`)
+
+These files cover the current App configuration schema, including MCP servers and environment variables. They localize the Home Assistant App options UI; the Codex CLI itself keeps its own upstream language behavior.
+
+## Home Assistant packaging
+
+The repository follows the current Home Assistant **App** repository model rather than HACS packaging. It provides `repository.yaml`, per-App `config.yaml`, `DOCS.md`, `CHANGELOG.md`, translations, AppArmor policy, prebuilt GHCR images, and a multi-architecture BuildKit publishing workflow.
+
+The build/release setup is intentionally maintained against current Home Assistant App guidance. In particular, the App uses the generic multi-architecture image reference in `config.yaml` and the current composable Home Assistant builder actions instead of the retired legacy builder action.
 
 ## Authentication
 
@@ -76,15 +119,15 @@ Credentials that you explicitly configure for an additional MCP server or as an 
 - Approval policy: `on-request`.
 - Session persistence: off by default; previous Codex conversations remain available through `codex resume`.
 - Bundled Home Assistant MCP: on.
-- Codex CLI updates: delivered through Home Assistant App versions, not runtime npm updates.
+- Codex CLI updates: automatically delivered through Home Assistant App versions, not runtime npm updates.
 
 Use `full_access` only when broad local access inside the App container is intended. Use `codex_approval_policy: never` only when autonomous execution without per-action approval prompts is intended.
 
 ## Updates
 
-A scheduled GitHub Actions workflow checks for newer `@openai/codex` releases. A new CLI version updates the image pin, increments the Home Assistant App version, and publishes new multi-architecture images.
+The scheduled **Update Codex CLI** workflow is the source of automated Codex releases. It checks npm for the newest `@openai/codex`, keeps the model dropdown synchronized with the bundled CLI catalog, increments the App version when needed, and triggers the **Publish Codex App** workflow.
 
-The App uses:
+The publish workflow creates the versioned and `latest` images at:
 
 ```text
 ghcr.io/canetlotw/ha-codex:<version>
