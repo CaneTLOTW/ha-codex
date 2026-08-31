@@ -9,6 +9,6 @@
   <circle cx="70" cy="25" r="3.8" fill="#99F6E4"/>
   <circle cx="72" cy="40" r="3.8" fill="#99F6E4"/>
   <circle cx="54" cy="44" r="3.8" fill="#99F6E4"/>
-  <text x="101" y="49" font-family="DejaVu Sans, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="1.2" fill="#111827">HA CODEX</text>
-  <text x="102" y="70" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.8" fill="#475569">TERMINAL AUTOMATION</text>
+  <text x="97" y="48" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" letter-spacing="0.8" fill="#111827">HA CODEX</text>
+  <text x="97" y="70" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="600" letter-spacing="0.5" fill="#475569">TERMINAL AUTOMATION</text>
 </svg>
