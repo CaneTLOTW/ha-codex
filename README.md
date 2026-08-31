@@ -19,9 +19,8 @@ A scheduled GitHub Actions workflow checks `@openai/codex` every day at **04:17 
 3. refreshes the Home Assistant model dropdown from that catalog;
 4. increments the Home Assistant App patch version;
 5. adds the CLI update to the changelog;
-6. commits the update to `main`;
-7. dispatches the image-publish workflow;
-8. builds and publishes signed `amd64` and `aarch64` images plus the generic multi-architecture manifest.
+6. commits and pushes the update to `main`;
+7. that `codex/**` push triggers the image-publish workflow exactly once, which builds and publishes signed `amd64` and `aarch64` images plus the generic multi-architecture manifest.
 
 Home Assistant then sees the new App version through the normal App Store update mechanism. If **Auto update** is enabled for the Codex App, Home Assistant can install that newly published version automatically.
 
@@ -125,7 +124,7 @@ Use `full_access` only when broad local access inside the App container is inten
 
 ## Updates
 
-The scheduled **Update Codex CLI** workflow is the source of automated Codex releases. It checks npm for the newest `@openai/codex`, keeps the model dropdown synchronized with the bundled CLI catalog, increments the App version when needed, and triggers the **Publish Codex App** workflow.
+The scheduled **Update Codex CLI** workflow is the source of automated Codex releases. It checks npm for the newest `@openai/codex`, keeps the model dropdown synchronized with the bundled CLI catalog, increments the App version when needed, and pushes the changed `codex/**` files to `main`. That push is the single trigger for the **Publish Codex App** workflow.
 
 The publish workflow creates the versioned and `latest` images at:
 
