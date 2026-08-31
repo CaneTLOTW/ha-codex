@@ -1,0 +1,48 @@
+name: Runtime Test Build
+
+on:
+  push:
+    branches:
+      - feat/toolchain-runtime-test
+    paths:
+      - ".github/workflows/runtime-test-build.yml"
+      - "codex/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build-amd64:
+    name: Build amd64 runtime test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build test image
+        run: |
+          docker build \
+            --build-arg BUILD_VERSION=0.4.4-test.1 \
+            --build-arg BUILD_ARCH=amd64 \
+            --tag ha-codex:0.4.4-test.1 \
+            codex
+
+      - name: Smoke-check bundled tools
+        run: |
+          docker run --rm --entrypoint /bin/bash ha-codex:0.4.4-test.1 -lc '
+            set -euo pipefail
+            python3 --version
+            python3 -c "import yaml; print(\"PyYAML\", yaml.__version__)"
+            yamllint --version
+            yq --version
+            7z | head -n 2
+            for cmd in tree file rsync zip unzip sqlite3 mosquitto_pub mosquitto_sub dig nslookup nc; do
+              command -v "$cmd"
+            done
+            codex --version
+          '
+
+      - name: Report image size
+        run: |
+          docker image inspect ha-codex:0.4.4-test.1 \
+            --format 'Image size: {{.Size}} bytes'
