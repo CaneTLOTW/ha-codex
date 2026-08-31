@@ -24,30 +24,40 @@ ENV \
 RUN apk add --no-cache \
     acl \
     bash \
+    bind-tools \
     bubblewrap \
     ca-certificates \
     coreutils \
     curl \
+    file \
     findutils \
     gawk \
     git \
     github-cli \
     grep \
     jq \
+    mosquitto-clients \
     nano \
     ncurses \
     ncurses-terminfo-base \
+    netcat-openbsd \
     nodejs \
     npm \
     openssh-client \
     openssl \
     p7zip \
     ripgrep \
+    rsync \
     sed \
+    sqlite \
     sudo \
     su-exec \
     tmux \
+    tree \
+    unzip \
     vim \
+    yq \
+    zip \
     json-c \
     libuv \
     libwebsockets \
@@ -88,7 +98,27 @@ RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION
     && codex --version \
     && rm -rf /tmp/npm-cache
 
-RUN pip3 install --no-cache-dir --break-system-packages hass-mcp
+RUN pip3 install --no-cache-dir --break-system-packages \
+        hass-mcp \
+        PyYAML \
+        yamllint \
+    && python3 --version \
+    && python3 -c 'import yaml; print("PyYAML", yaml.__version__)' \
+    && yamllint --version \
+    && command -v \
+        7z \
+        dig \
+        file \
+        mosquitto_pub \
+        mosquitto_sub \
+        nc \
+        nslookup \
+        rsync \
+        sqlite3 \
+        tree \
+        unzip \
+        yq \
+        zip
 
 RUN case "${BUILD_ARCH}" in \
         amd64) HA_ARCH="amd64" ;; \
