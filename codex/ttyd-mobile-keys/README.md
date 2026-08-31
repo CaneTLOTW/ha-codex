@@ -44,14 +44,25 @@ at the terminal input while `Sel` is active. This path deliberately does not
 use `navigator.clipboard.readText()` and is separate from terminal `Ctrl+C` or
 `Ctrl+V` control sequences.
 
-This behavior is based on the native-selection approach being developed in
-xterm.js for iOS, adapted at ttyd's integration layer so this App does not need
-a separate xterm fork. On-device testing with Home Assistant Companion on an
-iPhone 13 Pro has confirmed the two-row toolbar, `Sel` mode, native text
-selection/copy, native paste, page navigation, Enter, and modifier handling.
-The final mobile retest now covers `Kbd↑` reachability in the reordered toolbar,
-toolbar-Enter reconnect while the WebSocket is closed, and the reduced embedded
-safe-area padding in Home Assistant ingress.
+This behavior follows the same native DOM-selection direction discussed in
+[xterm.js #3727](https://github.com/xtermjs/xterm.js/issues/3727) and implemented
+by the in-progress [xterm.js PR #5961](https://github.com/xtermjs/xterm.js/pull/5961),
+adapted at ttyd's integration layer so this App does not need a separate xterm
+fork.
+
+## Runtime validation
+
+On-device testing with Home Assistant Companion on iPhone has confirmed the
+fixed two-row toolbar, `Sel` mode, native text selection/copy, native paste,
+page navigation, arrow navigation, `Enter`, modifier handling, and the final
+mobile layout. The validated `0.4.0` runtime uses Codex CLI `0.151.0`,
+`gpt-5.6-sol`, and `/homeassistant` as the working directory.
+
+The final implementation also contains the dedicated toolbar-Enter reconnect
+path and avoids a duplicate bottom safe-area inset inside Home Assistant
+ingress. These are covered by the maintained patch/regression contract; future
+ttyd/xterm changes should keep them in the same canonical patch rather than
+adding another patch layer.
 
 Desktop selection and normal browser/terminal clipboard behavior remain native
 ttyd/xterm behavior and are deliberately kept separate from the mobile controls.
