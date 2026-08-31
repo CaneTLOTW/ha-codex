@@ -78,7 +78,6 @@ jobs:
                   raise SystemExit(f"expected text not found in {path}: {old[:80]!r}")
               p.write_text(text.replace(old, new, 1))
 
-          # Dockerfile: install executable helpers and verify the user-facing wrapper exists.
           replace_once(
               "codex/Dockerfile",
               "        7z \\\n        dig \\",
@@ -90,7 +89,6 @@ jobs:
               "    /usr/local/bin/hass-mcp-wrapper \\\n    /usr/local/bin/hass-mcp-root-helper \\\n    /usr/local/bin/ha-readonly \\\n    /usr/local/bin/ha-readonly-root-helper \\",
           )
 
-          # Generated global AGENTS.md: make the built-in toolbox and HA access model explicit.
           start = Path("codex/rootfs/usr/local/bin/codex-start")
           text = start.read_text()
           marker = "## Reading Home Assistant Logs\n"
@@ -103,7 +101,6 @@ jobs:
           text = text.replace("ha core logs 2>&1 | grep -iE \"(error|exception)\"", "ha-readonly core logs 2>&1 | grep -iE \"(error|exception)\"")
           start.write_text(text)
 
-          # README: align documentation with actual secure runtime behavior.
           readme = Path("codex/README.md")
           text = readme.read_text()
           old_row = "| Home Assistant | Home Assistant CLI (`ha`), bundled `hass-mcp` helper |"
@@ -118,10 +115,8 @@ jobs:
               text = text.replace(anchor, anchor + extra, 1)
           readme.write_text(text)
 
-          # Deployment version bump so Home Assistant offers a new image.
           replace_once("codex/config.yaml", 'version: "0.4.4-dev.1"', 'version: "0.4.4-dev.2"')
 
-          # Regression coverage for the helper, internal agent knowledge and desktop selection CSS.
           tests = Path("codex/tests/test_modernization.py")
           text = tests.read_text()
           const_anchor = 'OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"\n'
@@ -173,6 +168,7 @@ jobs:
           PY
 
           git -C /tmp/ttyd-work diff --no-ext-diff -- . > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+          sed -i -E 's/^\+[[:space:]]+$/+/' codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
           test -s codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
 
           rm -rf /tmp/ttyd-check
