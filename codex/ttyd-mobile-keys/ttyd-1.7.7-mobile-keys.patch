@@ -1,8 +1,8 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..99f261e 100644
+index b42bf15..8963313 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,15 +11,49 @@ interface Props extends XtermOptions {
+@@ -11,18 +11,53 @@ interface Props extends XtermOptions {
 
  interface State {
      modal: boolean;
@@ -53,7 +53,11 @@ index b42bf15..99f261e 100644
      }
 
      async componentDidMount() {
-@@ -32,9 +66,30 @@ export class Terminal extends Component<Props, State> {
++        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);
+         await this.xterm.refreshToken();
+         this.xterm.open(this.container);
+         this.xterm.connect();
+@@ -32,9 +67,30 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
@@ -86,7 +90,7 @@ index b42bf15..99f261e 100644
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +100,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +101,276 @@ export class Terminal extends Component<Props, State> {
          );
      }
 
@@ -364,7 +368,7 @@ index b42bf15..99f261e 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..2460ab2 100644
+index b643f92..cf75422 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
 @@ -74,6 +74,25 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
@@ -393,10 +397,11 @@ index b643f92..2460ab2 100644
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +115,20 @@ export class Xterm {
+@@ -96,13 +115,21 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
++    private manualReconnectPending = false;
 +    private parent?: HTMLElement;
 +    private requestedRenderer: RendererType = 'canvas';
 +    private nativeSelectionCapable = false;
@@ -416,7 +421,7 @@ index b643f92..2460ab2 100644
 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +148,35 @@ export class Xterm {
+@@ -122,6 +149,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
@@ -452,7 +457,7 @@ index b643f92..2460ab2 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +204,8 @@ export class Xterm {
+@@ -149,6 +205,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -461,7 +466,7 @@ index b643f92..2460ab2 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +217,62 @@ export class Xterm {
+@@ -160,9 +218,62 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
@@ -524,7 +529,7 @@ index b643f92..2460ab2 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +283,7 @@ export class Xterm {
+@@ -173,7 +284,7 @@ export class Xterm {
                  }
              })
          );
@@ -533,7 +538,61 @@ index b643f92..2460ab2 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -379,7 +489,8 @@ export class Xterm {
+@@ -223,7 +334,10 @@ export class Xterm {
+     @bind
+     public sendData(data: string | Uint8Array) {
+         const { socket, textEncoder } = this;
+-        if (socket?.readyState !== WebSocket.OPEN) return;
++        if (socket?.readyState !== WebSocket.OPEN) {
++            if (typeof data === 'string' && data === '\r') this.requestManualReconnect();
++            return;
++        }
+
+         if (typeof data === 'string') {
+             const payload = new Uint8Array(data.length * 3 + 1);
+@@ -238,6 +352,15 @@ export class Xterm {
+         }
+     }
+
++    @bind
++    private requestManualReconnect() {
++        if (this.manualReconnectPending) return;
++        if (this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN) return;
++        this.manualReconnectPending = true;
++        this.overlayAddon.showOverlay('Reconnecting...');
++        this.refreshToken().then(() => this.connect());
++    }
++
+     @bind
+     public connect() {
+         this.socket = new WebSocket(this.options.wsUrl, ['tty']);
+@@ -253,6 +376,7 @@ export class Xterm {
+     @bind
+     private onSocketOpen() {
+         console.log('[ttyd] websocket connection opened');
++        this.manualReconnectPending = false;
+
+         const { textEncoder, terminal, overlayAddon } = this;
+         const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
+@@ -274,6 +398,7 @@ export class Xterm {
+     @bind
+     private onSocketClose(event: CloseEvent) {
+         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
++        this.manualReconnectPending = false;
+
+         const { refreshToken, connect, doReconnect, overlayAddon } = this;
+         overlayAddon.showOverlay('Connection Closed');
+@@ -289,8 +414,7 @@ export class Xterm {
+                 const event = e.domEvent;
+                 if (event.key === 'Enter') {
+                     keyDispose.dispose();
+-                    overlayAddon.showOverlay('Reconnecting...');
+-                    refreshToken().then(connect);
++                    this.requestManualReconnect();
+                 }
+             });
+             overlayAddon.showOverlay('Press ⏎ to Reconnect');
+@@ -379,7 +503,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
@@ -544,10 +603,10 @@ index b643f92..2460ab2 100644
                  case 'disableLeaveAlert':
                      if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
-index 0f9244b..8f0b8d1 100644
+index 0f9244b..5cd7fc2 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,111 @@ body {
+@@ -7,12 +7,115 @@ body {
  }
 
  #terminal-container {
@@ -633,6 +692,10 @@ index 0f9244b..8f0b8d1 100644
 +      max(6px, env(safe-area-inset-left));
 +    background: #181825;
 +    border-top: 1px solid #45475a;
++  }
++
++  html.ttyd-embedded .mobile-keys {
++    padding-bottom: 5px;
 +  }
 +
 +  .mobile-key {

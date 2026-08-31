@@ -16,6 +16,8 @@ The current mobile row order is intentionally optimized for iOS reachability:
 - row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`
 - row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`
 
+When ttyd is disconnected, the toolbar `Enter` uses the same manual reconnect path as a physical Enter key instead of trying to write to the closed WebSocket. In embedded Home Assistant ingress, the toolbar avoids adding a second iOS bottom safe-area inset because the parent panel already reserves that space.
+
 One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch
 reporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/
 `Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.
