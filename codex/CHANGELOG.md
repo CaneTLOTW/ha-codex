@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3] - 2026-08-31
+
+### Changed
+- Add dedicated project branding for the Home Assistant App with separate 128×128 icon and 250×100 horizontal logo assets.
+- Keep editable SVG masters and a reproducible renderer for the presentation assets.
+- Adjust horizontal logo typography so `HA CODEX` and `TERMINAL AUTOMATION` remain fully inside the 250×100 canvas.
+
 ## [0.4.2] - 2026-08-31
 
 ### Changed

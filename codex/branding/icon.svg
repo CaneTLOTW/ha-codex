@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">ha-codex app icon</title>
+  <desc id="desc">Original terminal automation mark with prompt and connected nodes.</desc>
+  <rect x="8" y="8" width="112" height="112" rx="27" fill="#111827" stroke="#2DD4BF" stroke-width="5"/>
+  <path d="M31 46 L49 64 L31 82" fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M56 82 H78" fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round"/>
+  <path d="M78 39 L94 31 M78 39 L96 51 M78 39 L72 57" fill="none" stroke="#5EEAD4" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="78" cy="39" r="6" fill="#2DD4BF"/>
+  <circle cx="94" cy="31" r="5" fill="#99F6E4"/>
+  <circle cx="96" cy="51" r="5" fill="#99F6E4"/>
+  <circle cx="72" cy="57" r="5" fill="#99F6E4"/>
+</svg>
