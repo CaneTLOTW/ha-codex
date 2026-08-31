@@ -90,12 +90,7 @@ jobs:
           marker = """scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
 navigation when session persistence is enabled.
 """
-          replacement = marker + """
-The current mobile row order is intentionally optimized for iOS reachability:
-
-- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`
-- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`
-"""
+          replacement = marker + "\nThe current mobile row order is intentionally optimized for iOS reachability:\n\n- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`\n"
           if marker not in text:
               raise SystemExit('README row-order anchor not found')
           readme.write_text(text.replace(marker, replacement, 1))
