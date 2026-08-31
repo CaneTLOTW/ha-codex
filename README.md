@@ -6,6 +6,14 @@ Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned
 
 This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
 
+## Mobile console
+
+<img src="docs/images/ios-mobile-terminal.webp" alt="Codex running in Home Assistant Companion on iOS with the two-row mobile terminal toolbar" width="320">
+
+The maintained ttyd frontend is validated on-device with Home Assistant Companion on iOS. The current two-row toolbar provides `Enter`, arrows, `Sel`, `PgUp`/`PgDn`, `Esc`, `Tab`, one-shot `Ctrl`/`Alt`/`Shift`, Shift Lock (`⇪`), and explicit keyboard show/hide controls. `Sel` temporarily enables a DOM-backed native-selection path so iOS text selection, Copy, and Paste work without relying on programmatic clipboard reads.
+
+Known-good `0.4.0` mobile runtime: **Codex CLI `0.151.0`**, **`gpt-5.6-sol`** (tested with medium reasoning), working directory **`/homeassistant`**, Home Assistant Companion on iPhone. The screenshot is a metadata-stripped repository copy of the final runtime test.
+
 ## Project Status
 
 This project started from the original [`kecksdigital/codex-hass`](https://github.com/kecksdigital/codex-hass) codebase but is now maintained as an **independent repository**.
@@ -50,7 +58,8 @@ Manual installation:
 - Optional environment variables for Codex/MCP sessions.
 - Persistent Codex authentication and settings under `/data/codex-home`.
 - Model, sandbox, approval, MCP, terminal theme, and session-persistence controls in the Home Assistant UI.
-- Touch-friendly mobile terminal controls with `Esc`, `Tab`, `Ctrl`, `Alt`, arrows, `PgUp`, and `PgDn`.
+- Touch-friendly two-row mobile terminal controls with `Enter`, `Esc`, `Tab`, one-shot modifiers, Shift Lock, arrows, `Sel`, page navigation, and keyboard controls.
+- Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
 - Mobile swipe navigation and tmux copy-mode page navigation.
 - Web-terminal Codex sessions that preserve output in xterm scrollback.
 
@@ -88,6 +97,7 @@ Enable **Auto update** on the Codex App page if Home Assistant should install ne
 - [Home Assistant App documentation](codex/DOCS.md)
 - [Detailed repository guide](codex/README.md)
 - [Migration notes](MIGRATION.md)
+- [ttyd mobile-control implementation notes](codex/ttyd-mobile-keys/README.md)
 
 Useful Codex documentation:
 
