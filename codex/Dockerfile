@@ -107,6 +107,7 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     && yamllint --version \
     && command -v \
         7z \
+        ha-readonly \
         dig \
         file \
         mosquitto_pub \
@@ -140,6 +141,8 @@ COPY rootfs/ /
 RUN chmod +x \
     /usr/local/bin/hass-mcp-wrapper \
     /usr/local/bin/hass-mcp-root-helper \
+    /usr/local/bin/ha-readonly \
+    /usr/local/bin/ha-readonly-root-helper \
     /usr/local/bin/codex-merge-config \
     /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \

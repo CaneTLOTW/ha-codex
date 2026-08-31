@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TOKEN_FILE="${CODEX_SUPERVISOR_TOKEN_FILE:-/tmp/codex/ha-token}"
+
+deny() {
+  echo "[ERROR] ha-readonly permits only: core info, core check, core logs" >&2
+  exit 64
+}
+
+[[ $# -eq 2 ]] || deny
+[[ "$1" == "core" ]] || deny
+case "$2" in
+  info|check|logs) ;;
+  *) deny ;;
+esac
+
+if [[ ! -r "$TOKEN_FILE" ]]; then
+  echo "[ERROR] Supervisor token file is not readable: $TOKEN_FILE" >&2
+  exit 1
+fi
+
+SUPERVISOR_TOKEN="$(<"$TOKEN_FILE")"
+if [[ -z "$SUPERVISOR_TOKEN" ]]; then
+  echo "[ERROR] Supervisor token is empty" >&2
+  exit 1
+fi
+export SUPERVISOR_TOKEN
+
+exec /usr/local/bin/ha "$@"

@@ -16,6 +16,9 @@ DOCKERFILE = CODEX_DIR / "Dockerfile"
 TTYD_PATCH_DIR = CODEX_DIR / "ttyd-mobile-keys"
 MOBILE_PATCH = TTYD_PATCH_DIR / "ttyd-1.7.7-mobile-keys.patch"
 OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
+HA_READONLY = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly"
+HA_READONLY_ROOT = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly-root-helper"
+SUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"
 
 
 class ModernizationTests(unittest.TestCase):
@@ -91,6 +94,29 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("--index /usr/share/ttyd/mobile-index.html", start_text)
         self.assertIn("bind -n PPage copy-mode", dockerfile)
         self.assertFalse(OLD_PATCH.exists())
+        # Desktop xterm drag-selection must not be clipped by the mobile layout wrapper.
+        self.assertNotIn("+    min-height: 0;\n+    overflow: hidden;\n+  }\n+  .terminal {", patch)
+        self.assertIn("+@media (hover: none), (pointer: coarse), (max-width: 768px) {\n+  .terminal-viewport {\n+    overflow: hidden;", patch)
+
+    def test_readonly_ha_helper_and_agent_guidance(self):
+        root = HA_READONLY_ROOT.read_text(encoding="utf-8")
+        wrapper = HA_READONLY.read_text(encoding="utf-8")
+        sudoers = SUDOERS.read_text(encoding="utf-8")
+        start_text = START.read_text(encoding="utf-8")
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+
+        self.assertIn("ha-readonly-root-helper", wrapper)
+        self.assertIn('[[ $# -eq 2 ]] || deny', root)
+        self.assertIn('[[ "$1" == "core" ]] || deny', root)
+        self.assertIn("info|check|logs", root)
+        self.assertIn("SUPERVISOR_TOKEN=", root)
+        self.assertIn("exec /usr/local/bin/ha", root)
+        self.assertIn("ha-readonly-root-helper", sudoers)
+        self.assertIn("ha-readonly core info", start_text)
+        self.assertIn("ha-readonly core check", start_text)
+        self.assertIn("ha-readonly core logs", start_text)
+        self.assertIn("Supervisor token is intentionally removed", start_text)
+        self.assertIn("ha-readonly", dockerfile)
 
     def test_web_session_keeps_scrollback(self):
         shell_text = SHELL.read_text(encoding="utf-8")

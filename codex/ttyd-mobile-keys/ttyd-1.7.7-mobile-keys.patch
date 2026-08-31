@@ -603,10 +603,10 @@ index b643f92..cf75422 100644
                  case 'disableLeaveAlert':
                      if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
-index 0f9244b..5cd7fc2 100644
+index 0f9244b..e7be822 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,115 @@ body {
+@@ -7,12 +7,118 @@ body {
  }
 
  #terminal-container {
@@ -619,7 +619,6 @@ index 0f9244b..5cd7fc2 100644
 +  .terminal-viewport {
 +    flex: 1 1 auto;
 +    min-height: 0;
-+    overflow: hidden;
 +  }
    .terminal {
      padding: 5px;
@@ -632,6 +631,10 @@ index 0f9244b..5cd7fc2 100644
 +}
 +
 +@media (hover: none), (pointer: coarse), (max-width: 768px) {
++  .terminal-viewport {
++    overflow: hidden;
++  }
++
 +  .terminal-viewport,
 +  .terminal-viewport .xterm {
 +    touch-action: none;
