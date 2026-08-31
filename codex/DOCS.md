@@ -84,6 +84,10 @@ Codex conversations are stored independently of tmux and can be restored with:
 codex resume
 ```
 
+## Languages
+
+The Home Assistant App configuration UI follows the Home Assistant language setting where a shipped translation is available. Current App option translations are English, German, Spanish, and Brazilian Portuguese.
+
 ## Mobile terminal controls
 
 On touch devices and narrow screens the terminal provides a fixed two-row toolbar:
@@ -101,11 +105,13 @@ The managed web session disables Codex's alternate screen so output remains avai
 
 The `0.4.0` mobile path was validated with Home Assistant Companion on iPhone, Codex CLI `0.151.0`, `gpt-5.6-sol`, and `/homeassistant` as the working directory.
 
-## Codex CLI updates
+## Automatic Codex CLI updates
 
 The Codex CLI is pinned into the App image. Runtime npm updates are intentionally not part of App startup.
 
-New Codex CLI releases are delivered through new Home Assistant App versions and GHCR images. Enable Home Assistant **Auto update** on the App page if desired.
+The repository automatically checks for a newer `@openai/codex` release every day. When a new CLI version or visible model-catalog change is found, the maintenance workflow refreshes the pinned CLI/model list, increments the Home Assistant App patch version, updates the changelog, and triggers signed `amd64`/`aarch64` image publishing plus the generic multi-architecture manifest.
+
+The resulting Codex CLI update therefore arrives as a normal Home Assistant App update instead of changing the running container in place. Enable Home Assistant **Auto update** on the App page if newly published App versions should be installed automatically.
 
 ## Migration from another repository
 
