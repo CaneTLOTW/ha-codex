@@ -86,15 +86,20 @@ codex resume
 
 ## Mobile terminal controls
 
-On touch devices and narrow screens the terminal provides:
+On touch devices and narrow screens the terminal provides a fixed two-row toolbar:
 
 ```text
-Esc  Tab  Ctrl  Alt  ←  ↓  ↑  →  PgUp  PgDn
+Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
+Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 ```
 
-`Ctrl` and `Alt` are one-shot modifiers for the next key. Vertical swipe gestures perform page navigation. With tmux persistence enabled, `PgUp` and `PgDn` integrate with tmux copy mode.
+`Ctrl`, `Alt`, and `Shift` apply to the next eligible key; `⇪` keeps Shift locked. The arrow/page controls work without forcing the iOS software keyboard open. `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipe gestures perform page navigation. With tmux persistence enabled, `PgUp`/`PgDn` and swipe navigation use tmux copy mode.
 
-The managed web session disables Codex's alternate screen so output remains available in the xterm scrollback. Desktop selection, browser context menus, and normal terminal/browser clipboard shortcuts remain handled by ttyd/xterm instead of a separate custom clipboard patch.
+On iOS, `Sel` temporarily enables a DOM-backed native-selection mode. Long-press/drag terminal output to use the native selection handles and Copy action. Native Paste at the prompt is routed through xterm and inserted once. Leave `Sel` to restore the normal renderer, swipe navigation, and terminal input behavior.
+
+The managed web session disables Codex's alternate screen so output remains available in xterm scrollback. The mobile frontend is maintained as one source patch against clean ttyd 1.7.7; no separate xterm fork or patch-on-patch chain is used.
+
+The `0.4.0` mobile path was validated with Home Assistant Companion on iPhone, Codex CLI `0.151.0`, `gpt-5.6-sol`, and `/homeassistant` as the working directory.
 
 ## Codex CLI updates
 
@@ -127,3 +132,7 @@ Use `/homeassistant/.codex/config.toml` and make sure `/homeassistant` is truste
 ### Mobile scrolling
 
 Use vertical swipes or the `PgUp`/`PgDn` controls. With session persistence enabled, page navigation enters or uses tmux copy mode.
+
+### Mobile selection/copy/paste on iOS
+
+Use `Sel` for native iOS selection/copy/paste. Disable it again for normal terminal interaction.
