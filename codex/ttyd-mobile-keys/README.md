@@ -49,9 +49,9 @@ xterm.js for iOS, adapted at ttyd's integration layer so this App does not need
 a separate xterm fork. On-device testing with Home Assistant Companion on an
 iPhone 13 Pro has confirmed the two-row toolbar, `Sel` mode, native text
 selection/copy, native paste, page navigation, Enter, and modifier handling.
-The remaining mobile tuning is limited to `Kbd↑` ergonomics; its implementation
-is intentionally unchanged while the validated `test.8` layout moves it to the
-upper row for the final reachability retest.
+The final mobile retest now covers `Kbd↑` reachability in the reordered toolbar,
+toolbar-Enter reconnect while the WebSocket is closed, and the reduced embedded
+safe-area padding in Home Assistant ingress.
 
 Desktop selection and normal browser/terminal clipboard behavior remain native
 ttyd/xterm behavior and are deliberately kept separate from the mobile controls.
