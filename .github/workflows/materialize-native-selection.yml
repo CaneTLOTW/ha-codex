@@ -1,4 +1,4 @@
-name: Finalize mobile toolbar reconnect and spacing
+name: Finalize mobile reconnect and embedded spacing
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected_head="6df5c5bf7742acfc54d65db48df8e6e555d63712"
+          expected_head="6752f40ada15bc1bb0462ef2cb135bea1c33869e"
           test "$(git rev-parse HEAD)" = "$expected_head"
 
           rm -rf /tmp/ttyd-1.7.7
@@ -38,36 +38,6 @@ jobs:
           style = root / 'style/index.scss'
 
           text = terminal.read_text()
-          old_lines = [
-              "                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}",
-              "                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}",
-              "                    {this.renderModifier('Alt', alt, 'alt')}",
-              "                    {this.renderModifier('Shift', shift, 'shift')}",
-              "                    {this.renderShiftLock(shiftLock)}",
-              "                    {this.renderSelectionMode(selectionMode)}",
-              "                    {this.renderKeyboardDismiss()}",
-              "                    {mobileKeys.slice(2).map(this.renderMobileKey)}",
-              "                    {this.renderKeyboardShow()}",
-          ]
-          new_lines = [
-              "                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}",
-              "                    {this.renderSelectionMode(selectionMode)}",
-              "                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}",
-              "                    {this.renderKeyboardShow()}",
-              "                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}",
-              "                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}",
-              "                    {this.renderModifier('Alt', alt, 'alt')}",
-              "                    {this.renderModifier('Shift', shift, 'shift')}",
-              "                    {this.renderShiftLock(shiftLock)}",
-              "                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}",
-              "                    {this.renderKeyboardDismiss()}",
-          ]
-          old = "\n".join(old_lines) + "\n"
-          new = "\n".join(new_lines) + "\n"
-          if old not in text:
-              raise SystemExit('toolbar render block not found')
-          text = text.replace(old, new, 1)
-
           old = """    async componentDidMount() {\n        await this.xterm.refreshToken();\n"""
           new = """    async componentDidMount() {\n        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);\n        await this.xterm.refreshToken();\n"""
           if old not in text:
@@ -133,11 +103,8 @@ jobs:
 
           tests = Path('codex/tests/test_modernization.py')
           text = tests.read_text()
-          anchor = '        self.assertIn("if (!this.isModifierInput(data)) return data;", patch)\n'
+          anchor = '        self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", patch)\n'
           extra = (
-              '        self.assertIn("mobileKeys.slice(2, 7).map(this.renderMobileKey)", patch)\n'
-              '        self.assertIn("mobileKeys.slice(7, 8).map(this.renderMobileKey)", patch)\n'
-              '        self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", patch)\n'
               '        self.assertIn("requestManualReconnect", patch)\n'
               '        self.assertIn("data === \'\\\\r\'", patch)\n'
               '        self.assertIn("ttyd-embedded", patch)\n'
@@ -149,8 +116,8 @@ jobs:
 
           readme = Path('codex/ttyd-mobile-keys/README.md')
           text = readme.read_text()
-          marker = "One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch\nreporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/\n`Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.\n"
-          addition = """\nThe mobile row order is optimized for iOS reachability:\n\n- row 1: `Enter`, left, down, up, right, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, Shift Lock, `PgDn`, `Kbd↓`\n\nWhen ttyd is disconnected, the toolbar `Enter` uses the same manual reconnect path as a physical Enter key instead of trying to write to the closed WebSocket. In embedded Home Assistant ingress, the toolbar also avoids adding a second iOS bottom safe-area inset because the parent panel already reserves that space.\n"""
+          marker = "- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`\n"
+          addition = """\nWhen ttyd is disconnected, the toolbar `Enter` uses the same manual reconnect path as a physical Enter key instead of trying to write to the closed WebSocket. In embedded Home Assistant ingress, the toolbar avoids adding a second iOS bottom safe-area inset because the parent panel already reserves that space.\n"""
           if marker not in text:
               raise SystemExit('README anchor not found')
           readme.write_text(text.replace(marker, marker + addition, 1))
@@ -168,5 +135,5 @@ jobs:
           git add codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch codex/tests/test_modernization.py codex/ttyd-mobile-keys/README.md
           git diff --cached --check
           git diff --cached --quiet && exit 0
-          git commit -m "fix: polish mobile toolbar reconnect and spacing"
+          git commit -m "fix: make mobile Enter reconnect and trim embedded safe area"
           git push origin HEAD:feat/upstream-mobile-mcp-modernization
