@@ -1,8 +1,0 @@
-build_from:
-  amd64: ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21
-  aarch64: ghcr.io/home-assistant/aarch64-base-python:3.13-alpine3.21
-labels:
-  org.opencontainers.image.title: "Codex App for Home Assistant"
-  org.opencontainers.image.description: "OpenAI Codex App for the Home Assistant sidebar with terminal access, model controls, and optional MCP integration"
-  org.opencontainers.image.source: "https://github.com/CaneTLOTW/ha-codex"
-  org.opencontainers.image.licenses: "MIT"
