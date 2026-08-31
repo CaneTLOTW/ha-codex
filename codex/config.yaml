@@ -1,9 +1,8 @@
-name: Codex
-description: OpenAI Codex App for Home Assistant with terminal access, model controls, and optional Home Assistant MCP integration
-version: "0.4.0"
-slug: codex
+name: Codex Test
+description: Runtime acceptance build for the next Codex App release
+version: "0.4.0-test.8"
+slug: codex_test
 url: https://github.com/CaneTLOTW/ha-codex
-image: ghcr.io/canetlotw/ha-codex
 arch:
   - amd64
   - aarch64
@@ -14,7 +13,7 @@ ingress: true
 ingress_port: 7681
 ingress_stream: true
 panel_icon: mdi:code-braces
-panel_title: Codex
+panel_title: Codex Test
 homeassistant_api: true
 hassio_api: true
 hassio_role: manager
