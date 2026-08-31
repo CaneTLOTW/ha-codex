@@ -37,28 +37,32 @@ jobs:
           terminal = Path('/tmp/ttyd-1.7.7/html/src/components/terminal/index.tsx')
           text = terminal.read_text()
 
-          old = """                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-                    {this.renderModifier('Alt', alt, 'alt')}
-                    {this.renderModifier('Shift', shift, 'shift')}
-                    {this.renderShiftLock(shiftLock)}
-                    {this.renderSelectionMode(selectionMode)}
-                    {this.renderKeyboardDismiss()}
-                    {mobileKeys.slice(2).map(this.renderMobileKey)}
-                    {this.renderKeyboardShow()}
-"""
-          new = """                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
-                    {this.renderSelectionMode(selectionMode)}
-                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
-                    {this.renderKeyboardShow()}
-                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-                    {this.renderModifier('Alt', alt, 'alt')}
-                    {this.renderModifier('Shift', shift, 'shift')}
-                    {this.renderShiftLock(shiftLock)}
-                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
-                    {this.renderKeyboardDismiss()}
-"""
+          old_lines = [
+              "                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}",
+              "                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}",
+              "                    {this.renderModifier('Alt', alt, 'alt')}",
+              "                    {this.renderModifier('Shift', shift, 'shift')}",
+              "                    {this.renderShiftLock(shiftLock)}",
+              "                    {this.renderSelectionMode(selectionMode)}",
+              "                    {this.renderKeyboardDismiss()}",
+              "                    {mobileKeys.slice(2).map(this.renderMobileKey)}",
+              "                    {this.renderKeyboardShow()}",
+          ]
+          new_lines = [
+              "                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}",
+              "                    {this.renderSelectionMode(selectionMode)}",
+              "                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}",
+              "                    {this.renderKeyboardShow()}",
+              "                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}",
+              "                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}",
+              "                    {this.renderModifier('Alt', alt, 'alt')}",
+              "                    {this.renderModifier('Shift', shift, 'shift')}",
+              "                    {this.renderShiftLock(shiftLock)}",
+              "                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}",
+              "                    {this.renderKeyboardDismiss()}",
+          ]
+          old = "\n".join(old_lines) + "\n"
+          new = "\n".join(new_lines) + "\n"
           if old not in text:
               raise SystemExit('current toolbar render block not found')
           terminal.write_text(text.replace(old, new, 1))
@@ -66,7 +70,6 @@ jobs:
 
           git -C /tmp/ttyd-1.7.7 diff --no-ext-diff > codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
           sed -i 's/^ $//' codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
-
           git -C /tmp/ttyd-1.7.7 reset --hard HEAD
           git -C /tmp/ttyd-1.7.7 apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
 
@@ -79,21 +82,19 @@ jobs:
 
           tests = Path('codex/tests/test_modernization.py')
           text = tests.read_text()
-          anchor = """        self.assertIn(\"public showKeyboard()\", patch)\n        self.assertIn(\"if (!this.isModifierInput(data)) return data;\", patch)\n"""
-          replacement = anchor + """        self.assertIn(\"mobileKeys.slice(2, 7).map(this.renderMobileKey)\", patch)\n        self.assertIn(\"mobileKeys.slice(7, 8).map(this.renderMobileKey)\", patch)\n        self.assertIn(\"mobileKeys.slice(8, 9).map(this.renderMobileKey)\", patch)\n"""
+          anchor = '        self.assertIn("public showKeyboard()", patch)\n        self.assertIn("if (!this.isModifierInput(data)) return data;", patch)\n'
+          replacement = anchor + '        self.assertIn("mobileKeys.slice(2, 7).map(this.renderMobileKey)", patch)\n        self.assertIn("mobileKeys.slice(7, 8).map(this.renderMobileKey)", patch)\n        self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", patch)\n'
           if anchor not in text:
               raise SystemExit('test toolbar anchor not found')
           tests.write_text(text.replace(anchor, replacement, 1))
 
           readme = Path('codex/ttyd-mobile-keys/README.md')
           text = readme.read_text()
-          marker = """scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
-navigation when session persistence is enabled.
-"""
-          replacement = marker + "\nThe current mobile row order is intentionally optimized for iOS reachability:\n\n- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`\n"
+          marker = "scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode\nnavigation when session persistence is enabled.\n"
+          rows = "\nThe current mobile row order is intentionally optimized for iOS reachability:\n\n- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`\n- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`\n"
           if marker not in text:
               raise SystemExit('README row-order anchor not found')
-          readme.write_text(text.replace(marker, replacement, 1))
+          readme.write_text(text.replace(marker, marker + rows, 1))
           PY
 
           git diff --check
