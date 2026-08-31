@@ -8,15 +8,20 @@ on:
       - "MIGRATION.md"
       - "README.md"
       - ".github/workflows/validate-codex.yml"
+      - ".github/workflows/publish-codex.yml"
+      - ".github/workflows/propose-codex-cli-update.yml"
   push:
     branches:
       - "feat/**"
+      - "chore/**"
     paths:
       - "codex/**"
       - "repository.yaml"
       - "MIGRATION.md"
       - "README.md"
       - ".github/workflows/validate-codex.yml"
+      - ".github/workflows/publish-codex.yml"
+      - ".github/workflows/propose-codex-cli-update.yml"
 
 permissions:
   contents: read
@@ -41,27 +46,51 @@ jobs:
 
       - name: Shell syntax
         run: |
+          bash -n scripts/update-codex-version.sh
           bash -n codex/rootfs/usr/local/bin/codex-start
           bash -n codex/rootfs/usr/local/bin/codex-session
           bash -n codex/rootfs/usr/local/bin/codex-shell
 
-      - name: Parse Home Assistant YAML
+      - name: Parse Home Assistant YAML and translation coverage
         run: |
           python - <<'PY'
           from pathlib import Path
           import yaml
 
-          paths = [
-              Path("repository.yaml"),
-              Path("codex/build.yaml"),
-              Path("codex/config.yaml"),
-              *sorted(Path("codex/translations").glob("*.yaml")),
-          ]
-          for path in paths:
+          repository = Path("repository.yaml")
+          config_path = Path("codex/config.yaml")
+          translation_paths = sorted(Path("codex/translations").glob("*.yaml"))
+
+          with repository.open("r", encoding="utf-8") as handle:
+              yaml.safe_load(handle)
+          print(f"parsed {repository}")
+
+          with config_path.open("r", encoding="utf-8") as handle:
+              config = yaml.safe_load(handle)
+          print(f"parsed {config_path}")
+
+          schema_keys = set(config.get("schema", {}))
+          if not schema_keys:
+              raise SystemExit("codex/config.yaml has no schema keys")
+
+          if not translation_paths:
+              raise SystemExit("no App translation files found")
+
+          for path in translation_paths:
               with path.open("r", encoding="utf-8") as handle:
-                  yaml.safe_load(handle)
-              print(f"parsed {path}")
+                  translation = yaml.safe_load(handle) or {}
+              translated_keys = set((translation.get("configuration") or {}).keys())
+              missing = sorted(schema_keys - translated_keys)
+              extra = sorted(translated_keys - schema_keys)
+              if missing or extra:
+                  raise SystemExit(
+                      f"{path}: translation/schema mismatch; missing={missing}, extra={extra}"
+                  )
+              print(f"parsed {path}; configuration coverage OK")
           PY
+
+      - name: Reject legacy Home Assistant build.yaml
+        run: test ! -e codex/build.yaml
 
       - name: Validate canonical ttyd patch against clean 1.7.7
         run: |
@@ -82,6 +111,6 @@ jobs:
         run: |
           docker build \
             --build-arg BUILD_ARCH=amd64 \
-            --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21 \
+            --build-arg BUILD_VERSION="$(sed -nE 's/^version:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' codex/config.yaml)" \
             -t ha-codex-validation \
             codex
