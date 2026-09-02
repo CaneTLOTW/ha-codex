@@ -87,4 +87,4 @@ The mobile keybar, touch swipe handlers, mobile viewport wrapper, and native tou
 
 ### Desktop selection scroll in Home Assistant ingress
 
-On desktop, Shift-forced xterm selection keeps wheel events local to the xterm scrollback instead of forwarding them to the mouse-aware TUI. A small in-frame edge zone also drives selection scrolling before the pointer leaves the Home Assistant ingress iframe, preserving multi-screen selection without changing the touch/mobile path.
+Desktop Shift-selection is intentionally independent from the mobile `Sel` path and from xterm's forced-selection mouse handler. A capture-phase desktop adapter owns Shift+drag, maps pointer coordinates directly into the public xterm buffer, updates the selection through `Terminal.select()`, and keeps Shift+wheel plus an in-frame edge zone local to xterm scrollback. This avoids depending on mousemove events after the pointer crosses the Home Assistant ingress iframe boundary.

@@ -123,11 +123,16 @@ class ModernizationTests(unittest.TestCase):
         self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
         # Desktop forced selection keeps wheel/edge scrolling local to xterm even when the TUI reports mouse events.
         self.assertIn("installDesktopShiftSelectionScroll", patch)
-        self.assertIn("attachCustomWheelEventHandler", patch)
-        self.assertIn("if (!event.shiftKey) return true", patch)
+        self.assertIn("desktopSelectionAnchor", patch)
+        self.assertIn("desktopBufferPoint", patch)
+        self.assertIn("updateDesktopOwnedSelection", patch)
+        self.assertIn("mouseEvent.stopImmediatePropagation()", patch)
+        self.assertIn("this.terminal.select(startCol, startRow, length)", patch)
+        self.assertIn("this.terminal.buffer.active.viewportY", patch)
         self.assertIn("scrollDesktopSelectionWheel", patch)
         self.assertIn("setDesktopSelectionScrollDirection", patch)
-        self.assertIn("replayDesktopSelectionMove", patch)
+        self.assertNotIn("attachCustomWheelEventHandler", patch)
+        self.assertNotIn("replayDesktopSelectionMove", patch)
 
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")
