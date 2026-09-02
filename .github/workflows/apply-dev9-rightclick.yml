@@ -1,0 +1,93 @@
+name: Apply dev.9 tmux right-click cleanup
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - ".github/workflows/apply-dev9-rightclick.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deployment
+        uses: actions/checkout@v6
+        with:
+          ref: deployment
+          fetch-depth: 0
+
+      - name: Apply tmux right-click cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          patch_before="$(git hash-object codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch)"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          session_path = Path('codex/rootfs/usr/local/bin/codex-session')
+          session = session_path.read_text(encoding='utf-8')
+          old = '''  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
+            echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
+          fi
+
+          "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
+          '''
+          new = '''  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
+            echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
+          fi
+
+          # tmux binds right-click on a pane to its own display-menu by default.
+          # In a browser terminal that menu appears underneath the browser/OS
+          # context menu. Keep wheel/mouse reporting enabled, but remove only
+          # those pane-menu bindings so right-click no longer opens two menus.
+          "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n MouseDown3Pane >/dev/null 2>&1 || true
+          "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n M-MouseDown3Pane >/dev/null 2>&1 || true
+
+          "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
+          '''
+          if session.count(old) != 1:
+              raise SystemExit(f'codex-session target count={session.count(old)}')
+          session_path.write_text(session.replace(old, new, 1), encoding='utf-8')
+
+          tests_path = Path('codex/tests/test_modernization.py')
+          tests = tests_path.read_text(encoding='utf-8')
+          old_test = '''        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse on', session_text)\n        self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)\n'''
+          new_test = '''        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse on', session_text)\n        self.assertIn('unbind-key -n MouseDown3Pane', session_text)\n        self.assertIn('unbind-key -n M-MouseDown3Pane', session_text)\n        self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)\n'''
+          if tests.count(old_test) != 1:
+              raise SystemExit(f'test target count={tests.count(old_test)}')
+          tests_path.write_text(tests.replace(old_test, new_test, 1), encoding='utf-8')
+
+          config_path = Path('codex/config.yaml')
+          config = config_path.read_text(encoding='utf-8')
+          if config.count('version: "0.4.4-dev.8"') != 1:
+              raise SystemExit('unexpected deployment version')
+          config_path.write_text(config.replace('version: "0.4.4-dev.8"', 'version: "0.4.4-dev.9"', 1), encoding='utf-8')
+          PY
+          patch_after="$(git hash-object codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch)"
+          test "$patch_before" = "$patch_after"
+
+      - name: Validate cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n codex/rootfs/usr/local/bin/codex-session
+          python3 -m unittest discover -s codex/tests -v
+          git diff --check
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            codex/rootfs/usr/local/bin/codex-session \
+            codex/tests/test_modernization.py \
+            codex/config.yaml
+          git diff --cached --check
+          git commit -m "fix: suppress tmux pane context menu in web terminal"
+          git push origin HEAD:deployment
