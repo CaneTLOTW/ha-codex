@@ -189,6 +189,13 @@ if [[ "$session_persist" == "true" ]]; then
     echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
   fi
 
+  # tmux binds right-click on a pane to its own display-menu by default.
+  # In a browser terminal that menu appears underneath the browser/OS
+  # context menu. Keep wheel/mouse reporting enabled, but remove only
+  # those pane-menu bindings so right-click no longer opens two menus.
+  "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n MouseDown3Pane >/dev/null 2>&1 || true
+  "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n M-MouseDown3Pane >/dev/null 2>&1 || true
+
   "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
   tmux_status=$?
 

@@ -152,6 +152,8 @@ class ModernizationTests(unittest.TestCase):
         session_text = SESSION.read_text(encoding="utf-8")
         patch = MOBILE_PATCH.read_text(encoding="utf-8")
         self.assertIn('tmux -S "$tmux_socket" set-option -g mouse on', session_text)
+        self.assertIn('unbind-key -n MouseDown3Pane', session_text)
+        self.assertIn('unbind-key -n M-MouseDown3Pane', session_text)
         self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
         self.assertIn("installDesktopSelectionPreference", patch)
         self.assertIn("desktopSelectionActive", patch)
