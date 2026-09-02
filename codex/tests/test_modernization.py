@@ -10,6 +10,7 @@ from pathlib import Path
 CODEX_DIR = Path(__file__).resolve().parents[1]
 START = CODEX_DIR / "rootfs/usr/local/bin/codex-start"
 SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
+SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"
 MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
 DOCKERFILE = CODEX_DIR / "Dockerfile"
@@ -121,18 +122,6 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("class={this.touchControls ? 'ttyd-touch-controls' : undefined}", patch)
         self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
         self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
-        # Desktop forced selection keeps wheel/edge scrolling local to xterm even when the TUI reports mouse events.
-        self.assertIn("installDesktopShiftSelectionScroll", patch)
-        self.assertIn("desktopSelectionAnchor", patch)
-        self.assertIn("desktopBufferPoint", patch)
-        self.assertIn("updateDesktopOwnedSelection", patch)
-        self.assertIn("mouseEvent.stopImmediatePropagation()", patch)
-        self.assertIn("this.terminal.select(startCol, startRow, length)", patch)
-        self.assertIn("this.terminal.buffer.active.viewportY", patch)
-        self.assertIn("scrollDesktopSelectionWheel", patch)
-        self.assertIn("setDesktopSelectionScrollDirection", patch)
-        self.assertNotIn("attachCustomWheelEventHandler", patch)
-        self.assertNotIn("replayDesktopSelectionMove", patch)
 
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")
@@ -158,6 +147,14 @@ class ModernizationTests(unittest.TestCase):
         shell_text = SHELL.read_text(encoding="utf-8")
         self.assertIn("tui.alternate_screen", shell_text)
         self.assertIn('"never"', shell_text)
+
+    def test_persistent_ttyd_session_disables_tmux_mouse(self):
+        session_text = SESSION.read_text(encoding="utf-8")
+        patch = MOBILE_PATCH.read_text(encoding="utf-8")
+        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse off', session_text)
+        self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
+        self.assertNotIn("installDesktopShiftSelectionScroll", patch)
+        self.assertNotIn("desktopSelectionAnchor", patch)
 
     def test_prepare_mcp_keeps_bearer_value_out_of_server_json(self):
         with tempfile.TemporaryDirectory() as tmp:

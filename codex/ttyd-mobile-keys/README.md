@@ -84,7 +84,3 @@ beside this file.
 ### Touch-only mobile activation
 
 The mobile keybar, touch swipe handlers, mobile viewport wrapper, and native touch-selection mode are activated only when the browser reports real touch capability (`navigator.maxTouchPoints > 0`) together with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch pointer. A narrow desktop browser window no longer activates or renders the mobile path. iPadOS desktop-style user agents are covered through `MacIntel` plus multiple touch points.
-
-### Desktop selection scroll in Home Assistant ingress
-
-Desktop Shift-selection is intentionally independent from the mobile `Sel` path and from xterm's forced-selection mouse handler. A capture-phase desktop adapter owns Shift+drag, maps pointer coordinates directly into the public xterm buffer, updates the selection through `Terminal.select()`, and keeps Shift+wheel plus an in-frame edge zone local to xterm scrollback. This avoids depending on mousemove events after the pointer crosses the Home Assistant ingress iframe boundary.
