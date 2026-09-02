@@ -396,7 +396,7 @@ index b42bf15..1440e7a 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..9b219c7 100644
+index b643f92..e8376bd 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
 @@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
@@ -433,7 +433,15 @@ index b643f92..9b219c7 100644
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +123,21 @@ export class Xterm {
+@@ -82,6 +109,7 @@ export class Xterm {
+     private pending = 0;
+
+     private terminal: Terminal;
++    private desktopSelectionActive = false;
+     private fitAddon = new FitAddon();
+     private overlayAddon = new OverlayAddon();
+     private webglAddon?: WebglAddon;
+@@ -96,13 +124,21 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -457,7 +465,7 @@ index b643f92..9b219c7 100644
 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +157,35 @@ export class Xterm {
+@@ -122,6 +158,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
@@ -493,7 +501,7 @@ index b643f92..9b219c7 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +213,8 @@ export class Xterm {
+@@ -149,6 +214,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -502,14 +510,84 @@ index b643f92..9b219c7 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +226,62 @@ export class Xterm {
+@@ -160,9 +227,132 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
 +        this.installNativeTouchSelection();
++        this.installDesktopSelectionPreference();
          fitAddon.fit();
      }
 
++    /**
++     * Backport the mouse arbitration added upstream as xterm's
++     * `mouseEventsRequireAlt` option. ttyd 1.7.7 is pinned to xterm 5.x, so we
++     * keep that stable stack and only make plain desktop left-drag look like
++     * xterm's existing forced-selection gesture. Wheel events are untouched and
++     * continue to the application/tmux. Holding Alt leaves application mouse
++     * interaction untouched as well.
++     */
++    private installDesktopSelectionPreference() {
++        const element = this.terminal.element;
++        if (!element) return;
++
++        const navigator = window.navigator as Navigator & {
++            maxTouchPoints?: number;
++            userAgentData?: { mobile?: boolean };
++        };
++        const touchPoints = navigator.maxTouchPoints ?? 0;
++        const mobilePlatform =
++            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++            (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++            navigator.userAgentData?.mobile === true;
++        const coarsePrimaryPointer = window.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++        if (touchPoints > 0 && (mobilePlatform || coarsePrimaryPointer)) return;
++
++        const forceSelectionModifier = (event: MouseEvent) => {
++            if (event.altKey || event.shiftKey) return;
++            try {
++                Object.defineProperty(event, 'shiftKey', {
++                    configurable: true,
++                    value: true,
++                });
++            } catch {
++                // Keep upstream behavior if the browser refuses event decoration.
++            }
++        };
++
++        const onMouseDown = (event: Event) => {
++            const mouseEvent = event as MouseEvent;
++            if (mouseEvent.button !== 0 || mouseEvent.altKey) return;
++            this.desktopSelectionActive = true;
++            forceSelectionModifier(mouseEvent);
++        };
++        const onMouseMove = (event: Event) => {
++            if (!this.desktopSelectionActive) return;
++            forceSelectionModifier(event as MouseEvent);
++        };
++        const onMouseUp = (event: Event) => {
++            if (!this.desktopSelectionActive) return;
++            forceSelectionModifier(event as MouseEvent);
++            this.desktopSelectionActive = false;
++        };
++        const onBlur = () => {
++            this.desktopSelectionActive = false;
++        };
++
++        element.addEventListener('mousedown', onMouseDown, true);
++        document.addEventListener('mousemove', onMouseMove, true);
++        document.addEventListener('mouseup', onMouseUp, true);
++        window.addEventListener('blur', onBlur, true);
++        this.register(
++            toDisposable(() => {
++                element.removeEventListener('mousedown', onMouseDown, true);
++                document.removeEventListener('mousemove', onMouseMove, true);
++                document.removeEventListener('mouseup', onMouseUp, true);
++                window.removeEventListener('blur', onBlur, true);
++            })
++        );
++    }
++
 +    private installNativeTouchSelection() {
 +        if (!this.nativeSelectionCapable || !this.terminal.element) return;
 +
@@ -565,7 +643,7 @@ index b643f92..9b219c7 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +292,7 @@ export class Xterm {
+@@ -173,7 +363,7 @@ export class Xterm {
                  }
              })
          );
@@ -574,7 +652,7 @@ index b643f92..9b219c7 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +342,10 @@ export class Xterm {
+@@ -223,7 +413,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -586,7 +664,7 @@ index b643f92..9b219c7 100644
 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +360,15 @@ export class Xterm {
+@@ -238,6 +431,15 @@ export class Xterm {
          }
      }
 
@@ -602,7 +680,7 @@ index b643f92..9b219c7 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +384,7 @@ export class Xterm {
+@@ -253,6 +455,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
@@ -610,7 +688,7 @@ index b643f92..9b219c7 100644
 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +406,7 @@ export class Xterm {
+@@ -274,6 +477,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
@@ -618,7 +696,7 @@ index b643f92..9b219c7 100644
 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +422,7 @@ export class Xterm {
+@@ -289,8 +493,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -628,7 +706,7 @@ index b643f92..9b219c7 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +511,8 @@ export class Xterm {
+@@ -379,7 +582,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':

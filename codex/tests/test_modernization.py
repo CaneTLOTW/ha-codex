@@ -148,11 +148,16 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("tui.alternate_screen", shell_text)
         self.assertIn('"never"', shell_text)
 
-    def test_persistent_ttyd_session_disables_tmux_mouse(self):
+    def test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection(self):
         session_text = SESSION.read_text(encoding="utf-8")
         patch = MOBILE_PATCH.read_text(encoding="utf-8")
-        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse off', session_text)
+        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse on', session_text)
         self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
+        self.assertIn("installDesktopSelectionPreference", patch)
+        self.assertIn("desktopSelectionActive", patch)
+        self.assertIn("Object.defineProperty(event, 'shiftKey'", patch)
+        self.assertIn("mouseEvent.button !== 0 || mouseEvent.altKey", patch)
+        self.assertIn("window.matchMedia?.('(hover: none) and (pointer: coarse)')", patch)
         self.assertNotIn("installDesktopShiftSelectionScroll", patch)
         self.assertNotIn("desktopSelectionAnchor", patch)
 

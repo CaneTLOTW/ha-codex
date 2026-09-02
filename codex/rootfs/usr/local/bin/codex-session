@@ -182,11 +182,11 @@ if [[ "$session_persist" == "true" ]]; then
     fi
   fi
 
-  # Browser terminals need xterm/ttyd to own mouse selection and scrollback.
-  # Match the Home Assistant Advanced SSH & Web Terminal behavior: tmux
-  # persistence remains enabled, but tmux mouse reporting is disabled under ttyd.
-  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse off; then
-    echo "[WARN] Unable to disable tmux mouse mode for the ttyd session." >&2
+  # Keep tmux wheel/history support. The ttyd frontend separately prefers
+  # xterm's forced-selection path for plain desktop left-drag, while Alt can
+  # still be used for application mouse interaction.
+  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
+    echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
   fi
 
   "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex

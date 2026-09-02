@@ -64,8 +64,13 @@ ingress. These are covered by the maintained patch/regression contract; future
 ttyd/xterm changes should keep them in the same canonical patch rather than
 adding another patch layer.
 
-Desktop selection and normal browser/terminal clipboard behavior remain native
-ttyd/xterm behavior and are deliberately kept separate from the mobile controls.
+Desktop selection remains separate from the mobile controls. On desktop, persistent
+tmux sessions keep mouse reporting enabled so wheel scrolling/history continues to
+work. Because ttyd 1.7.7 is pinned to xterm 5.x, the frontend backports the behavior
+of xterm's newer `mouseEventsRequireAlt` arbitration at the integration layer: plain
+left-drag is decorated as xterm's existing forced-selection gesture, wheel events are
+left untouched for tmux, and holding Alt leaves application mouse interaction alone.
+This does not add a second selection implementation or a second ttyd patch.
 
 To validate the patch against a clean ttyd source tree:
 
