@@ -121,6 +121,13 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("class={this.touchControls ? 'ttyd-touch-controls' : undefined}", patch)
         self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
         self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
+        # Desktop forced selection keeps wheel/edge scrolling local to xterm even when the TUI reports mouse events.
+        self.assertIn("installDesktopShiftSelectionScroll", patch)
+        self.assertIn("attachCustomWheelEventHandler", patch)
+        self.assertIn("if (!event.shiftKey) return true", patch)
+        self.assertIn("scrollDesktopSelectionWheel", patch)
+        self.assertIn("setDesktopSelectionScrollDirection", patch)
+        self.assertIn("replayDesktopSelectionMove", patch)
 
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")

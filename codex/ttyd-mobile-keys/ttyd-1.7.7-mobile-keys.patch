@@ -396,7 +396,7 @@ index b42bf15..1440e7a 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..9b219c7 100644
+index b643f92..8a6bde9 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
 @@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
@@ -433,7 +433,7 @@ index b643f92..9b219c7 100644
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +123,21 @@ export class Xterm {
+@@ -96,13 +123,25 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -442,6 +442,10 @@ index b643f92..9b219c7 100644
 +    private requestedRenderer: RendererType = 'canvas';
 +    private nativeSelectionCapable = false;
 +    private nativeSelectionMode = false;
++    private desktopSelectionActive = false;
++    private desktopSelectionPointer?: { x: number; y: number };
++    private desktopSelectionScrollDirection = 0;
++    private desktopSelectionScrollTimer?: number;
 
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -457,7 +461,7 @@ index b643f92..9b219c7 100644
 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +157,35 @@ export class Xterm {
+@@ -122,6 +161,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
@@ -493,7 +497,7 @@ index b643f92..9b219c7 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +213,8 @@ export class Xterm {
+@@ -149,6 +217,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -502,11 +506,12 @@ index b643f92..9b219c7 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +226,62 @@ export class Xterm {
+@@ -160,9 +230,164 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
 +        this.installNativeTouchSelection();
++        this.installDesktopShiftSelectionScroll();
          fitAddon.fit();
      }
 
@@ -553,6 +558,107 @@ index b643f92..9b219c7 100644
 +        this.register(addCapturedEventListener(textarea, 'input', inputFallback));
 +    }
 +
++    private installDesktopShiftSelectionScroll() {
++        if (this.nativeSelectionCapable || !this.terminal.element) return;
++
++        const terminalElement = this.terminal.element;
++        const screenElement = terminalElement.querySelector('.xterm-screen') as HTMLElement | null;
++        if (!screenElement) return;
++
++        const updatePointer = (event: MouseEvent) => {
++            if (!this.desktopSelectionActive) return;
++            this.desktopSelectionPointer = { x: event.clientX, y: event.clientY };
++
++            const bounds = screenElement.getBoundingClientRect();
++            const threshold = Math.min(36, Math.max(18, bounds.height * 0.06));
++            let direction = 0;
++            if (event.clientY <= bounds.top + threshold) direction = -1;
++            else if (event.clientY >= bounds.bottom - threshold) direction = 1;
++            this.setDesktopSelectionScrollDirection(direction);
++        };
++
++        const startSelection = (event: Event) => {
++            const mouseEvent = event as MouseEvent;
++            const target = mouseEvent.target as Element | null;
++            if (mouseEvent.button !== 0 || !mouseEvent.shiftKey || !target?.closest('.xterm-screen')) return;
++            this.desktopSelectionActive = true;
++            updatePointer(mouseEvent);
++        };
++        const moveSelection = (event: Event) => updatePointer(event as MouseEvent);
++        const stopSelection = () => this.stopDesktopSelectionScroll();
++
++        this.register(addCapturedEventListener(terminalElement, 'mousedown', startSelection));
++        this.register(addCapturedEventListener(terminalElement.ownerDocument, 'mousemove', moveSelection));
++        this.register(addCapturedEventListener(terminalElement.ownerDocument, 'mouseup', stopSelection));
++        this.register(addCapturedEventListener(window, 'blur', stopSelection));
++        this.register(toDisposable(stopSelection));
++
++        this.terminal.attachCustomWheelEventHandler(event => {
++            if (!event.shiftKey) return true;
++            event.preventDefault();
++            event.stopPropagation();
++            this.scrollDesktopSelectionWheel(event);
++            if (this.desktopSelectionActive) this.replayDesktopSelectionMove();
++            return false;
++        });
++    }
++
++    private scrollDesktopSelectionWheel(event: WheelEvent) {
++        if (!event.deltaY) return;
++        let lines = event.deltaY;
++        if (event.deltaMode === 0) lines /= 40;
++        else if (event.deltaMode === 2) lines *= this.terminal.rows;
++
++        let amount = Math.trunc(lines);
++        if (!amount) amount = Math.sign(event.deltaY);
++        amount = Math.max(-this.terminal.rows, Math.min(this.terminal.rows, amount));
++        this.terminal.scrollLines(amount);
++    }
++
++    private setDesktopSelectionScrollDirection(direction: number) {
++        this.desktopSelectionScrollDirection = direction;
++        if (!direction) {
++            if (this.desktopSelectionScrollTimer !== undefined) {
++                window.clearInterval(this.desktopSelectionScrollTimer);
++                this.desktopSelectionScrollTimer = undefined;
++            }
++            return;
++        }
++        if (this.desktopSelectionScrollTimer !== undefined) return;
++
++        this.desktopSelectionScrollTimer = window.setInterval(() => {
++            if (!this.desktopSelectionActive || !this.desktopSelectionScrollDirection) return;
++            this.terminal.scrollLines(this.desktopSelectionScrollDirection);
++            this.replayDesktopSelectionMove();
++        }, 50);
++    }
++
++    private replayDesktopSelectionMove() {
++        if (!this.desktopSelectionActive || !this.desktopSelectionPointer || !this.terminal.element) return;
++        const ownerDocument = this.terminal.element.ownerDocument;
++        ownerDocument.dispatchEvent(
++            new MouseEvent('mousemove', {
++                bubbles: true,
++                cancelable: true,
++                view: window,
++                clientX: this.desktopSelectionPointer.x,
++                clientY: this.desktopSelectionPointer.y,
++                buttons: 1,
++                shiftKey: true,
++            })
++        );
++    }
++
++    private stopDesktopSelectionScroll() {
++        this.desktopSelectionActive = false;
++        this.desktopSelectionPointer = undefined;
++        this.desktopSelectionScrollDirection = 0;
++        if (this.desktopSelectionScrollTimer !== undefined) {
++            window.clearInterval(this.desktopSelectionScrollTimer);
++            this.desktopSelectionScrollTimer = undefined;
++        }
++    }
++
 +    private applyNativeSelectionState() {
 +        const terminalElement = this.terminal.element;
 +        terminalElement?.classList.toggle('ttyd-native-touch-selection', this.nativeSelectionMode);
@@ -565,7 +671,7 @@ index b643f92..9b219c7 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +292,7 @@ export class Xterm {
+@@ -173,7 +398,7 @@ export class Xterm {
                  }
              })
          );
@@ -574,7 +680,7 @@ index b643f92..9b219c7 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +342,10 @@ export class Xterm {
+@@ -223,7 +448,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -586,7 +692,7 @@ index b643f92..9b219c7 100644
 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +360,15 @@ export class Xterm {
+@@ -238,6 +466,15 @@ export class Xterm {
          }
      }
 
@@ -602,7 +708,7 @@ index b643f92..9b219c7 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +384,7 @@ export class Xterm {
+@@ -253,6 +490,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
@@ -610,7 +716,7 @@ index b643f92..9b219c7 100644
 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +406,7 @@ export class Xterm {
+@@ -274,6 +512,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
@@ -618,7 +724,7 @@ index b643f92..9b219c7 100644
 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +422,7 @@ export class Xterm {
+@@ -289,8 +528,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -628,7 +734,7 @@ index b643f92..9b219c7 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +511,8 @@ export class Xterm {
+@@ -379,7 +617,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
