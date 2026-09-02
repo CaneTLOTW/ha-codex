@@ -6,6 +6,7 @@ on:
       - deployment
     paths:
       - ".github/workflows/materialize-dev3-touch-gate.yml"
+      - ".github/scripts/materialize_dev3_touch_gate.py"
 
 permissions:
   contents: write
