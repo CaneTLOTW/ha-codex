@@ -58,8 +58,7 @@ method = r'''    /**
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
             (navigator.platform === 'MacIntel' && touchPoints > 1) ||
             navigator.userAgentData?.mobile === true;
-        const coarsePrimaryPointer =
-            window.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
+        const coarsePrimaryPointer = window.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
         if (touchPoints > 0 && (mobilePlatform || coarsePrimaryPointer)) return;
 
         const forceSelectionModifier = (event: MouseEvent) => {
