@@ -104,22 +104,18 @@ jobs:
           if t.count(marker) != 1:
               raise SystemExit('test constant marker mismatch')
           t = t.replace(marker, marker + 'SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"\n', 1)
-          marker = '''    def test_web_session_keeps_scrollback(self):
-              shell_text = SHELL.read_text(encoding="utf-8")
-              self.assertIn("tui.alternate_screen", shell_text)
-              self.assertIn('\"never\"', shell_text)
-          '''
-          replacement = marker + '''
 
-              def test_persistent_ttyd_session_disables_tmux_mouse(self):
-                  session_text = SESSION.read_text(encoding="utf-8")
-                  self.assertIn('tmux -S "$tmux_socket" set-option -g mouse off', session_text)
-                  self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
-                  self.assertNotIn("installDesktopShiftSelectionScroll", MOBILE_PATCH.read_text(encoding="utf-8"))
-          '''
+          marker = '    def test_prepare_mcp_keeps_bearer_value_out_of_server_json(self):\n'
+          method = '''    def test_persistent_ttyd_session_disables_tmux_mouse(self):
+              session_text = SESSION.read_text(encoding="utf-8")
+              self.assertIn('tmux -S "$tmux_socket" set-option -g mouse off', session_text)
+              self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
+              self.assertNotIn("installDesktopShiftSelectionScroll", MOBILE_PATCH.read_text(encoding="utf-8"))
+
+'''
           if t.count(marker) != 1:
-              raise SystemExit('web session test marker mismatch')
-          test.write_text(t.replace(marker, replacement, 1), encoding='utf-8')
+              raise SystemExit('prepare MCP test marker mismatch')
+          test.write_text(t.replace(marker, method + marker, 1), encoding='utf-8')
           PY
 
       - name: Verify experiment
