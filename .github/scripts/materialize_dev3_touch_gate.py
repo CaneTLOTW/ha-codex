@@ -27,8 +27,7 @@ function shouldUseTouchControls(targetWindow: Window): boolean {
         /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
         (navigator.platform === 'MacIntel' && touchPoints > 1) ||
         navigator.userAgentData?.mobile === true;
-    const coarsePrimaryPointer =
-        targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
+    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
 
     return mobilePlatform || coarsePrimaryPointer;
 }
@@ -119,8 +118,7 @@ new_detector = r'''function shouldUseNativeTouchSelection(targetWindow: Window):
         /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
         (navigator.platform === 'MacIntel' && touchPoints > 1) ||
         navigator.userAgentData?.mobile === true;
-    const coarsePrimaryPointer =
-        targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
+    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
 
     return mobilePlatform || coarsePrimaryPointer;
 }'''
