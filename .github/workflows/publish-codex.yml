@@ -7,6 +7,8 @@ on:
     paths:
       - ".github/workflows/publish-codex.yml"
       - "codex/**"
+  # The automatic Codex CLI updater invokes this explicitly because a push
+  # performed with GITHUB_TOKEN does not recursively start push workflows.
   workflow_dispatch:
 
 env:
