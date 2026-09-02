@@ -99,23 +99,12 @@ methods = r'''    private installDesktopShiftSelectionScroll() {
 
     private desktopBufferPoint(screenElement: HTMLElement, clientX: number, clientY: number) {
         const bounds = screenElement.getBoundingClientRect();
-        if (
-            bounds.width <= 0 ||
-            bounds.height <= 0 ||
-            this.terminal.cols <= 0 ||
-            this.terminal.rows <= 0
-        ) {
+        if (bounds.width <= 0 || bounds.height <= 0 || this.terminal.cols <= 0 || this.terminal.rows <= 0) {
             return undefined;
         }
 
-        const relativeX = Math.min(
-            Math.max(clientX - bounds.left, 0),
-            Math.max(bounds.width - 1, 0)
-        );
-        const relativeY = Math.min(
-            Math.max(clientY - bounds.top, 0),
-            Math.max(bounds.height - 1, 0)
-        );
+        const relativeX = Math.min(Math.max(clientX - bounds.left, 0), Math.max(bounds.width - 1, 0));
+        const relativeY = Math.min(Math.max(clientY - bounds.top, 0), Math.max(bounds.height - 1, 0));
         const col = Math.min(
             this.terminal.cols - 1,
             Math.max(0, Math.floor((relativeX / bounds.width) * this.terminal.cols))
