@@ -80,3 +80,7 @@ yarn check
 
 The customized ttyd frontend remains covered by ttyd's MIT license, included
 beside this file.
+
+### Touch-only mobile activation
+
+The mobile keybar, touch swipe handlers, mobile viewport wrapper, and native touch-selection mode are activated only when the browser reports real touch capability (`navigator.maxTouchPoints > 0`) together with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch pointer. A narrow desktop browser window no longer activates or renders the mobile path. iPadOS desktop-style user agents are covered through `MacIntel` plus multiple touch points.

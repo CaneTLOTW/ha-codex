@@ -1,8 +1,8 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..8963313 100644
+index b42bf15..1440e7a 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,18 +11,53 @@ interface Props extends XtermOptions {
+@@ -11,18 +11,71 @@ interface Props extends XtermOptions {
 
  interface State {
      modal: boolean;
@@ -11,8 +11,8 @@ index b42bf15..8963313 100644
 +    shift: boolean;
 +    shiftLock: boolean;
 +    selectionMode: boolean;
- }
-
++}
++
 +interface MobileKey {
 +    label: string;
 +    ariaLabel: string;
@@ -33,10 +33,28 @@ index b42bf15..8963313 100644
 +    { label: 'PgDn', ariaLabel: 'Scroll one page down', value: '\x1b[6~', page: 'down' },
 +];
 +
++function shouldUseTouchControls(targetWindow: Window): boolean {
++    const navigator = targetWindow.navigator as Navigator & {
++        maxTouchPoints?: number;
++        userAgentData?: { mobile?: boolean };
++    };
++    const touchPoints = navigator.maxTouchPoints ?? 0;
++    if (touchPoints <= 0) return false;
++
++    const mobilePlatform =
++        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++        (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++        navigator.userAgentData?.mobile === true;
++    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++
++    return mobilePlatform || coarsePrimaryPointer;
+ }
+
  export class Terminal extends Component<Props, State> {
      private container: HTMLElement;
      private xterm: Xterm;
 +    private touchStartY?: number;
++    private readonly touchControls = shouldUseTouchControls(window);
 
      constructor(props: Props) {
          super();
@@ -57,7 +75,7 @@ index b42bf15..8963313 100644
          await this.xterm.refreshToken();
          this.xterm.open(this.container);
          this.xterm.connect();
-@@ -32,9 +67,30 @@ export class Terminal extends Component<Props, State> {
+@@ -32,9 +85,40 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
@@ -65,32 +83,42 @@ index b42bf15..8963313 100644
 +    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
          return (
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
-+            <div id={id}>
-+                <div
-+                    class="terminal-viewport"
-+                    ref={c => (this.container = c as HTMLElement)}
-+                    onTouchStart={this.startTouchScroll}
-+                    onTouchMove={this.continueTouchScroll}
-+                    onTouchEnd={this.finishTouchScroll}
-+                    onTouchCancel={this.cancelTouchScroll}
-+                />
-+                <nav class="mobile-keys" aria-label="Terminal special keys">
-+                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
-+                    {this.renderSelectionMode(selectionMode)}
-+                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
-+                    {this.renderKeyboardShow()}
-+                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-+                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-+                    {this.renderModifier('Alt', alt, 'alt')}
-+                    {this.renderModifier('Shift', shift, 'shift')}
-+                    {this.renderShiftLock(shiftLock)}
-+                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
-+                    {this.renderKeyboardDismiss()}
-+                </nav>
++            <div
++                id={id}
++                class={this.touchControls ? 'ttyd-touch-controls' : undefined}
++                ref={c => {
++                    if (!this.touchControls) this.container = c as HTMLElement;
++                }}
++            >
++                {this.touchControls && (
++                    <div
++                        class="terminal-viewport"
++                        ref={c => (this.container = c as HTMLElement)}
++                        onTouchStart={this.startTouchScroll}
++                        onTouchMove={this.continueTouchScroll}
++                        onTouchEnd={this.finishTouchScroll}
++                        onTouchCancel={this.cancelTouchScroll}
++                    />
++                )}
++                {this.touchControls && (
++                    <nav class="mobile-keys" aria-label="Terminal special keys">
++                        {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
++                        {this.renderSelectionMode(selectionMode)}
++                        {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
++                        {this.renderKeyboardShow()}
++                        {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
++                        {this.renderModifier('Ctrl', ctrl, 'ctrl')}
++                        {this.renderModifier('Alt', alt, 'alt')}
++                        {this.renderModifier('Shift', shift, 'shift')}
++                        {this.renderShiftLock(shiftLock)}
++                        {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
++                        {this.renderKeyboardDismiss()}
++                    </nav>
++                )}
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +101,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +129,276 @@ export class Terminal extends Component<Props, State> {
          );
      }
 
@@ -368,10 +396,10 @@ index b42bf15..8963313 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..cf75422 100644
+index b643f92..9b219c7 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -74,6 +74,25 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
+@@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
      return toDisposable(() => target.removeEventListener(type, listener));
  }
 
@@ -386,18 +414,26 @@ index b643f92..cf75422 100644
 +}
 +
 +function shouldUseNativeTouchSelection(targetWindow: Window): boolean {
-+    const navigator = targetWindow.navigator as Navigator & { maxTouchPoints?: number };
-+    const appleTouchDevice =
-+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-+        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1);
-+    const coarsePointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? true;
-+    return appleTouchDevice && coarsePointer;
++    const navigator = targetWindow.navigator as Navigator & {
++        maxTouchPoints?: number;
++        userAgentData?: { mobile?: boolean };
++    };
++    const touchPoints = navigator.maxTouchPoints ?? 0;
++    if (touchPoints <= 0) return false;
++
++    const mobilePlatform =
++        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++        (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++        navigator.userAgentData?.mobile === true;
++    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++
++    return mobilePlatform || coarsePrimaryPointer;
 +}
 +
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +115,21 @@ export class Xterm {
+@@ -96,13 +123,21 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -421,13 +457,13 @@ index b643f92..cf75422 100644
 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +149,35 @@ export class Xterm {
+@@ -122,6 +157,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
 
 +    @bind
 +    public focus() {
-+        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
++        if (!shouldUseNativeTouchSelection(window)) {
 +            this.terminal?.focus();
 +        }
 +    }
@@ -457,7 +493,7 @@ index b643f92..cf75422 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +205,8 @@ export class Xterm {
+@@ -149,6 +213,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -466,7 +502,7 @@ index b643f92..cf75422 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +218,62 @@ export class Xterm {
+@@ -160,9 +226,62 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
@@ -529,7 +565,7 @@ index b643f92..cf75422 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +284,7 @@ export class Xterm {
+@@ -173,7 +292,7 @@ export class Xterm {
                  }
              })
          );
@@ -538,7 +574,7 @@ index b643f92..cf75422 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +334,10 @@ export class Xterm {
+@@ -223,7 +342,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -550,7 +586,7 @@ index b643f92..cf75422 100644
 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +352,15 @@ export class Xterm {
+@@ -238,6 +360,15 @@ export class Xterm {
          }
      }
 
@@ -566,7 +602,7 @@ index b643f92..cf75422 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +376,7 @@ export class Xterm {
+@@ -253,6 +384,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
@@ -574,7 +610,7 @@ index b643f92..cf75422 100644
 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +398,7 @@ export class Xterm {
+@@ -274,6 +406,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
@@ -582,7 +618,7 @@ index b643f92..cf75422 100644
 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +414,7 @@ export class Xterm {
+@@ -289,8 +422,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -592,7 +628,7 @@ index b643f92..cf75422 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +503,8 @@ export class Xterm {
+@@ -379,7 +511,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':

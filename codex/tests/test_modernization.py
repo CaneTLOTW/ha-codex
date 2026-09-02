@@ -73,6 +73,13 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("Native text selection and paste mode", patch)
         self.assertIn("toggleNativeSelection", patch)
         self.assertIn("shouldUseNativeTouchSelection", patch)
+        self.assertIn("shouldUseTouchControls", patch)
+        self.assertIn("maxTouchPoints", patch)
+        self.assertIn("Android|iPhone|iPad|iPod", patch)
+        self.assertIn("userAgentData?.mobile", patch)
+        self.assertIn("coarsePrimaryPointer", patch)
+        self.assertIn("this.touchControls && (", patch)
+        self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
         self.assertIn("ttyd-native-touch-selection", patch)
         self.assertIn("this.terminal.paste(text)", patch)
         self.assertIn("Selection unavailable", patch)
@@ -94,9 +101,10 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("--index /usr/share/ttyd/mobile-index.html", start_text)
         self.assertIn("bind -n PPage copy-mode", dockerfile)
         self.assertFalse(OLD_PATCH.exists())
-        # Desktop xterm drag-selection must not be clipped by the mobile layout wrapper.
-        self.assertNotIn("+    min-height: 0;\n+    overflow: hidden;\n+  }\n+  .terminal {", patch)
-        self.assertIn("+@media (hover: none), (pointer: coarse), (max-width: 768px) {\n+  .terminal-viewport {\n+    overflow: hidden;", patch)
+        # Desktop keeps the upstream ttyd/xterm parent DOM; the mobile wrapper is rendered only on detected touch devices.
+        self.assertIn("class={this.touchControls ? 'ttyd-touch-controls' : undefined}", patch)
+        self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
+        self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
 
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")
