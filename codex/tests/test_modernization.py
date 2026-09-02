@@ -44,6 +44,22 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("enable_mcp=\"$(jq -r '.enable_mcp' /data/options.json)\"", start_text)
         self.assertNotIn(".enable_mcp // true", start_text)
 
+    def test_runtime_codex_self_update_is_disabled(self):
+        shell_text = SHELL.read_text(encoding="utf-8")
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / "config.toml"
+            managed = root / "mcp.json"
+            config.write_text("check_for_update_on_startup = true\n", encoding="utf-8")
+            managed.write_text("[]\n", encoding="utf-8")
+            result = self.run_merge(config, managed)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            parsed = tomllib.loads(config.read_text(encoding="utf-8"))
+            self.assertIs(parsed["check_for_update_on_startup"], False)
+        self.assertIn("check_for_update_on_startup=false", shell_text)
+        self.assertIn("ARG CODEX_VERSION=0.152.1", dockerfile)
+
     def test_mobile_terminal_patch_is_canonical_and_served(self):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
         start_text = START.read_text(encoding="utf-8")
