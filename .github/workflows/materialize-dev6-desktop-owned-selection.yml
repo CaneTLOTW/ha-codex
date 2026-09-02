@@ -73,4 +73,4 @@ jobs:
           git commit -m "fix: isolate desktop shift selection from mobile path"
           git push origin HEAD:deployment
 
-# rerun after prettier-only materializer correction
+# rerun after exact ttyd prettier alignment
