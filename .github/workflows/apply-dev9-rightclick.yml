@@ -30,28 +30,18 @@ jobs:
 
           session_path = Path('codex/rootfs/usr/local/bin/codex-session')
           session = session_path.read_text(encoding='utf-8')
-          old = '''  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
-            echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
-          fi
+          marker = '  "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex\n'
+          insertion = '''  # tmux binds right-click on a pane to its own display-menu by default.
+            # In a browser terminal that menu appears underneath the browser/OS
+            # context menu. Keep wheel/mouse reporting enabled, but remove only
+            # those pane-menu bindings so right-click no longer opens two menus.
+            "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n MouseDown3Pane >/dev/null 2>&1 || true
+            "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n M-MouseDown3Pane >/dev/null 2>&1 || true
 
-          "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
           '''
-          new = '''  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
-            echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
-          fi
-
-          # tmux binds right-click on a pane to its own display-menu by default.
-          # In a browser terminal that menu appears underneath the browser/OS
-          # context menu. Keep wheel/mouse reporting enabled, but remove only
-          # those pane-menu bindings so right-click no longer opens two menus.
-          "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n MouseDown3Pane >/dev/null 2>&1 || true
-          "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n M-MouseDown3Pane >/dev/null 2>&1 || true
-
-          "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
-          '''
-          if session.count(old) != 1:
-              raise SystemExit(f'codex-session target count={session.count(old)}')
-          session_path.write_text(session.replace(old, new, 1), encoding='utf-8')
+          if session.count(marker) != 1:
+              raise SystemExit(f'codex-session attach marker count={session.count(marker)}')
+          session_path.write_text(session.replace(marker, insertion + marker, 1), encoding='utf-8')
 
           tests_path = Path('codex/tests/test_modernization.py')
           tests = tests_path.read_text(encoding='utf-8')
