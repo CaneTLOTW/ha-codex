@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -39,5 +40,15 @@ jobs:
           git commit -m "chore: update Codex CLI to ${CODEX_VERSION}"
           git push origin HEAD:main
 
-          # The main-branch push changes codex/** and therefore triggers
-          # publish-codex.yml exactly once through its normal push event.
+      - name: Publish updated Codex App
+        if: steps.version.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Pushes performed with GITHUB_TOKEN do not recursively start
+          # push-triggered workflows. workflow_dispatch is the supported
+          # exception, so explicitly start the publisher after the commit.
+          gh workflow run publish-codex.yml --ref main
