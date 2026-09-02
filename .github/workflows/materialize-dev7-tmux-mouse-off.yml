@@ -1,0 +1,152 @@
+name: Materialize dev.7 ttyd selection experiment
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - ".github/workflows/materialize-dev7-tmux-mouse-off.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deployment
+        uses: actions/checkout@v6
+        with:
+          ref: deployment
+          fetch-depth: 0
+
+      - name: Restore native desktop ttyd path
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout f72553b843a89c8fb9304b16428beb3cda9f9a63 -- \
+            codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch \
+            codex/ttyd-mobile-keys/README.md \
+            codex/tests/test_modernization.py
+
+      - name: Disable tmux mouse under ttyd
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          session = Path('codex/rootfs/usr/local/bin/codex-session')
+          text = session.read_text(encoding='utf-8')
+          old = '''if [[ "$session_persist" == "true" ]]; then
+            tmux_socket="${user_root}/tmux.sock"
+            if [[ -e "$tmux_socket" && ! -S "$tmux_socket" ]]; then
+              rm -f "$tmux_socket" || true
+            fi
+
+            su-exec "$session_uid:$session_gid" env "${session_env[@]}" \\
+              tmux -S "$tmux_socket" new-session -A -s codex -c "$work_dir" \\
+              "exec /usr/local/bin/codex-shell"
+            tmux_status=$?
+
+            if [[ "$tmux_status" -ne 0 ]]; then
+              echo "[WARN] Persistent tmux session failed with exit code ${tmux_status}; starting Codex without tmux for this connection." >&2
+              exec su-exec "$session_uid:$session_gid" env "${session_env[@]}" \\
+                /usr/local/bin/codex-shell
+            fi
+
+            exit 0
+          fi
+          '''
+          new = '''if [[ "$session_persist" == "true" ]]; then
+            tmux_socket="${user_root}/tmux.sock"
+            if [[ -e "$tmux_socket" && ! -S "$tmux_socket" ]]; then
+              rm -f "$tmux_socket" || true
+            fi
+
+            tmux_env=(su-exec "$session_uid:$session_gid" env "${session_env[@]}")
+
+            if ! "${tmux_env[@]}" tmux -S "$tmux_socket" has-session -t codex 2>/dev/null; then
+              if ! "${tmux_env[@]}" tmux -S "$tmux_socket" new-session -d -s codex -c "$work_dir" \\
+                "exec /usr/local/bin/codex-shell"; then
+                echo "[WARN] Persistent tmux session could not be created; starting Codex without tmux for this connection." >&2
+                exec su-exec "$session_uid:$session_gid" env "${session_env[@]}" \\
+                  /usr/local/bin/codex-shell
+              fi
+            fi
+
+            # Browser terminals need xterm/ttyd to own mouse selection and scrollback.
+            # Match the Home Assistant Advanced SSH & Web Terminal behavior: tmux
+            # persistence remains enabled, but tmux mouse reporting is disabled under ttyd.
+            if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse off; then
+              echo "[WARN] Unable to disable tmux mouse mode for the ttyd session." >&2
+            fi
+
+            "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
+            tmux_status=$?
+
+            if [[ "$tmux_status" -ne 0 ]]; then
+              echo "[WARN] Persistent tmux session failed with exit code ${tmux_status}; starting Codex without tmux for this connection." >&2
+              exec su-exec "$session_uid:$session_gid" env "${session_env[@]}" \\
+                /usr/local/bin/codex-shell
+            fi
+
+            exit 0
+          fi
+          '''
+          if text.count(old) != 1:
+              raise SystemExit('persistent tmux block did not match exactly once')
+          session.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          test = Path('codex/tests/test_modernization.py')
+          t = test.read_text(encoding='utf-8')
+          marker = 'SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"\n'
+          if t.count(marker) != 1:
+              raise SystemExit('test constant marker mismatch')
+          t = t.replace(marker, marker + 'SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"\n', 1)
+          marker = '''    def test_web_session_keeps_scrollback(self):
+              shell_text = SHELL.read_text(encoding="utf-8")
+              self.assertIn("tui.alternate_screen", shell_text)
+              self.assertIn('\"never\"', shell_text)
+          '''
+          replacement = marker + '''
+
+              def test_persistent_ttyd_session_disables_tmux_mouse(self):
+                  session_text = SESSION.read_text(encoding="utf-8")
+                  self.assertIn('tmux -S "$tmux_socket" set-option -g mouse off', session_text)
+                  self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
+                  self.assertNotIn("installDesktopShiftSelectionScroll", MOBILE_PATCH.read_text(encoding="utf-8"))
+          '''
+          if t.count(marker) != 1:
+              raise SystemExit('web session test marker mismatch')
+          test.write_text(t.replace(marker, replacement, 1), encoding='utf-8')
+          PY
+
+      - name: Verify experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n codex/rootfs/usr/local/bin/codex-session
+          test "$(find codex/ttyd-mobile-keys -maxdepth 1 -name '*.patch' -type f | wc -l)" -eq 1
+          rm -rf /tmp/ttyd-check
+          git clone --depth 1 --branch 1.7.7 https://github.com/tsl0922/ttyd.git /tmp/ttyd-check
+          git -C /tmp/ttyd-check apply --check "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+          git -C /tmp/ttyd-check apply "$GITHUB_WORKSPACE/codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch"
+          git -C /tmp/ttyd-check diff --check
+          python3 -m unittest discover -s codex/tests -v
+          git diff --check
+
+      - name: Commit experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            codex/rootfs/usr/local/bin/codex-session \
+            codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch \
+            codex/ttyd-mobile-keys/README.md \
+            codex/tests/test_modernization.py
+          git diff --cached --check
+          git commit -m "fix: let ttyd own desktop mouse selection"
+          git push origin HEAD:deployment
