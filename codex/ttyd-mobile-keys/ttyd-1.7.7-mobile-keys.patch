@@ -396,7 +396,7 @@ index b42bf15..1440e7a 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..e8376bd 100644
+index b643f92..b17b8e2 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
 @@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
@@ -510,7 +510,7 @@ index b643f92..e8376bd 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +227,132 @@ export class Xterm {
+@@ -160,9 +227,154 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
 
          terminal.open(parent);
@@ -594,8 +594,9 @@ index b643f92..e8376bd 100644
 +        const terminalElement = this.terminal.element;
 +        const guardTouchGesture = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
-+            const target = event.target as Element | null;
-+            if (!target?.closest('.xterm-rows, .xterm-helper-textarea')) return;
++            // In native iOS selection mode Safari must own the entire touch
++            // gesture consistently. Letting xterm's gesture layer receive
++            // touches that start between rows causes the jumpy split behavior.
 +            event.stopPropagation();
 +        };
 +
@@ -609,13 +610,30 @@ index b643f92..e8376bd 100644
 +        const pasteHandler = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
 +            const pasteEvent = event as ClipboardEvent;
-+            if (pasteEvent.clipboardData) {
-+                // xterm's normal paste handler will consume clipboardData. Prevent the
-+                // browser from inserting the same text into the helper textarea again.
-+                pasteEvent.preventDefault();
-+            }
++            const text = pasteEvent.clipboardData?.getData('text/plain');
++            if (!text) return;
++
++            // Handle iOS paste directly instead of relying on xterm's hidden
++            // textarea listener ordering. Capture + stopImmediatePropagation
++            // guarantees one bracketed-paste path and avoids duplicate text.
++            pasteEvent.preventDefault();
++            pasteEvent.stopImmediatePropagation();
++            textarea.value = '';
++            this.terminal.paste(text);
 +        };
 +        this.register(addCapturedEventListener(textarea, 'paste', pasteHandler));
++
++        const beforeInputFallback = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const inputEvent = event as InputEvent;
++            if (inputEvent.inputType !== 'insertFromPaste' || !inputEvent.data) return;
++
++            inputEvent.preventDefault();
++            inputEvent.stopImmediatePropagation();
++            textarea.value = '';
++            this.terminal.paste(inputEvent.data);
++        };
++        this.register(addCapturedEventListener(textarea, 'beforeinput', beforeInputFallback));
 +
 +        const inputFallback = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
@@ -626,7 +644,7 @@ index b643f92..e8376bd 100644
 +            textarea.value = '';
 +            this.terminal.paste(text);
 +            inputEvent.preventDefault();
-+            inputEvent.stopPropagation();
++            inputEvent.stopImmediatePropagation();
 +        };
 +        this.register(addCapturedEventListener(textarea, 'input', inputFallback));
 +    }
@@ -636,14 +654,18 @@ index b643f92..e8376bd 100644
 +        terminalElement?.classList.toggle('ttyd-native-touch-selection', this.nativeSelectionMode);
 +        this.parent?.classList.toggle('ttyd-native-touch-selection-host', this.nativeSelectionMode);
 +        this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
-+        if (this.nativeSelectionMode) this.terminal.blur();
++        // Do not force-blur the helper textarea on entry. Upstream xterm's iOS
++        // implementation keeps the native textarea available at the cursor so
++        // Safari can expose its long-press Paste action. Exiting selection mode
++        // restores the normal terminal focus path.
++        if (!this.nativeSelectionMode) this.terminal.focus();
 +        this.fitAddon.fit();
 +    }
 +
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +363,7 @@ export class Xterm {
+@@ -173,7 +385,7 @@ export class Xterm {
                  }
              })
          );
@@ -652,7 +674,7 @@ index b643f92..e8376bd 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +413,10 @@ export class Xterm {
+@@ -223,7 +435,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -664,7 +686,7 @@ index b643f92..e8376bd 100644
 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +431,15 @@ export class Xterm {
+@@ -238,6 +453,15 @@ export class Xterm {
          }
      }
 
@@ -680,7 +702,7 @@ index b643f92..e8376bd 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +455,7 @@ export class Xterm {
+@@ -253,6 +477,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
@@ -688,7 +710,7 @@ index b643f92..e8376bd 100644
 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +477,7 @@ export class Xterm {
+@@ -274,6 +499,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
@@ -696,7 +718,7 @@ index b643f92..e8376bd 100644
 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +493,7 @@ export class Xterm {
+@@ -289,8 +515,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -706,7 +728,7 @@ index b643f92..e8376bd 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +582,8 @@ export class Xterm {
+@@ -379,7 +604,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
@@ -717,10 +739,10 @@ index b643f92..e8376bd 100644
                  case 'disableLeaveAlert':
                      if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
-index 0f9244b..e7be822 100644
+index 0f9244b..c8b266c 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,118 @@ body {
+@@ -7,12 +7,129 @@ body {
  }
 
  #terminal-container {
@@ -775,6 +797,17 @@ index 0f9244b..e7be822 100644
 +
 +  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows span {
 +    display: inline !important;
++  }
++
++  // Keep xterm's DOM measurement helpers out of Safari's native selection
++  // layout. This mirrors the upstream iOS native-selection fix and avoids
++  // measurement nodes affecting wrapped/box-drawing output.
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-char-measure-element,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-width-cache-measure-container {
++    position: absolute !important;
++    visibility: hidden !important;
++    left: -9999em !important;
++    top: 0 !important;
 +  }
 +
 +  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-helper-textarea {

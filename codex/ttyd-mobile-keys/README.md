@@ -72,6 +72,12 @@ left-drag is decorated as xterm's existing forced-selection gesture, wheel event
 left untouched for tmux, and holding Alt leaves application mouse interaction alone.
 This does not add a second selection implementation or a second ttyd patch.
 
+On iOS, `Sel` uses Safari's native DOM selection. The helper textarea remains
+available at the cursor for the native Paste action; paste events are captured
+once and forwarded through xterm's `paste()` API. While `Sel` is active Safari
+owns touch gestures consistently, and DOM measurement helpers are hidden from
+the selection layout. Desktop mouse arbitration is unchanged by this path.
+
 To validate the patch against a clean ttyd source tree:
 
 ```bash
