@@ -14,11 +14,14 @@ class MobileKeyboardAvoidanceTests(unittest.TestCase):
         self.assertNotIn("diff --git a/html/src/components/app.tsx", patch)
         self.assertNotIn("shouldUseMobileKeyboardAvoidance", patch)
         self.assertIn("private host: HTMLElement;", patch)
+        self.assertIn("private keyboardViewport?: VisualViewport;", patch)
+        self.assertIn("private keyboardResizeHandler?: () => void;", patch)
         self.assertIn("private installKeyboardAvoidance()", patch)
         self.assertIn("private updateKeyboardAvoidance()", patch)
         self.assertIn("private resetKeyboardAvoidance()", patch)
-        self.assertIn("const topWindow = window.top as any;", patch)
+        self.assertIn("const topWindow = window.top;", patch)
         self.assertIn("topWindow.visualViewport", patch)
+        self.assertIn("return window.visualViewport;", patch)
         self.assertIn("viewport.addEventListener('resize', this.keyboardResizeHandler)", patch)
         self.assertIn("this.keyboardViewport.removeEventListener('resize', this.keyboardResizeHandler)", patch)
         self.assertIn("active.classList.contains('xterm-helper-textarea')", patch)
@@ -30,6 +33,12 @@ class MobileKeyboardAvoidanceTests(unittest.TestCase):
         self.assertIn("this.xterm.scrollToBottom();", patch)
         self.assertIn("public fit()", patch)
         self.assertIn("public scrollToBottom()", patch)
+
+        # The temporary Gate 5 lint workaround must be fully canonicalized.
+        self.assertNotIn("private keyboardViewport: any;", patch)
+        self.assertNotIn("private keyboardResizeHandler: any;", patch)
+        self.assertNotIn("const topWindow = window.top as any;", patch)
+        self.assertNotIn("return (window as any).visualViewport;", patch)
 
         # Accepted dev.11 mobile and desktop behavior must remain present.
         self.assertIn("const selectionMode = this.xterm.toggleNativeSelection();", patch)
