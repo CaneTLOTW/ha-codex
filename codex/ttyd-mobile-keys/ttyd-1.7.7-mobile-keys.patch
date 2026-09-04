@@ -932,7 +932,7 @@ diff --git a/html/src/components/app.tsx b/html/src/components/app.tsx
 +}
 +
  export class App extends Component {
-+    private keyboardCleanup?: () => void;
++    private keyboardCleanup: any;
 +    private keyboardFrame?: number;
 +    private keyboardViewport?: VisualViewport;
 +    private keyboardViewportBaselineHeight = 0;
