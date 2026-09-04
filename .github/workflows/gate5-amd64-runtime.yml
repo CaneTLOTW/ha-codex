@@ -1,0 +1,98 @@
+name: Gate 5 amd64 Runtime Publish
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - ".github/workflows/gate5-amd64-runtime.yml"
+  workflow_dispatch:
+
+# Temporary runtime-acceptance path for dev.12.
+# It deliberately builds the exact accepted dev.12 source commit and publishes
+# only amd64 under the already advertised version tag. The normal deployment
+# workflow remains responsible for the final amd64+aarch64 manifest.
+env:
+  TARGET_SHA: e26e6e571e51e628c754da5c353fa6fd94c5daac
+  VERSION: 0.4.4-dev.12
+  ARCHITECTURES: '["amd64"]'
+  IMAGE_NAME: ha-codex
+  REGISTRY_PREFIX: ghcr.io/canetlotw
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    name: Prepare amd64 Gate 5 build
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Prepare amd64 matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.06.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}
+
+  build:
+    name: Build Gate 5 amd64
+    needs: init
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Check out exact dev.12 source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Verify pinned source version
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          grep -F 'version: "0.4.4-dev.12"' codex/config.yaml
+
+      - name: Build and publish Gate 5 image
+        uses: home-assistant/builder/actions/build-image@2026.06.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: codex
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ env.VERSION }}
+          labels: |
+            io.hass.name=Codex Deployment
+            io.hass.description=Temporary amd64 Gate 5 runtime acceptance image
+            io.hass.type=app
+            io.hass.gate5-source=${{ env.TARGET_SHA }}
+          push: "true"
+          version: ${{ env.VERSION }}
+
+  manifest:
+    name: Publish amd64 Gate 5 manifest
+    needs:
+      - init
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - name: Publish single-architecture version manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.06.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ env.IMAGE_NAME }}
+          image-tags: |
+            ${{ env.VERSION }}
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}
