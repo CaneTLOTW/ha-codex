@@ -47,6 +47,22 @@ available while `Sel` is active. This path deliberately does not use
 `navigator.clipboard.readText()` and is separate from terminal `Ctrl+C` or
 `Ctrl+V` control sequences.
 
+## Mobile keyboard avoidance
+
+When the software keyboard opens on a detected touch/mobile device, ttyd tracks
+the visual viewport while xterm's helper textarea has focus. In Home Assistant
+ingress the top-level `visualViewport` is preferred when same-origin access is
+available; otherwise the embedded window viewport is used as a fallback.
+
+A keyboard-sized viewport reduction temporarily shortens the existing
+`#terminal-container`, keeping the two-row toolbar and the terminal above the
+keyboard. xterm is re-fitted after every effective height change, and only the
+closed-to-open transition scrolls to the bottom so the active prompt becomes
+visible without continuously stealing manual scrollback position. Closing the
+keyboard, including through `Kbd↓`, restores the normal terminal height. This
+logic does not toggle `Sel`, alter paste/input handling, or change the desktop
+selection path.
+
 This behavior follows the same native DOM-selection direction discussed in
 [xterm.js #3727](https://github.com/xtermjs/xterm.js/issues/3727) and implemented
 by the in-progress [xterm.js PR #5961](https://github.com/xtermjs/xterm.js/pull/5961),
@@ -97,4 +113,4 @@ beside this file.
 
 ### Touch-only mobile activation
 
-The mobile keybar, touch swipe handlers, mobile viewport wrapper, and native touch-selection mode are activated only when the browser reports real touch capability (`navigator.maxTouchPoints > 0`) together with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch pointer. A narrow desktop browser window no longer activates or renders the mobile path. iPadOS desktop-style user agents are covered through `MacIntel` plus multiple touch points.
+The mobile keybar, touch swipe handlers, mobile viewport wrapper, native touch-selection mode, and keyboard-avoidance path are activated only when the browser reports real touch capability (`navigator.maxTouchPoints > 0`) together with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch pointer. A narrow desktop browser window no longer activates or renders the mobile path. iPadOS desktop-style user agents are covered through `MacIntel` plus multiple touch points.

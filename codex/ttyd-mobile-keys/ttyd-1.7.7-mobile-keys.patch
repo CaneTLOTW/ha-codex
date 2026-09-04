@@ -890,3 +890,173 @@ index e710c09..6cde839 100644
      <meta name="apple-mobile-web-app-capable" content="yes">
      <title><%= htmlWebpackPlugin.options.title %></title>
      <link inline rel="icon" type="image/png" href="favicon.png">
+diff --git a/html/src/components/app.tsx b/html/src/components/app.tsx
+--- a/html/src/components/app.tsx
++++ b/html/src/components/app.tsx
+@@ -51,7 +51,166 @@
+     lowWater: 4,
+ } as FlowControl;
+ 
++const MOBILE_KEYBOARD_THRESHOLD = 120;
++const MOBILE_KEYBOARD_MIN_HOST_HEIGHT = 160;
++const MOBILE_VIEWPORT_BASELINE_TOLERANCE = 80;
++
++function shouldUseMobileKeyboardAvoidance(targetWindow: Window): boolean {
++    const targetNavigator = targetWindow.navigator as Navigator & {
++        maxTouchPoints?: number;
++        userAgentData?: { mobile?: boolean };
++    };
++    const touchPoints = targetNavigator.maxTouchPoints ?? 0;
++    if (touchPoints <= 0) return false;
++
++    const mobilePlatform =
++        /Android|iPhone|iPad|iPod/i.test(targetNavigator.userAgent || '') ||
++        (targetNavigator.platform === 'MacIntel' && touchPoints > 1) ||
++        targetNavigator.userAgentData?.mobile === true;
++    const coarsePrimaryPointer =
++        targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++
++    return mobilePlatform || coarsePrimaryPointer;
++}
++
++function resolveKeyboardViewportWindow(): Window {
++    try {
++        if (window.top && window.top !== window && window.top.visualViewport) {
++            void window.top.innerHeight;
++            return window.top;
++        }
++    } catch {
++        // Home Assistant ingress can be cross-origin in some deployments.
++    }
++    return window;
++}
++
+ export class App extends Component {
++    private keyboardCleanup?: () => void;
++    private keyboardFrame?: number;
++    private keyboardViewport?: VisualViewport;
++    private keyboardViewportBaselineHeight = 0;
++    private keyboardViewportBaselineWidth = 0;
++    private keyboardHostBaselineHeight = 0;
++    private keyboardInputFocused = false;
++    private keyboardVisible = false;
++
++    componentDidMount() {
++        if (!shouldUseMobileKeyboardAvoidance(window)) return;
++
++        const host = document.getElementById('terminal-container');
++        if (!host) return;
++
++        const viewportWindow = resolveKeyboardViewportWindow();
++        const viewport = viewportWindow.visualViewport || window.visualViewport;
++        if (!viewport) return;
++
++        this.keyboardViewport = viewport;
++        this.captureKeyboardBaseline(host);
++
++        const schedule = () => this.scheduleKeyboardAvoidance(host);
++        const onFocusIn = (event: Event) => {
++            const target = event.target as HTMLElement | null;
++            if (!target?.classList.contains('xterm-helper-textarea')) return;
++            this.keyboardInputFocused = true;
++            schedule();
++        };
++        const onFocusOut = (event: Event) => {
++            const target = event.target as HTMLElement | null;
++            if (!target?.classList.contains('xterm-helper-textarea')) return;
++            this.keyboardInputFocused = false;
++            this.resetKeyboardAvoidance(host);
++            schedule();
++        };
++
++        viewport.addEventListener('resize', schedule);
++        viewport.addEventListener('scroll', schedule);
++        viewportWindow.addEventListener('resize', schedule);
++        document.addEventListener('focusin', onFocusIn, true);
++        document.addEventListener('focusout', onFocusOut, true);
++
++        this.keyboardCleanup = () => {
++            viewport.removeEventListener('resize', schedule);
++            viewport.removeEventListener('scroll', schedule);
++            viewportWindow.removeEventListener('resize', schedule);
++            document.removeEventListener('focusin', onFocusIn, true);
++            document.removeEventListener('focusout', onFocusOut, true);
++            if (this.keyboardFrame !== undefined) {
++                window.cancelAnimationFrame(this.keyboardFrame);
++                this.keyboardFrame = undefined;
++            }
++            this.keyboardInputFocused = false;
++            this.resetKeyboardAvoidance(host);
++        };
++    }
++
++    componentWillUnmount() {
++        this.keyboardCleanup?.();
++        this.keyboardCleanup = undefined;
++    }
++
++    private captureKeyboardBaseline(host: HTMLElement) {
++        const viewport = this.keyboardViewport;
++        if (!viewport) return;
++        this.keyboardViewportBaselineHeight = viewport.height;
++        this.keyboardViewportBaselineWidth = viewport.width;
++        const hostHeight = host.getBoundingClientRect().height;
++        if (hostHeight > 0) this.keyboardHostBaselineHeight = hostHeight;
++    }
++
++    private scheduleKeyboardAvoidance(host: HTMLElement) {
++        if (this.keyboardFrame !== undefined) window.cancelAnimationFrame(this.keyboardFrame);
++        this.keyboardFrame = window.requestAnimationFrame(() => {
++            this.keyboardFrame = undefined;
++            this.updateKeyboardAvoidance(host);
++        });
++    }
++
++    private updateKeyboardAvoidance(host: HTMLElement) {
++        const viewport = this.keyboardViewport;
++        if (!viewport || this.keyboardViewportBaselineHeight <= 0) return;
++
++        const widthChanged =
++            Math.abs(viewport.width - this.keyboardViewportBaselineWidth) > MOBILE_VIEWPORT_BASELINE_TOLERANCE;
++        if (widthChanged && !this.keyboardInputFocused) {
++            this.resetKeyboardAvoidance(host);
++            this.captureKeyboardBaseline(host);
++            return;
++        }
++
++        const shrink = this.keyboardViewportBaselineHeight - viewport.height;
++        const keyboardOpen = this.keyboardInputFocused && shrink >= MOBILE_KEYBOARD_THRESHOLD;
++        if (!keyboardOpen) {
++            if (this.keyboardVisible) this.resetKeyboardAvoidance(host);
++            if (
++                !this.keyboardInputFocused &&
++                viewport.height >= this.keyboardViewportBaselineHeight - MOBILE_VIEWPORT_BASELINE_TOLERANCE
++            ) {
++                this.captureKeyboardBaseline(host);
++            }
++            return;
++        }
++
++        const opening = !this.keyboardVisible;
++        this.keyboardVisible = true;
++        const hostHeight = Math.max(
++            MOBILE_KEYBOARD_MIN_HOST_HEIGHT,
++            this.keyboardHostBaselineHeight - shrink
++        );
++        host.style.height = `${Math.round(hostHeight)}px`;
++        host.classList.add('ttyd-keyboard-visible');
++        window.term?.fit();
++        if (opening) window.term?.scrollToBottom();
++    }
++
++    private resetKeyboardAvoidance(host: HTMLElement) {
++        const changed = this.keyboardVisible || host.style.height !== '';
++        this.keyboardVisible = false;
++        host.style.height = '';
++        host.classList.remove('ttyd-keyboard-visible');
++        if (changed) window.term?.fit();
++    }
++
+     render() {
+         return (
+             <Terminal
