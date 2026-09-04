@@ -1,8 +1,8 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..1440e7a 100644
+index b42bf15..28b275e 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,18 +11,71 @@ interface Props extends XtermOptions {
+@@ -11,20 +11,77 @@ interface Props extends XtermOptions {
 
  interface State {
      modal: boolean;
@@ -74,8 +74,14 @@ index b42bf15..1440e7a 100644
 +        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);
          await this.xterm.refreshToken();
          this.xterm.open(this.container);
++        if (this.touchControls) {
++            const selectionMode = this.xterm.toggleNativeSelection();
++            this.setState({ selectionMode });
++        }
          this.xterm.connect();
-@@ -32,9 +85,40 @@ export class Terminal extends Component<Props, State> {
+     }
+
+@@ -32,9 +89,40 @@ export class Terminal extends Component<Props, State> {
          this.xterm.dispose();
      }
 
@@ -118,7 +124,7 @@ index b42bf15..1440e7a 100644
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +129,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +133,276 @@ export class Terminal extends Component<Props, State> {
          );
      }
 

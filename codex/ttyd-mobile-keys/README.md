@@ -38,10 +38,13 @@ touch devices:
   method;
 - leaving `Sel` restores the requested renderer and normal swipe behavior.
 
-The intended iOS interaction is: enable `Sel`, long-press/drag terminal output
-and use the native iOS Copy action. For paste, use the native iOS Paste action
-at the terminal input while `Sel` is active. This path deliberately does not
-use `navigator.clipboard.readText()` and is separate from terminal `Ctrl+C` or
+On supported mobile/touch devices the terminal now enters `Sel` automatically
+after opening, so native selection/read mode is the default mobile state. `Sel`
+remains a manual toggle and can still be switched off and back on when needed.
+`Kbd↑` and `Kbd↓` keep their existing behavior: they only show or hide the
+software keyboard and do not change selection mode. Copy and native paste remain
+available while `Sel` is active. This path deliberately does not use
+`navigator.clipboard.readText()` and is separate from terminal `Ctrl+C` or
 `Ctrl+V` control sequences.
 
 This behavior follows the same native DOM-selection direction discussed in
