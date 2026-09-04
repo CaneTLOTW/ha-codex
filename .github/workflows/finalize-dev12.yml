@@ -1,0 +1,84 @@
+name: Finalize dev.12 canonical state
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - ".github/workflows/finalize-dev12.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    name: Canonicalize accepted dev.12
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deployment
+        uses: actions/checkout@v6
+        with:
+          ref: deployment
+          fetch-depth: 0
+
+      - name: Fold Gate 5 type fixes into canonical ttyd patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch')
+          text = path.read_text()
+          replacements = {
+              'private keyboardViewport: any;': 'private keyboardViewport?: VisualViewport;',
+              'private keyboardResizeHandler: any;': 'private keyboardResizeHandler?: () => void;',
+              'const topWindow = window.top as any;': 'const topWindow = window.top;',
+              'return (window as any).visualViewport;': 'return window.visualViewport;',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected exactly one occurrence of {old!r}, found {count}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+          git diff --check
+
+      - name: Record Desktop acceptance
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/DEV12_RUNTIME_ACCEPTANCE.md')
+          text = path.read_text()
+          replacements = {
+              '| Desktop regression acceptance | ⏳ pending |': '| Desktop regression acceptance | ✅ passed, user-confirmed 2026-09-04 |',
+              '### Desktop\n\n**Status: ⏳ pending**': '### Desktop\n\n**Status: ✅ passed**',
+              'Do not mark dev.12 fully accepted until this check is recorded.': 'Desktop regression acceptance was user-confirmed on 2026-09-04. The accepted Desktop behavior remains intact.',
+              '## Required finalization after Desktop passes': '## Release finalization',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'missing expected acceptance text: {old!r}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+      - name: Remove temporary Gate 5 and one-shot finalizer workflows
+        shell: bash
+        run: |
+          rm -f .github/workflows/gate5-amd64-runtime.yml
+          rm -f .github/workflows/finalize-dev12.yml
+
+      - name: Commit finalized dev.12 state
+        shell: bash
+        run: |
+          git status --short
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: finalize dev.12 runtime acceptance"
+          git push origin HEAD:deployment
