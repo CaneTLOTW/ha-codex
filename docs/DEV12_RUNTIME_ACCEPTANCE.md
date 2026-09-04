@@ -1,8 +1,6 @@
 # dev.12 mobile keyboard avoidance – runtime acceptance record
 
-This document records the implementation, CI recovery, temporary Gate 5 publish path, and runtime acceptance state for `0.4.4-dev.12`.
-
-It is intentionally a **working acceptance record** until Desktop regression testing and normal multi-architecture publishing are complete.
+This document records the implementation, CI recovery, temporary Gate 5 publish path, and completed runtime/release acceptance for `0.4.4-dev.12`.
 
 ## Status snapshot
 
@@ -10,14 +8,16 @@ It is intentionally a **working acceptance record** until Desktop regression tes
 | --- | --- |
 | Deployment version | `0.4.4-dev.12` |
 | Behavioral source pinned for Gate 5 | `e26e6e571e51e628c754da5c353fa6fd94c5daac` |
-| `deployment` HEAD while this record was prepared | `f96eea951169546a8eccb542a61a5b17eb30de5d` |
+| Canonical release source | `8d429a007db7eaed0df8ec5ae9c7750d9c8cfaf4` |
 | Tracking issue | `#18` |
 | iOS runtime acceptance | ✅ passed, user-confirmed 2026-09-04 |
 | Desktop regression acceptance | ✅ passed, user-confirmed 2026-09-04 |
 | Gate 5 amd64 image build | ✅ passed |
 | Gate 5 amd64 publish/manifest | ✅ passed |
-| Normal amd64+aarch64 release path | ⏳ not yet finalized |
-| `main` | untouched |
+| Normal validation/build | ✅ passed — run `33921576192` |
+| Normal amd64+aarch64 publish | ✅ passed — run `33921576250` |
+| Normal multi-arch manifest | ✅ passed — run `33921576250` |
+| Stable promotion | ✅ user-approved 2026-09-04; target `0.4.8` |
 
 ## Objective
 
@@ -32,13 +32,13 @@ The dev.12 work must not reopen or replace the accepted Desktop selection/mouse 
 
 ## Implementation scope
 
-The canonical ttyd base remains `1.7.7` and the intended end state remains a single canonical patch:
+The canonical ttyd base remains `1.7.7` and the final implementation remains a single canonical patch:
 
 `codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch`
 
 The dev.12 keyboard-avoidance behavior uses the browser visual viewport to react to the mobile software keyboard while preserving the already accepted ttyd/mobile controls.
 
-An earlier app-layer attempt was rejected because it referenced a Terminal API that did not exist in that build context. That approach was reverted and must not be resurrected without a new design review.
+An earlier app-layer attempt was rejected because it referenced a Terminal API that did not exist in that build context. That approach was reverted and is not part of the accepted implementation.
 
 ## CI failure that blocked runtime testing
 
@@ -59,23 +59,11 @@ The four type-only corrections are:
 | `const topWindow = window.top as any;` | `const topWindow = window.top;` |
 | `return (window as any).visualViewport;` | `return window.visualViewport;` |
 
-These are TypeScript type corrections only. They do not intentionally alter generated runtime behavior.
+These are TypeScript type corrections only. They do not intentionally alter generated runtime behavior. They are now part of the canonical patch itself; no build-time replacement remains.
 
 ## Temporary Gate 5 recovery path
 
-A temporary workflow was added:
-
-`.github/workflows/gate5-amd64-runtime.yml`
-
-Purpose:
-
-1. check out the behavioral dev.12 source at `e26e6e571e51e628c754da5c353fa6fd94c5daac`;
-2. verify version `0.4.4-dev.12`;
-3. apply only the four type corrections above in the CI checkout;
-4. build the real `codex/Dockerfile` for `amd64`;
-5. capture and post actionable build diagnostics to issue `#18` on failure;
-6. push the amd64 image;
-7. publish a single-architecture `0.4.4-dev.12` manifest so the Home Assistant runtime test can proceed.
+A temporary workflow was used to unblock runtime acceptance while the four lint-only corrections were still outside the canonical patch.
 
 Successful Gate 5 run:
 
@@ -84,7 +72,7 @@ Successful Gate 5 run:
 - image push: ✅
 - amd64 manifest publish: ✅
 
-This workflow is a **temporary acceptance/recovery mechanism**, not the desired permanent production pipeline.
+The temporary Gate 5 workflow was removed during finalization and is not part of the release pipeline.
 
 ## Runtime acceptance
 
@@ -100,7 +88,7 @@ The iOS result is accepted for the dev.12 keyboard-avoidance objective.
 
 **Status: ✅ passed**
 
-The Desktop regression check must confirm that previously accepted behavior remains intact, especially:
+Desktop regression acceptance was user-confirmed on 2026-09-04. The accepted Desktop behavior remains intact, including:
 
 - normal terminal input;
 - terminal resize/layout behavior;
@@ -110,24 +98,26 @@ The Desktop regression check must confirm that previously accepted behavior rema
 - browser/OS right-click behavior;
 - no regression from mobile-only controls or keyboard avoidance.
 
-Desktop regression acceptance was user-confirmed on 2026-09-04. The accepted Desktop behavior remains intact.
+## Canonical release finalization
 
-## Release finalization
+The final `deployment` release source is `8d429a007db7eaed0df8ec5ae9c7750d9c8cfaf4`.
 
-Once Desktop is confirmed green:
+Completed items:
 
-1. fold the four TypeScript corrections into `codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch` itself;
-2. ensure no permanent build-time `sed`/replacement layer remains for this fix;
-3. remove or neutralize the temporary Gate 5 recovery workflow once it is no longer needed;
-4. run the normal validation/build pipeline from the resulting `deployment` HEAD;
-5. require normal `amd64` and `aarch64` builds to pass;
-6. publish the normal multi-architecture deployment manifest;
-7. update this record with the final commit SHA, workflow run IDs, and Desktop result;
-8. update issue `#18` and close it only when all acceptance criteria are satisfied;
-9. keep `main` untouched until the user explicitly approves promotion.
+1. the four TypeScript corrections are folded into `codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch`;
+2. no permanent build-time `sed`/replacement layer remains;
+3. the temporary Gate 5 workflow has been removed;
+4. regression tests assert the typed canonical forms and reject the four old `any` forms;
+5. normal validation and the independent amd64 validation build passed in run `33921576192`;
+6. normal `amd64` and `aarch64` deployment image builds passed in run `33921576250`;
+7. the normal deployment multi-architecture manifest passed in run `33921576250`;
+8. iPhone and Desktop runtime acceptance both passed;
+9. the user explicitly approved promotion to `main` on 2026-09-04.
+
+## Stable promotion
+
+At approval time, stable `main` is already at `0.4.7` and contains newer Codex CLI update commits. The accepted dev.12 product state is therefore promoted as **`0.4.8`**, while preserving the newer stable Codex CLI/tooling state rather than overwriting `main` with the older deployment metadata.
 
 ## Acceptance rule
 
-The successful amd64 Gate 5 run proves that the dev.12 runtime behavior can be built and tested after the demonstrated type-only lint fix. It does **not** replace the requirement to restore the canonical patch and normal multi-architecture pipeline before dev.12 is considered release-complete.
-
-The final state must remain reproducible from GitHub without relying on chat history or an undocumented CI mutation.
+Dev.12 is release-complete. Its final state is reproducible from GitHub through the normal validation and multi-architecture publication pipeline and no longer depends on the temporary Gate 5 mutation or chat history.
