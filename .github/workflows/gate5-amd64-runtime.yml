@@ -43,7 +43,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-      id-token: write
+      issues: write
       packages: write
     strategy:
       fail-fast: false
@@ -60,22 +60,50 @@ jobs:
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           grep -F 'version: "0.4.4-dev.12"' codex/config.yaml
 
-      - name: Build and publish Gate 5 image
-        uses: home-assistant/builder/actions/build-image@2026.06.0
-        with:
-          arch: ${{ matrix.arch }}
-          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
-          context: codex
-          image: ${{ matrix.image }}
-          image-tags: |
-            ${{ env.VERSION }}
-          labels: |
-            io.hass.name=Codex Deployment
-            io.hass.description=Temporary amd64 Gate 5 runtime acceptance image
-            io.hass.type=app
-            io.hass.gate5-source=${{ env.TARGET_SHA }}
-          push: "true"
-          version: ${{ env.VERSION }}
+      - name: Log in to GHCR
+        shell: bash
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Build Gate 5 image with diagnostic capture
+        id: docker-build
+        shell: bash
+        env:
+          TARGET_IMAGE: ${{ matrix.image }}:${{ env.VERSION }}
+        run: |
+          set +e
+          docker build \
+            --progress=plain \
+            --build-arg BUILD_VERSION="${VERSION}" \
+            --build-arg BUILD_ARCH=amd64 \
+            --label io.hass.name="Codex Deployment" \
+            --label io.hass.description="Temporary amd64 Gate 5 runtime acceptance image" \
+            --label io.hass.type=app \
+            --label io.hass.gate5-source="${TARGET_SHA}" \
+            -t "${TARGET_IMAGE}" \
+            codex 2>&1 | tee /tmp/gate5-build.log
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "${status}" -ne 0 ]; then
+            {
+              echo "## Gate 5 amd64 build diagnostic"
+              echo
+              echo "Pinned source: \`${TARGET_SHA}\`"
+              echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+              echo
+              echo '```text'
+              tail -n 180 /tmp/gate5-build.log
+              echo '```'
+            } > /tmp/gate5-issue-comment.md
+            gh issue comment 18 --repo "${GITHUB_REPOSITORY}" --body-file /tmp/gate5-issue-comment.md || true
+            exit "${status}"
+          fi
+
+      - name: Push Gate 5 amd64 image
+        shell: bash
+        env:
+          TARGET_IMAGE: ${{ matrix.image }}:${{ env.VERSION }}
+        run: docker push "${TARGET_IMAGE}"
 
   manifest:
     name: Publish amd64 Gate 5 manifest
