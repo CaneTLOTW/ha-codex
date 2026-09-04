@@ -10,12 +10,16 @@ from pathlib import Path
 CODEX_DIR = Path(__file__).resolve().parents[1]
 START = CODEX_DIR / "rootfs/usr/local/bin/codex-start"
 SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
+SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"
 MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
 DOCKERFILE = CODEX_DIR / "Dockerfile"
 TTYD_PATCH_DIR = CODEX_DIR / "ttyd-mobile-keys"
 MOBILE_PATCH = TTYD_PATCH_DIR / "ttyd-1.7.7-mobile-keys.patch"
 OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
+HA_READONLY = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly"
+HA_READONLY_ROOT = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly-root-helper"
+SUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"
 
 
 class ModernizationTests(unittest.TestCase):
@@ -40,6 +44,24 @@ class ModernizationTests(unittest.TestCase):
         start_text = START.read_text(encoding="utf-8")
         self.assertIn("enable_mcp=\"$(jq -r '.enable_mcp' /data/options.json)\"", start_text)
         self.assertNotIn(".enable_mcp // true", start_text)
+
+    def test_runtime_codex_self_update_is_disabled(self):
+        shell_text = SHELL.read_text(encoding="utf-8")
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / "config.toml"
+            managed = root / "mcp.json"
+            config.write_text("check_for_update_on_startup = true\n", encoding="utf-8")
+            managed.write_text("[]\n", encoding="utf-8")
+            result = self.run_merge(config, managed)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            parsed = tomllib.loads(config.read_text(encoding="utf-8"))
+            self.assertIs(parsed["check_for_update_on_startup"], False)
+        self.assertIn("check_for_update_on_startup=false", shell_text)
+        self.assertRegex(dockerfile, r"(?m)^ARG CODEX_VERSION=\d+\.\d+\.\d+$")
+        self.assertIn("npm install -g @openai/codex@${CODEX_VERSION}", dockerfile)
+        self.assertNotIn("npm install -g @openai/codex@latest", dockerfile)
 
     def test_mobile_terminal_patch_is_canonical_and_served(self):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
@@ -70,6 +92,20 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("Native text selection and paste mode", patch)
         self.assertIn("toggleNativeSelection", patch)
         self.assertIn("shouldUseNativeTouchSelection", patch)
+        self.assertIn("shouldUseTouchControls", patch)
+        self.assertIn("maxTouchPoints", patch)
+        self.assertIn("Android|iPhone|iPad|iPod", patch)
+        self.assertIn("userAgentData?.mobile", patch)
+        self.assertIn("coarsePrimaryPointer", patch)
+        self.assertIn("this.touchControls && (", patch)
+        self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
+        self.assertIn("if (this.touchControls) {", patch)
+        self.assertIn("const selectionMode = this.xterm.toggleNativeSelection();", patch)
+        self.assertIn("this.setState({ selectionMode });", patch)
+        self.assertIn("private pressKeyboardDismiss(event: PointerEvent)", patch)
+        self.assertIn("this.xterm.blur();", patch)
+        self.assertIn("private pressKeyboardShow(event: PointerEvent)", patch)
+        self.assertIn("this.xterm.showKeyboard();", patch)
         self.assertIn("ttyd-native-touch-selection", patch)
         self.assertIn("this.terminal.paste(text)", patch)
         self.assertIn("Selection unavailable", patch)
@@ -91,11 +127,59 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("--index /usr/share/ttyd/mobile-index.html", start_text)
         self.assertIn("bind -n PPage copy-mode", dockerfile)
         self.assertFalse(OLD_PATCH.exists())
+        # Desktop keeps the upstream ttyd/xterm parent DOM; the mobile wrapper is rendered only on detected touch devices.
+        self.assertIn("class={this.touchControls ? 'ttyd-touch-controls' : undefined}", patch)
+        self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
+        self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
+
+    def test_readonly_ha_helper_and_agent_guidance(self):
+        root = HA_READONLY_ROOT.read_text(encoding="utf-8")
+        wrapper = HA_READONLY.read_text(encoding="utf-8")
+        sudoers = SUDOERS.read_text(encoding="utf-8")
+        start_text = START.read_text(encoding="utf-8")
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+
+        self.assertIn("ha-readonly-root-helper", wrapper)
+        self.assertIn('[[ $# -eq 2 ]] || deny', root)
+        self.assertIn('[[ "$1" == "core" ]] || deny', root)
+        self.assertIn("info|check|logs", root)
+        self.assertIn("SUPERVISOR_TOKEN=", root)
+        self.assertIn("exec /usr/local/bin/ha", root)
+        self.assertIn("ha-readonly-root-helper", sudoers)
+        self.assertIn("ha-readonly core info", start_text)
+        self.assertIn("ha-readonly core check", start_text)
+        self.assertIn("ha-readonly core logs", start_text)
+        self.assertIn("Supervisor token is intentionally removed", start_text)
+        self.assertIn("ha-readonly", dockerfile)
 
     def test_web_session_keeps_scrollback(self):
         shell_text = SHELL.read_text(encoding="utf-8")
         self.assertIn("tui.alternate_screen", shell_text)
         self.assertIn('"never"', shell_text)
+
+    def test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection(self):
+        session_text = SESSION.read_text(encoding="utf-8")
+        patch = MOBILE_PATCH.read_text(encoding="utf-8")
+        self.assertIn('tmux -S "$tmux_socket" set-option -g mouse on', session_text)
+        self.assertIn('unbind-key -n MouseDown3Pane', session_text)
+        self.assertIn('unbind-key -n M-MouseDown3Pane', session_text)
+        self.assertIn('tmux -S "$tmux_socket" attach-session -t codex', session_text)
+        self.assertIn("installDesktopSelectionPreference", patch)
+        self.assertIn("desktopSelectionActive", patch)
+        self.assertIn("Object.defineProperty(event, 'shiftKey'", patch)
+        self.assertIn("mouseEvent.button !== 0 || mouseEvent.altKey", patch)
+        self.assertIn("window.matchMedia?.('(hover: none) and (pointer: coarse)')", patch)
+        self.assertIn("installDesktopSelectionPreference", patch)
+        self.assertIn("Object.defineProperty(event, 'shiftKey'", patch)
+        self.assertIn("stopImmediatePropagation", patch)
+        self.assertIn("beforeInputFallback", patch)
+        self.assertIn("inputEvent.inputType !== 'insertFromPaste'", patch)
+        self.assertIn("xterm-char-measure-element", patch)
+        self.assertIn("xterm-width-cache-measure-container", patch)
+        self.assertIn("if (!this.nativeSelectionMode) this.terminal.focus();", patch)
+        self.assertNotIn("if (this.nativeSelectionMode) this.terminal.blur();", patch)
+        self.assertNotIn("installDesktopShiftSelectionScroll", patch)
+        self.assertNotIn("desktopSelectionAnchor", patch)
 
     def test_prepare_mcp_keeps_bearer_value_out_of_server_json(self):
         with tempfile.TemporaryDirectory() as tmp:

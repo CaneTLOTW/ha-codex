@@ -1,9 +1,9 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..8963313 100644
+index b42bf15..4647c7f 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,18 +11,53 @@ interface Props extends XtermOptions {
-
+@@ -11,30 +11,188 @@ interface Props extends XtermOptions {
+ 
  interface State {
      modal: boolean;
 +    ctrl: boolean;
@@ -11,8 +11,8 @@ index b42bf15..8963313 100644
 +    shift: boolean;
 +    shiftLock: boolean;
 +    selectionMode: boolean;
- }
-
++}
++
 +interface MobileKey {
 +    label: string;
 +    ariaLabel: string;
@@ -33,11 +33,35 @@ index b42bf15..8963313 100644
 +    { label: 'PgDn', ariaLabel: 'Scroll one page down', value: '\x1b[6~', page: 'down' },
 +];
 +
++function shouldUseTouchControls(targetWindow: Window): boolean {
++    const navigator = targetWindow.navigator as Navigator & {
++        maxTouchPoints?: number;
++        userAgentData?: { mobile?: boolean };
++    };
++    const touchPoints = navigator.maxTouchPoints ?? 0;
++    if (touchPoints <= 0) return false;
++
++    const mobilePlatform =
++        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++        (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++        navigator.userAgentData?.mobile === true;
++    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++
++    return mobilePlatform || coarsePrimaryPointer;
+ }
+ 
  export class Terminal extends Component<Props, State> {
      private container: HTMLElement;
      private xterm: Xterm;
++    private host: HTMLElement;
 +    private touchStartY?: number;
-
++    private keyboardViewport?: VisualViewport;
++    private keyboardBaseViewportHeight = 0;
++    private keyboardBaseHostHeight = 0;
++    private keyboardVisible = false;
++    private keyboardResizeHandler?: () => void;
++    private readonly touchControls = shouldUseTouchControls(window);
+ 
      constructor(props: Props) {
          super();
 -        this.xterm = new Xterm(props, this.showModal);
@@ -51,49 +75,129 @@ index b42bf15..8963313 100644
 +        };
 +        this.xterm = new Xterm(props, this.showModal, this.transformInput);
      }
-
+ 
      async componentDidMount() {
 +        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);
          await this.xterm.refreshToken();
          this.xterm.open(this.container);
++        if (this.touchControls) {
++            const selectionMode = this.xterm.toggleNativeSelection();
++            this.setState({ selectionMode });
++            this.installKeyboardAvoidance();
++        }
          this.xterm.connect();
-@@ -32,9 +67,30 @@ export class Terminal extends Component<Props, State> {
+     }
+ 
+     componentWillUnmount() {
++        this.uninstallKeyboardAvoidance();
          this.xterm.dispose();
      }
-
+ 
 -    render({ id }: Props, { modal }: State) {
++    private resolveKeyboardViewport() {
++        try {
++            const topWindow = window.top;
++            if (topWindow && topWindow !== window && topWindow.visualViewport) return topWindow.visualViewport;
++        } catch (e) {
++            // Home Assistant ingress can make the top window cross-origin.
++        }
++        return window.visualViewport;
++    }
++
++    private installKeyboardAvoidance() {
++        const viewport = this.resolveKeyboardViewport();
++        if (!viewport || !this.host) return;
++
++        this.keyboardViewport = viewport;
++        this.keyboardBaseViewportHeight = viewport.height;
++        this.keyboardBaseHostHeight = this.host.getBoundingClientRect().height;
++        this.keyboardResizeHandler = () => this.updateKeyboardAvoidance();
++        viewport.addEventListener('resize', this.keyboardResizeHandler);
++    }
++
++    private uninstallKeyboardAvoidance() {
++        if (this.keyboardViewport && this.keyboardResizeHandler) {
++            this.keyboardViewport.removeEventListener('resize', this.keyboardResizeHandler);
++        }
++        this.resetKeyboardAvoidance();
++        this.keyboardViewport = undefined;
++        this.keyboardResizeHandler = undefined;
++    }
++
++    private updateKeyboardAvoidance() {
++        if (!this.keyboardViewport || !this.host) return;
++
++        const active = document.activeElement as HTMLElement;
++        const inputFocused = !!active && active.classList.contains('xterm-helper-textarea');
++        const shrink = this.keyboardBaseViewportHeight - this.keyboardViewport.height;
++        if (!inputFocused || shrink < 120) {
++            this.resetKeyboardAvoidance();
++            if (!inputFocused) {
++                this.keyboardBaseViewportHeight = this.keyboardViewport.height;
++                this.keyboardBaseHostHeight = this.host.getBoundingClientRect().height;
++            }
++            return;
++        }
++
++        const opening = !this.keyboardVisible;
++        this.keyboardVisible = true;
++        const hostHeight = Math.max(160, Math.round(this.keyboardBaseHostHeight - shrink));
++        this.host.style.height = `${hostHeight}px`;
++        this.xterm.fit();
++        if (opening) this.xterm.scrollToBottom();
++    }
++
++    private resetKeyboardAvoidance() {
++        if (!this.host) return;
++        const changed = this.keyboardVisible || this.host.style.height !== '';
++        this.keyboardVisible = false;
++        this.host.style.height = '';
++        if (changed) this.xterm.fit();
++    }
++
 +    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
          return (
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
-+            <div id={id}>
-+                <div
-+                    class="terminal-viewport"
-+                    ref={c => (this.container = c as HTMLElement)}
-+                    onTouchStart={this.startTouchScroll}
-+                    onTouchMove={this.continueTouchScroll}
-+                    onTouchEnd={this.finishTouchScroll}
-+                    onTouchCancel={this.cancelTouchScroll}
-+                />
-+                <nav class="mobile-keys" aria-label="Terminal special keys">
-+                    {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
-+                    {this.renderSelectionMode(selectionMode)}
-+                    {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
-+                    {this.renderKeyboardShow()}
-+                    {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-+                    {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-+                    {this.renderModifier('Alt', alt, 'alt')}
-+                    {this.renderModifier('Shift', shift, 'shift')}
-+                    {this.renderShiftLock(shiftLock)}
-+                    {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
-+                    {this.renderKeyboardDismiss()}
-+                </nav>
++            <div
++                id={id}
++                class={this.touchControls ? 'ttyd-touch-controls' : undefined}
++                ref={c => {
++                    this.host = c as HTMLElement;
++                    if (!this.touchControls) this.container = c as HTMLElement;
++                }}
++            >
++                {this.touchControls && (
++                    <div
++                        class="terminal-viewport"
++                        ref={c => (this.container = c as HTMLElement)}
++                        onTouchStart={this.startTouchScroll}
++                        onTouchMove={this.continueTouchScroll}
++                        onTouchEnd={this.finishTouchScroll}
++                        onTouchCancel={this.cancelTouchScroll}
++                    />
++                )}
++                {this.touchControls && (
++                    <nav class="mobile-keys" aria-label="Terminal special keys">
++                        {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
++                        {this.renderSelectionMode(selectionMode)}
++                        {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
++                        {this.renderKeyboardShow()}
++                        {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
++                        {this.renderModifier('Ctrl', ctrl, 'ctrl')}
++                        {this.renderModifier('Alt', alt, 'alt')}
++                        {this.renderModifier('Shift', shift, 'shift')}
++                        {this.renderShiftLock(shiftLock)}
++                        {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
++                        {this.renderKeyboardDismiss()}
++                    </nav>
++                )}
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +101,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +203,280 @@ export class Terminal extends Component<Props, State> {
          );
      }
-
+ 
 +    @bind
 +    private renderMobileKey(key: MobileKey) {
 +        return (
@@ -232,11 +336,15 @@ index b42bf15..8963313 100644
 +    private pressKeyboardDismiss(event: PointerEvent) {
 +        event.preventDefault();
 +        this.xterm.blur();
++        this.resetKeyboardAvoidance();
 +    }
 +
 +    @bind
 +    private clickKeyboardDismiss(event: MouseEvent) {
-+        if (event.detail === 0) this.xterm.blur();
++        if (event.detail === 0) {
++            this.xterm.blur();
++            this.resetKeyboardAvoidance();
++        }
 +    }
 +
 +    @bind
@@ -368,13 +476,13 @@ index b42bf15..8963313 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..cf75422 100644
+index b643f92..47391b5 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -74,6 +74,25 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
+@@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
      return toDisposable(() => target.removeEventListener(type, listener));
  }
-
+ 
 +function addCapturedEventListener(
 +    target: EventTarget,
 +    type: string,
@@ -386,18 +494,34 @@ index b643f92..cf75422 100644
 +}
 +
 +function shouldUseNativeTouchSelection(targetWindow: Window): boolean {
-+    const navigator = targetWindow.navigator as Navigator & { maxTouchPoints?: number };
-+    const appleTouchDevice =
-+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-+        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1);
-+    const coarsePointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? true;
-+    return appleTouchDevice && coarsePointer;
++    const navigator = targetWindow.navigator as Navigator & {
++        maxTouchPoints?: number;
++        userAgentData?: { mobile?: boolean };
++    };
++    const touchPoints = navigator.maxTouchPoints ?? 0;
++    if (touchPoints <= 0) return false;
++
++    const mobilePlatform =
++        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++        (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++        navigator.userAgentData?.mobile === true;
++    const coarsePrimaryPointer = targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++
++    return mobilePlatform || coarsePrimaryPointer;
 +}
 +
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -96,13 +115,21 @@ export class Xterm {
+@@ -82,6 +109,7 @@ export class Xterm {
+     private pending = 0;
+ 
+     private terminal: Terminal;
++    private desktopSelectionActive = false;
+     private fitAddon = new FitAddon();
+     private overlayAddon = new OverlayAddon();
+     private webglAddon?: WebglAddon;
+@@ -96,13 +124,21 @@ export class Xterm {
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
@@ -406,9 +530,9 @@ index b643f92..cf75422 100644
 +    private requestedRenderer: RendererType = 'canvas';
 +    private nativeSelectionCapable = false;
 +    private nativeSelectionMode = false;
-
+ 
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-
+ 
      constructor(
          private options: XtermOptions,
 -        private sendCb: () => void
@@ -418,16 +542,31 @@ index b643f92..cf75422 100644
 +    ) {
 +        this.requestedRenderer = options.clientOptions.rendererType;
 +    }
-
+ 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +149,35 @@ export class Xterm {
+@@ -111,6 +147,14 @@ export class Xterm {
+         this.disposables.length = 0;
+     }
+ 
++    public fit() {
++        this.fitAddon.fit();
++    }
++
++    public scrollToBottom() {
++        this.terminal.scrollToBottom();
++    }
++
+     @bind
+     private register<T extends IDisposable>(d: T): T {
+         this.disposables.push(d);
+@@ -122,6 +166,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
-
+ 
 +    @bind
 +    public focus() {
-+        if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches) {
++        if (!shouldUseNativeTouchSelection(window)) {
 +            this.terminal?.focus();
 +        }
 +    }
@@ -457,7 +596,7 @@ index b643f92..cf75422 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +205,8 @@ export class Xterm {
+@@ -149,6 +222,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -466,22 +605,93 @@ index b643f92..cf75422 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +218,62 @@ export class Xterm {
+@@ -160,9 +235,154 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
-
+ 
          terminal.open(parent);
 +        this.installNativeTouchSelection();
++        this.installDesktopSelectionPreference();
          fitAddon.fit();
      }
-
+ 
++    /**
++     * Backport the mouse arbitration added upstream as xterm's
++     * `mouseEventsRequireAlt` option. ttyd 1.7.7 is pinned to xterm 5.x, so we
++     * keep that stable stack and only make plain desktop left-drag look like
++     * xterm's existing forced-selection gesture. Wheel events are untouched and
++     * continue to the application/tmux. Holding Alt leaves application mouse
++     * interaction untouched as well.
++     */
++    private installDesktopSelectionPreference() {
++        const element = this.terminal.element;
++        if (!element) return;
++
++        const navigator = window.navigator as Navigator & {
++            maxTouchPoints?: number;
++            userAgentData?: { mobile?: boolean };
++        };
++        const touchPoints = navigator.maxTouchPoints ?? 0;
++        const mobilePlatform =
++            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
++            (navigator.platform === 'MacIntel' && touchPoints > 1) ||
++            navigator.userAgentData?.mobile === true;
++        const coarsePrimaryPointer = window.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
++        if (touchPoints > 0 && (mobilePlatform || coarsePrimaryPointer)) return;
++
++        const forceSelectionModifier = (event: MouseEvent) => {
++            if (event.altKey || event.shiftKey) return;
++            try {
++                Object.defineProperty(event, 'shiftKey', {
++                    configurable: true,
++                    value: true,
++                });
++            } catch {
++                // Keep upstream behavior if the browser refuses event decoration.
++            }
++        };
++
++        const onMouseDown = (event: Event) => {
++            const mouseEvent = event as MouseEvent;
++            if (mouseEvent.button !== 0 || mouseEvent.altKey) return;
++            this.desktopSelectionActive = true;
++            forceSelectionModifier(mouseEvent);
++        };
++        const onMouseMove = (event: Event) => {
++            if (!this.desktopSelectionActive) return;
++            forceSelectionModifier(event as MouseEvent);
++        };
++        const onMouseUp = (event: Event) => {
++            if (!this.desktopSelectionActive) return;
++            forceSelectionModifier(event as MouseEvent);
++            this.desktopSelectionActive = false;
++        };
++        const onBlur = () => {
++            this.desktopSelectionActive = false;
++        };
++
++        element.addEventListener('mousedown', onMouseDown, true);
++        document.addEventListener('mousemove', onMouseMove, true);
++        document.addEventListener('mouseup', onMouseUp, true);
++        window.addEventListener('blur', onBlur, true);
++        this.register(
++            toDisposable(() => {
++                element.removeEventListener('mousedown', onMouseDown, true);
++                document.removeEventListener('mousemove', onMouseMove, true);
++                document.removeEventListener('mouseup', onMouseUp, true);
++                window.removeEventListener('blur', onBlur, true);
++            })
++        );
++    }
++
 +    private installNativeTouchSelection() {
 +        if (!this.nativeSelectionCapable || !this.terminal.element) return;
 +
 +        const terminalElement = this.terminal.element;
 +        const guardTouchGesture = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
-+            const target = event.target as Element | null;
-+            if (!target?.closest('.xterm-rows, .xterm-helper-textarea')) return;
++            // In native iOS selection mode Safari must own the entire touch
++            // gesture consistently. Letting xterm's gesture layer receive
++            // touches that start between rows causes the jumpy split behavior.
 +            event.stopPropagation();
 +        };
 +
@@ -495,13 +705,30 @@ index b643f92..cf75422 100644
 +        const pasteHandler = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
 +            const pasteEvent = event as ClipboardEvent;
-+            if (pasteEvent.clipboardData) {
-+                // xterm's normal paste handler will consume clipboardData. Prevent the
-+                // browser from inserting the same text into the helper textarea again.
-+                pasteEvent.preventDefault();
-+            }
++            const text = pasteEvent.clipboardData?.getData('text/plain');
++            if (!text) return;
++
++            // Handle iOS paste directly instead of relying on xterm's hidden
++            // textarea listener ordering. Capture + stopImmediatePropagation
++            // guarantees one bracketed-paste path and avoids duplicate text.
++            pasteEvent.preventDefault();
++            pasteEvent.stopImmediatePropagation();
++            textarea.value = '';
++            this.terminal.paste(text);
 +        };
 +        this.register(addCapturedEventListener(textarea, 'paste', pasteHandler));
++
++        const beforeInputFallback = (event: Event) => {
++            if (!this.nativeSelectionMode) return;
++            const inputEvent = event as InputEvent;
++            if (inputEvent.inputType !== 'insertFromPaste' || !inputEvent.data) return;
++
++            inputEvent.preventDefault();
++            inputEvent.stopImmediatePropagation();
++            textarea.value = '';
++            this.terminal.paste(inputEvent.data);
++        };
++        this.register(addCapturedEventListener(textarea, 'beforeinput', beforeInputFallback));
 +
 +        const inputFallback = (event: Event) => {
 +            if (!this.nativeSelectionMode) return;
@@ -512,7 +739,7 @@ index b643f92..cf75422 100644
 +            textarea.value = '';
 +            this.terminal.paste(text);
 +            inputEvent.preventDefault();
-+            inputEvent.stopPropagation();
++            inputEvent.stopImmediatePropagation();
 +        };
 +        this.register(addCapturedEventListener(textarea, 'input', inputFallback));
 +    }
@@ -522,14 +749,18 @@ index b643f92..cf75422 100644
 +        terminalElement?.classList.toggle('ttyd-native-touch-selection', this.nativeSelectionMode);
 +        this.parent?.classList.toggle('ttyd-native-touch-selection-host', this.nativeSelectionMode);
 +        this.setRendererType(this.nativeSelectionMode ? 'dom' : this.requestedRenderer);
-+        if (this.nativeSelectionMode) this.terminal.blur();
++        // Do not force-blur the helper textarea on entry. Upstream xterm's iOS
++        // implementation keeps the native textarea available at the cursor so
++        // Safari can expose its long-press Paste action. Exiting selection mode
++        // restores the normal terminal focus path.
++        if (!this.nativeSelectionMode) this.terminal.focus();
 +        this.fitAddon.fit();
 +    }
 +
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +284,7 @@ export class Xterm {
+@@ -173,7 +393,7 @@ export class Xterm {
                  }
              })
          );
@@ -538,7 +769,7 @@ index b643f92..cf75422 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +334,10 @@ export class Xterm {
+@@ -223,7 +443,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -547,13 +778,13 @@ index b643f92..cf75422 100644
 +            if (typeof data === 'string' && data === '\r') this.requestManualReconnect();
 +            return;
 +        }
-
+ 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +352,15 @@ export class Xterm {
+@@ -238,6 +461,15 @@ export class Xterm {
          }
      }
-
+ 
 +    @bind
 +    private requestManualReconnect() {
 +        if (this.manualReconnectPending) return;
@@ -566,23 +797,23 @@ index b643f92..cf75422 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +376,7 @@ export class Xterm {
+@@ -253,6 +485,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
 +        this.manualReconnectPending = false;
-
+ 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +398,7 @@ export class Xterm {
+@@ -274,6 +507,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 +        this.manualReconnectPending = false;
-
+ 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +414,7 @@ export class Xterm {
+@@ -289,8 +523,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -592,7 +823,7 @@ index b643f92..cf75422 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +503,8 @@ export class Xterm {
+@@ -379,7 +612,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
@@ -603,12 +834,12 @@ index b643f92..cf75422 100644
                  case 'disableLeaveAlert':
                      if (value) {
 diff --git a/html/src/style/index.scss b/html/src/style/index.scss
-index 0f9244b..5cd7fc2 100644
+index 0f9244b..c8b266c 100644
 --- a/html/src/style/index.scss
 +++ b/html/src/style/index.scss
-@@ -7,12 +7,115 @@ body {
+@@ -7,12 +7,129 @@ body {
  }
-
+ 
  #terminal-container {
 +  display: flex;
 +  flex-direction: column;
@@ -619,7 +850,6 @@ index 0f9244b..5cd7fc2 100644
 +  .terminal-viewport {
 +    flex: 1 1 auto;
 +    min-height: 0;
-+    overflow: hidden;
 +  }
    .terminal {
      padding: 5px;
@@ -632,6 +862,10 @@ index 0f9244b..5cd7fc2 100644
 +}
 +
 +@media (hover: none), (pointer: coarse), (max-width: 768px) {
++  .terminal-viewport {
++    overflow: hidden;
++  }
++
 +  .terminal-viewport,
 +  .terminal-viewport .xterm {
 +    touch-action: none;
@@ -658,6 +892,17 @@ index 0f9244b..5cd7fc2 100644
 +
 +  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-rows span {
 +    display: inline !important;
++  }
++
++  // Keep xterm's DOM measurement helpers out of Safari's native selection
++  // layout. This mirrors the upstream iOS native-selection fix and avoids
++  // measurement nodes affecting wrapped/box-drawing output.
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-char-measure-element,
++  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-width-cache-measure-container {
++    position: absolute !important;
++    visibility: hidden !important;
++    left: -9999em !important;
++    top: 0 !important;
 +  }
 +
 +  .terminal-viewport .xterm.ttyd-native-touch-selection .xterm-helper-textarea {

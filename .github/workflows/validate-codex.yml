@@ -9,9 +9,11 @@ on:
       - "README.md"
       - ".github/workflows/validate-codex.yml"
       - ".github/workflows/publish-codex.yml"
+      - ".github/workflows/publish-deployment.yml"
       - ".github/workflows/propose-codex-cli-update.yml"
   push:
     branches:
+      - "deployment"
       - "feat/**"
       - "chore/**"
     paths:
@@ -21,6 +23,7 @@ on:
       - "README.md"
       - ".github/workflows/validate-codex.yml"
       - ".github/workflows/publish-codex.yml"
+      - ".github/workflows/publish-deployment.yml"
       - ".github/workflows/propose-codex-cli-update.yml"
 
 permissions:

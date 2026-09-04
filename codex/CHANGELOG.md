@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.8] - 2026-09-04
+
+### Added
+- Add hardened iOS native terminal selection/paste handling and touch-only mobile terminal controls.
+- Add software-keyboard avoidance so the active terminal prompt remains visible above the iPhone/iPad keyboard in Home Assistant ingress.
+- Add read-only Home Assistant diagnostic helpers and expanded in-container troubleshooting tooling for Codex sessions.
+
+### Fixed
+- Preserve the accepted Desktop wheel, text-selection, clipboard, right-click, and reconnect behavior while keeping mobile-only handling isolated.
+- Canonicalize the ttyd 1.7.7 mobile patch with typed Visual Viewport handling and remove the temporary dev.12 Gate 5 build workaround.
+
+### Changed
+- Promote the iPhone- and Desktop-accepted `0.4.4-dev.12` deployment state to stable while retaining the newer stable Codex CLI version.
+
 ## [0.4.7] - 2026-09-04
 
 ### Changed

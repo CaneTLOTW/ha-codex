@@ -29,7 +29,7 @@ repair_codex_config() {
 if command -v codex >/dev/null 2>&1; then
   while true; do
     repair_codex_config
-    codex -c 'tui.alternate_screen="never"'
+    codex -c 'tui.alternate_screen="never"' -c 'check_for_update_on_startup=false'
     codex_status=$?
     if [[ "$codex_status" -eq 0 ]]; then
       break

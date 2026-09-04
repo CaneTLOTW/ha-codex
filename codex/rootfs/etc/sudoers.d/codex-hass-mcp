@@ -1,1 +1,1 @@
-%root ALL=(root) NOPASSWD: /usr/local/bin/hass-mcp-root-helper
+%root ALL=(root) NOPASSWD: /usr/local/bin/hass-mcp-root-helper, /usr/local/bin/ha-readonly-root-helper
