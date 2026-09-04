@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.7] - 2026-09-04
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.153.2.
+
 ## [0.4.6] - 2026-09-03
 
 ### Changed
