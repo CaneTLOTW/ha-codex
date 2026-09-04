@@ -13,7 +13,7 @@ It is intentionally a **working acceptance record** until Desktop regression tes
 | `deployment` HEAD while this record was prepared | `f96eea951169546a8eccb542a61a5b17eb30de5d` |
 | Tracking issue | `#18` |
 | iOS runtime acceptance | ✅ passed, user-confirmed 2026-09-04 |
-| Desktop regression acceptance | ⏳ pending |
+| Desktop regression acceptance | ✅ passed, user-confirmed 2026-09-04 |
 | Gate 5 amd64 image build | ✅ passed |
 | Gate 5 amd64 publish/manifest | ✅ passed |
 | Normal amd64+aarch64 release path | ⏳ not yet finalized |
@@ -98,7 +98,7 @@ The iOS result is accepted for the dev.12 keyboard-avoidance objective.
 
 ### Desktop
 
-**Status: ⏳ pending**
+**Status: ✅ passed**
 
 The Desktop regression check must confirm that previously accepted behavior remains intact, especially:
 
@@ -110,9 +110,9 @@ The Desktop regression check must confirm that previously accepted behavior rema
 - browser/OS right-click behavior;
 - no regression from mobile-only controls or keyboard avoidance.
 
-Do not mark dev.12 fully accepted until this check is recorded.
+Desktop regression acceptance was user-confirmed on 2026-09-04. The accepted Desktop behavior remains intact.
 
-## Required finalization after Desktop passes
+## Release finalization
 
 Once Desktop is confirmed green:
 

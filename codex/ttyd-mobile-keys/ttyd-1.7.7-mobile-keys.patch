@@ -55,11 +55,11 @@ index b42bf15..4647c7f 100644
      private xterm: Xterm;
 +    private host: HTMLElement;
 +    private touchStartY?: number;
-+    private keyboardViewport: any;
++    private keyboardViewport?: VisualViewport;
 +    private keyboardBaseViewportHeight = 0;
 +    private keyboardBaseHostHeight = 0;
 +    private keyboardVisible = false;
-+    private keyboardResizeHandler: any;
++    private keyboardResizeHandler?: () => void;
 +    private readonly touchControls = shouldUseTouchControls(window);
  
      constructor(props: Props) {
@@ -96,12 +96,12 @@ index b42bf15..4647c7f 100644
 -    render({ id }: Props, { modal }: State) {
 +    private resolveKeyboardViewport() {
 +        try {
-+            const topWindow = window.top as any;
++            const topWindow = window.top;
 +            if (topWindow && topWindow !== window && topWindow.visualViewport) return topWindow.visualViewport;
 +        } catch (e) {
 +            // Home Assistant ingress can make the top window cross-origin.
 +        }
-+        return (window as any).visualViewport;
++        return window.visualViewport;
 +    }
 +
 +    private installKeyboardAvoidance() {
