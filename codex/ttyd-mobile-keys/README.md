@@ -1,51 +1,24 @@
-# ttyd mobile controls
+# ttyd mobile keys patch
 
-The Codex App builds ttyd 1.7.7 from source and applies one canonical
-`ttyd-1.7.7-mobile-keys.patch` directly to that clean source tree before
-building the customized frontend. No patch-on-patch chain is used.
+This directory contains the single canonical patch applied to ttyd 1.7.7 by the
+Codex add-on build. Keep the patch self-contained and regenerate it against a
+clean ttyd 1.7.7 tree when behavior changes; do not stack follow-up patches.
 
-The mobile toolbar adds `Esc`, `Tab`, `Enter`, one-shot `Ctrl`, `Alt`, and
-`Shift`, persistent Shift Lock, arrow keys, `PgUp`/`PgDn`, explicit keyboard
-show/hide buttons, and a `Sel` mode. On narrow/touch layouts the controls are
-shown as a fixed two-row grid so the toolbar itself does not need horizontal
-scrolling. The App's tmux configuration maps `PgUp` and `PgDn` to copy-mode
-navigation when session persistence is enabled.
+The mobile toolbar adds touch-friendly terminal keys while preserving the
+accepted desktop behavior. Mobile activation is capability-based rather than
+viewport-width-based so narrow desktop windows do not get the mobile UI.
 
-The current mobile row order is intentionally optimized for iOS reachability:
+## iOS native selection and paste
 
-- row 1: `Enter`, `←`, `↓`, `↑`, `→`, `Sel`, `PgUp`, `Kbd↑`
-- row 2: `Esc`, `Tab`, `Ctrl`, `Alt`, `Shift`, `⇪`, `PgDn`, `Kbd↓`
+`Sel` switches xterm to its DOM renderer and lets Safari own touch selection.
+The helper textarea remains available so native long-press Paste can reach
+xterm. Paste handling is captured and forwarded through xterm's `paste()` path,
+with `beforeinput` and `input` fallbacks for `insertFromPaste`.
 
-When ttyd is disconnected, the toolbar `Enter` uses the same manual reconnect path as a physical Enter key instead of trying to write to the closed WebSocket. In embedded Home Assistant ingress, the toolbar avoids adding a second iOS bottom safe-area inset because the parent panel already reserves that space.
-
-One-shot modifiers are consumed only by modifier-eligible keyboard input. Mouse/touch
-reporting sequences and multi-character paste do not clear them, so `Ctrl`/`Alt`/
-`Shift` can be armed before `Kbd↑` or a prompt tap and still apply to the next key.
-
-## iOS selection mode
-
-Normal mobile mode keeps the terminal optimized for input and vertical swipe
-page navigation. `Sel` temporarily changes that behavior on supported Apple
-touch devices:
-
-- ttyd switches xterm from the configured renderer (normally canvas) to the DOM
-  renderer so terminal rows exist as selectable DOM text;
-- native WebKit text selection and touch callouts are enabled for terminal rows;
-- ttyd/xterm touch gesture handling is kept out of the way while native
-  selection is active;
-- the xterm helper textarea remains available for the native iOS paste path,
-  with an `insertFromPaste` fallback routed through xterm's public `paste()`
-  method;
-- leaving `Sel` restores the requested renderer and normal swipe behavior.
-
-On supported mobile/touch devices the terminal now enters `Sel` automatically
-after opening, so native selection/read mode is the default mobile state. `Sel`
-remains a manual toggle and can still be switched off and back on when needed.
-`Kbd↑` and `Kbd↓` keep their existing behavior: they only show or hide the
-software keyboard and do not change selection mode. Copy and native paste remain
-available while `Sel` is active. This path deliberately does not use
-`navigator.clipboard.readText()` and is separate from terminal `Ctrl+C` or
-`Ctrl+V` control sequences.
+The keyboard buttons only show or hide the software keyboard and do not change
+selection mode. Copy and native paste remain available while `Sel` is active.
+This path deliberately does not use `navigator.clipboard.readText()` and is
+separate from terminal `Ctrl+C` or `Ctrl+V` control sequences.
 
 ## Mobile keyboard avoidance
 
@@ -62,7 +35,9 @@ or `Kbd↓` blurs xterm, the inline height is removed and the terminal is fitted
 back to its normal size.
 
 This does not toggle `Sel`, alter paste/input handling, or change the accepted
-desktop selection path.
+desktop selection path. The implementation is part of the one canonical ttyd
+1.7.7 patch; no auxiliary or follow-up keyboard patch is used.
+
 This behavior follows the same native DOM-selection direction discussed in
 [xterm.js #3727](https://github.com/xtermjs/xterm.js/issues/3727) and implemented
 by the in-progress [xterm.js PR #5961](https://github.com/xtermjs/xterm.js/pull/5961),
@@ -78,39 +53,23 @@ mobile layout. The validated `0.4.0` runtime uses Codex CLI `0.151.0`,
 `gpt-5.6-sol`, and `/homeassistant` as the working directory.
 
 The final implementation also contains the dedicated toolbar-Enter reconnect
-path and avoids a duplicate bottom safe-area inset inside Home Assistant
-ingress. These are covered by the maintained patch/regression contract; future
-ttyd/xterm changes should keep them in the same canonical patch rather than
-adding another patch layer.
+path and the accepted desktop mouse-selection backport described below.
 
-Desktop selection remains separate from the mobile controls. On desktop, persistent
-tmux sessions keep mouse reporting enabled so wheel scrolling/history continues to
-work. Because ttyd 1.7.7 is pinned to xterm 5.x, the frontend backports the behavior
-of xterm's newer `mouseEventsRequireAlt` arbitration at the integration layer: plain
-left-drag is decorated as xterm's existing forced-selection gesture, wheel events are
-left untouched for tmux, and holding Alt leaves application mouse interaction alone.
-This does not add a second selection implementation or a second ttyd patch.
+## Desktop selection behavior
 
-On iOS, `Sel` uses Safari's native DOM selection. The helper textarea remains
-available at the cursor for the native Paste action; paste events are captured
-once and forwarded through xterm's `paste()` API. While `Sel` is active Safari
-owns touch gestures consistently, and DOM measurement helpers are hidden from
-the selection layout. Desktop mouse arbitration is unchanged by this path.
+Desktop remains intentionally separate from the touch/mobile path. Wheel input
+continues to scroll terminal/tmux history. Plain left-drag is decorated as
+xterm's forced-selection gesture; holding Alt leaves application mouse handling
+untouched. tmux right-click bindings are removed while the browser/Windows
+context menu remains available. Multi-screen-page selection scrolling is an
+accepted limitation and is not replaced by a custom selection engine.
 
-To validate the patch against a clean ttyd source tree:
+## Touch-only mobile activation
 
-```bash
-git clone --depth 1 --branch 1.7.7 https://github.com/tsl0922/ttyd.git /tmp/ttyd-1.7.7
-git -C /tmp/ttyd-1.7.7 apply /path/to/ttyd-1.7.7-mobile-keys.patch
-cd /tmp/ttyd-1.7.7/html
-corepack enable
-yarn install --immutable
-yarn check
-```
-
-The customized ttyd frontend remains covered by ttyd's MIT license, included
-beside this file.
-
-### Touch-only mobile activation
-
-The mobile keybar, touch swipe handlers, mobile viewport wrapper, native touch-selection mode, and keyboard-avoidance path are activated only when the browser reports real touch capability (`navigator.maxTouchPoints > 0`) together with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch pointer. A narrow desktop browser window no longer activates or renders the mobile path. iPadOS desktop-style user agents are covered through `MacIntel` plus multiple touch points.
+The mobile keybar, touch swipe handlers, mobile viewport wrapper, native
+touch-selection mode, and keyboard-avoidance path are activated only when the
+browser reports real touch capability (`navigator.maxTouchPoints > 0`) together
+with an iOS/iPadOS/Android/mobile-platform signal or a coarse primary touch
+pointer. A narrow desktop browser window no longer activates or renders the
+mobile path. iPadOS desktop-style user agents are covered through `MacIntel`
+plus multiple touch points.
