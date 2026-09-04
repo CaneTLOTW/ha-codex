@@ -26,13 +26,48 @@ Home Assistant then sees the new App version through the normal App Store update
 
 This deliberately replaces runtime `npm install` updates. The running App does **not** modify its own Codex CLI installation; each Codex version is reproducibly built into a published container image and goes through the normal Home Assistant App release path.
 
-## Mobile console
+## Desktop vs iOS terminal behavior
 
-<img width="320" alt="image" src="https://github.com/user-attachments/assets/63e1a482-11e7-49f8-9dbd-026688e1aeba" />
+The maintained ttyd frontend deliberately uses separate desktop and touch/mobile interaction paths. A narrow desktop browser window does **not** activate the mobile toolbar; the mobile UI requires real touch capability plus a mobile/touch platform signal.
 
-The maintained ttyd frontend is validated on-device with Home Assistant Companion on iOS. The current two-row toolbar provides `Enter`, arrows, `Sel`, `PgUp`/`PgDn`, `Esc`, `Tab`, one-shot `Ctrl`/`Alt`/`Shift`, Shift Lock (`⇪`), and explicit keyboard show/hide controls. `Sel` temporarily enables a DOM-backed native-selection path so iOS text selection, Copy, and Paste work without relying on programmatic clipboard reads.
+| Interaction | Desktop / PC | iPhone / iPad |
+| --- | --- | --- |
+| Terminal controls | Normal physical keyboard and ttyd/xterm interaction | Fixed two-row touch toolbar plus the software keyboard |
+| Text selection | Normal mouse drag selection | Enable `Sel`, then long-press/drag with native iOS selection handles |
+| Copy / Paste | Native browser/context-menu and normal terminal shortcuts | Native iOS Copy/Paste while `Sel` is active |
+| Scrolling | Mouse wheel / normal terminal history | Vertical swipe or `PgUp` / `PgDn` |
+| Software keyboard | Not applicable | `Kbd↑` shows it, `Kbd↓` hides it |
+| Keyboard opening | No mobile viewport handling | Terminal automatically shortens so the active prompt remains above the keyboard |
+| Context menu | Native browser/OS context menu remains available | Native iOS selection/callout behavior in `Sel` mode |
 
-Known-good `0.4.0` mobile runtime: **Codex CLI `0.151.0`**, **`gpt-5.6-sol`** (tested with medium reasoning), working directory **`/homeassistant`**, Home Assistant Companion on iPhone. The screenshot is a metadata-stripped repository copy of the final runtime test.
+### iOS mobile console
+
+<img width="360" alt="Codex terminal on iOS with the mobile toolbar and software-keyboard avoidance active" src="docs/assets/ios-keyboard-avoidance-0.4.8.webp" />
+
+*Anonymized stable `0.4.8` runtime screenshot. With the iOS software keyboard open, the terminal and two-row toolbar remain visible above it instead of being covered.*
+
+The iOS toolbar is:
+
+```text
+Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
+Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
+```
+
+| Control | Function |
+| --- | --- |
+| `Enter` | Sends Enter to the terminal. If ttyd is disconnected, it also follows the manual reconnect path. |
+| `←` `↓` `↑` `→` | Sends the corresponding arrow key without forcing the iOS software keyboard open. |
+| `Sel` | Toggles iOS-native selection mode. While active, long-press/drag terminal output and use the native Copy/Paste actions. Disable `Sel` again for normal terminal input and swipe behavior. |
+| `PgUp` / `PgDn` | Moves by terminal pages. With `session_persistence` enabled, page navigation integrates with tmux copy mode. |
+| `Esc` | Sends Escape. |
+| `Tab` | Sends Tab, including normal shell/Codex completion behavior. |
+| `Ctrl` / `Alt` / `Shift` | One-shot modifiers: the modifier applies to the next eligible key and then releases. |
+| `⇪` | Persistent Shift Lock. Tap again to release it. |
+| `Kbd↑` | Focuses terminal input and explicitly opens the iOS software keyboard. |
+| `Kbd↓` | Hides the software keyboard and restores the terminal to its normal full-height layout. |
+| Vertical swipe | Performs page navigation without requiring the keyboard. |
+
+When the iOS keyboard opens, the terminal watches the visual viewport, reduces the existing terminal host by the keyboard height, refits xterm, and brings the active prompt into view. When the keyboard closes or `Kbd↓` is used, the temporary height is removed and the terminal returns to its normal size. This keyboard-avoidance behavior was accepted on iPhone together with the desktop regression path for stable `0.4.8`.
 
 ### Android status
 
@@ -93,6 +128,7 @@ This project is a **Home Assistant App** (formerly called an add-on), not a cust
 - Model, sandbox, approval, MCP, terminal theme, and session-persistence controls in the Home Assistant UI.
 - Touch-friendly two-row mobile terminal controls with `Enter`, `Esc`, `Tab`, one-shot modifiers, Shift Lock, arrows, `Sel`, page navigation, and keyboard controls.
 - Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
+- iOS software-keyboard avoidance that keeps the active terminal prompt and toolbar above the keyboard.
 - Mobile swipe navigation and tmux copy-mode page navigation.
 - Web-terminal Codex sessions that preserve output in xterm scrollback.
 
@@ -108,7 +144,7 @@ The image intentionally includes a practical Home Assistant troubleshooting/deve
 | Data/search | `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find`/coreutils |
 | Editors/session | `nano`, `vim`, `tmux` |
 | Archives | `7z`/p7zip |
-| Home Assistant | Home Assistant CLI (`ha`), bundled `hass-mcp` helper |
+| Home Assistant | Home Assistant CLI (`ha`), authenticated read-only wrapper (`ha-readonly`), bundled `hass-mcp` helper |
 | Codex sandbox/support | `bubblewrap`, ACL tools and the customized ttyd terminal |
 
 The App includes an **SSH client, not an SSH server**; it does not expose a separate inbound SSH service. Tools run inside the App container and remain subject to the App's mounted paths, AppArmor profile and Codex permission mode.
