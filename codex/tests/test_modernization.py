@@ -59,7 +59,9 @@ class ModernizationTests(unittest.TestCase):
             parsed = tomllib.loads(config.read_text(encoding="utf-8"))
             self.assertIs(parsed["check_for_update_on_startup"], False)
         self.assertIn("check_for_update_on_startup=false", shell_text)
-        self.assertIn("ARG CODEX_VERSION=0.152.1", dockerfile)
+        self.assertRegex(dockerfile, r"(?m)^ARG CODEX_VERSION=\d+\.\d+\.\d+$")
+        self.assertIn("npm install -g @openai/codex@${CODEX_VERSION}", dockerfile)
+        self.assertNotIn("npm install -g @openai/codex@latest", dockerfile)
 
     def test_mobile_terminal_patch_is_canonical_and_served(self):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
