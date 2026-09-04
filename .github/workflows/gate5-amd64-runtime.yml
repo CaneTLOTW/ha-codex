@@ -60,6 +60,31 @@ jobs:
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           grep -F 'version: "0.4.4-dev.12"' codex/config.yaml
 
+      - name: Apply Gate 5 type-only ttyd lint fix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch')
+          text = path.read_text()
+          replacements = {
+              'private keyboardViewport: any;': 'private keyboardViewport?: VisualViewport;',
+              'private keyboardResizeHandler: any;': 'private keyboardResizeHandler?: () => void;',
+              'const topWindow = window.top as any;': 'const topWindow = window.top;',
+              'return (window as any).visualViewport;': 'return window.visualViewport;',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected exactly one occurrence of {old!r}, found {count}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+          git diff --check
+          git diff -- codex/ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+
       - name: Log in to GHCR
         shell: bash
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
