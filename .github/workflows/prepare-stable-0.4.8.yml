@@ -38,7 +38,6 @@ jobs:
             .github/workflows/publish-deployment.yml \
             .github/workflows/validate-codex.yml
 
-          # Preserve stable-channel metadata/history from the current main line.
           git checkout "${base_sha}" -- codex/config.yaml codex/CHANGELOG.md
 
           STABLE_CODEX_VERSION="${stable_codex_version}" python3 - <<'PY'
@@ -67,27 +66,22 @@ jobs:
           anchor = '## [0.4.7] - 2026-09-04\n'
           if text.count(anchor) != 1:
               raise SystemExit('0.4.7 changelog anchor missing or duplicated')
-          release = '''## [0.4.8] - 2026-09-04
-
-### Added
-- Add hardened iOS native terminal selection/paste handling and touch-only mobile terminal controls.
-- Add software-keyboard avoidance so the active terminal prompt remains visible above the iPhone/iPad keyboard in Home Assistant ingress.
-- Add read-only Home Assistant diagnostic helpers and expanded in-container troubleshooting tooling for Codex sessions.
-
-### Fixed
-- Preserve the accepted Desktop wheel, text-selection, clipboard, right-click, and reconnect behavior while keeping mobile-only handling isolated.
-- Canonicalize the ttyd 1.7.7 mobile patch with typed Visual Viewport handling and remove the temporary dev.12 Gate 5 build workaround.
-
-### Changed
-- Promote the iPhone- and Desktop-accepted `0.4.4-dev.12` deployment state to stable while retaining the newer stable Codex CLI version.
-
-'''
+          release = (
+              '## [0.4.8] - 2026-09-04\n\n'
+              '### Added\n'
+              '- Add hardened iOS native terminal selection/paste handling and touch-only mobile terminal controls.\n'
+              '- Add software-keyboard avoidance so the active terminal prompt remains visible above the iPhone/iPad keyboard in Home Assistant ingress.\n'
+              '- Add read-only Home Assistant diagnostic helpers and expanded in-container troubleshooting tooling for Codex sessions.\n\n'
+              '### Fixed\n'
+              '- Preserve the accepted Desktop wheel, text-selection, clipboard, right-click, and reconnect behavior while keeping mobile-only handling isolated.\n'
+              '- Canonicalize the ttyd 1.7.7 mobile patch with typed Visual Viewport handling and remove the temporary dev.12 Gate 5 build workaround.\n\n'
+              '### Changed\n'
+              '- Promote the iPhone- and Desktop-accepted `0.4.4-dev.12` deployment state to stable while retaining the newer stable Codex CLI version.\n\n'
+          )
           changelog.write_text(text.replace(anchor, release + anchor))
           PY
 
-          # The preparation workflow is intentionally one-shot and must not land in main.
           rm -f .github/workflows/prepare-stable-0.4.8.yml
-
           git diff --check
           git status --short
 
