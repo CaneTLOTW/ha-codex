@@ -38,6 +38,11 @@ This does not toggle `Sel`, alter paste/input handling, or change the accepted
 desktop selection path. The implementation is part of the one canonical ttyd
 1.7.7 patch; no auxiliary or follow-up keyboard patch is used.
 
+The dev.12 keyboard-avoidance path passed iPhone runtime acceptance and Desktop
+regression acceptance on 2026-09-04. The four temporary Gate 5 TypeScript lint
+workarounds were folded into the canonical patch before the normal multi-arch
+release build; the temporary Gate 5 workflow was removed.
+
 This behavior follows the same native DOM-selection direction discussed in
 [xterm.js #3727](https://github.com/xtermjs/xterm.js/issues/3727) and implemented
 by the in-progress [xterm.js PR #5961](https://github.com/xtermjs/xterm.js/pull/5961),
@@ -48,9 +53,9 @@ fork.
 
 On-device testing with Home Assistant Companion on iPhone has confirmed the
 fixed two-row toolbar, `Sel` mode, native text selection/copy, native paste,
-page navigation, arrow navigation, `Enter`, modifier handling, and the final
-mobile layout. The validated `0.4.0` runtime uses Codex CLI `0.151.0`,
-`gpt-5.6-sol`, and `/homeassistant` as the working directory.
+page navigation, arrow navigation, `Enter`, modifier handling, mobile keyboard
+avoidance, and the final mobile layout. Desktop regression testing has also
+confirmed the accepted mouse/selection/input path remains intact.
 
 The final implementation also contains the dedicated toolbar-Enter reconnect
 path and the accepted desktop mouse-selection backport described below.
