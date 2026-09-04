@@ -22,6 +22,7 @@ class MobileKeyboardAvoidanceTests(unittest.TestCase):
         self.assertIn("this.resetKeyboardAvoidance(host)", patch)
         self.assertIn("maxTouchPoints", patch)
         self.assertIn("pointer: coarse", patch)
+        self.assertIn("private keyboardCleanup: any;", patch)
 
         # dev.12 must not replace the accepted selection or keyboard button paths.
         self.assertIn("const selectionMode = this.xterm.toggleNativeSelection();", patch)
