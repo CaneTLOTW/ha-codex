@@ -49,20 +49,20 @@ available while `Sel` is active. This path deliberately does not use
 
 ## Mobile keyboard avoidance
 
-When the software keyboard opens on a detected touch/mobile device, ttyd tracks
-the visual viewport while xterm's helper textarea has focus. In Home Assistant
-ingress the top-level `visualViewport` is preferred when same-origin access is
-available; otherwise the embedded window viewport is used as a fallback.
+On touch/mobile clients, keyboard avoidance lives in the existing `Terminal`
+mobile path and reuses the already accepted `touchControls` decision. There is no
+second mobile detector and no separate `app.tsx` keyboard state machine.
 
-A keyboard-sized viewport reduction temporarily shortens the existing
-`#terminal-container`, keeping the two-row toolbar and the terminal above the
-keyboard. xterm is re-fitted after every effective height change, and only the
-closed-to-open transition scrolls to the bottom so the active prompt becomes
-visible without continuously stealing manual scrollback position. Closing the
-keyboard, including through `Kbd↓`, restores the normal terminal height. This
-logic does not toggle `Sel`, alter paste/input handling, or change the desktop
-selection path.
+The terminal listens only to `visualViewport.resize` (preferring an accessible
+top-level viewport in Home Assistant ingress). While xterm's helper textarea is
+the active element and the visual viewport shrinks by at least 120 px, the
+existing terminal host is shortened by the same amount, xterm is fitted, and the
+first opening transition scrolls the prompt into view. When the keyboard closes
+or `Kbd↓` blurs xterm, the inline height is removed and the terminal is fitted
+back to its normal size.
 
+This does not toggle `Sel`, alter paste/input handling, or change the accepted
+desktop selection path.
 This behavior follows the same native DOM-selection direction discussed in
 [xterm.js #3727](https://github.com/xtermjs/xterm.js/issues/3727) and implemented
 by the in-progress [xterm.js PR #5961](https://github.com/xtermjs/xterm.js/pull/5961),

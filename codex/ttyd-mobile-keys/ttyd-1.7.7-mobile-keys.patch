@@ -1,9 +1,9 @@
 diff --git a/html/src/components/terminal/index.tsx b/html/src/components/terminal/index.tsx
-index b42bf15..28b275e 100644
+index b42bf15..4647c7f 100644
 --- a/html/src/components/terminal/index.tsx
 +++ b/html/src/components/terminal/index.tsx
-@@ -11,20 +11,77 @@ interface Props extends XtermOptions {
-
+@@ -11,30 +11,188 @@ interface Props extends XtermOptions {
+ 
  interface State {
      modal: boolean;
 +    ctrl: boolean;
@@ -49,13 +49,19 @@ index b42bf15..28b275e 100644
 +
 +    return mobilePlatform || coarsePrimaryPointer;
  }
-
+ 
  export class Terminal extends Component<Props, State> {
      private container: HTMLElement;
      private xterm: Xterm;
++    private host: HTMLElement;
 +    private touchStartY?: number;
++    private keyboardViewport: any;
++    private keyboardBaseViewportHeight = 0;
++    private keyboardBaseHostHeight = 0;
++    private keyboardVisible = false;
++    private keyboardResizeHandler: any;
 +    private readonly touchControls = shouldUseTouchControls(window);
-
+ 
      constructor(props: Props) {
          super();
 -        this.xterm = new Xterm(props, this.showModal);
@@ -69,7 +75,7 @@ index b42bf15..28b275e 100644
 +        };
 +        this.xterm = new Xterm(props, this.showModal, this.transformInput);
      }
-
+ 
      async componentDidMount() {
 +        document.documentElement.classList.toggle('ttyd-embedded', window.self !== window.top);
          await this.xterm.refreshToken();
@@ -77,15 +83,78 @@ index b42bf15..28b275e 100644
 +        if (this.touchControls) {
 +            const selectionMode = this.xterm.toggleNativeSelection();
 +            this.setState({ selectionMode });
++            this.installKeyboardAvoidance();
 +        }
          this.xterm.connect();
      }
-
-@@ -32,9 +89,40 @@ export class Terminal extends Component<Props, State> {
+ 
+     componentWillUnmount() {
++        this.uninstallKeyboardAvoidance();
          this.xterm.dispose();
      }
-
+ 
 -    render({ id }: Props, { modal }: State) {
++    private resolveKeyboardViewport() {
++        try {
++            const topWindow = window.top as any;
++            if (topWindow && topWindow !== window && topWindow.visualViewport) return topWindow.visualViewport;
++        } catch (e) {
++            // Home Assistant ingress can make the top window cross-origin.
++        }
++        return (window as any).visualViewport;
++    }
++
++    private installKeyboardAvoidance() {
++        const viewport = this.resolveKeyboardViewport();
++        if (!viewport || !this.host) return;
++
++        this.keyboardViewport = viewport;
++        this.keyboardBaseViewportHeight = viewport.height;
++        this.keyboardBaseHostHeight = this.host.getBoundingClientRect().height;
++        this.keyboardResizeHandler = () => this.updateKeyboardAvoidance();
++        viewport.addEventListener('resize', this.keyboardResizeHandler);
++    }
++
++    private uninstallKeyboardAvoidance() {
++        if (this.keyboardViewport && this.keyboardResizeHandler) {
++            this.keyboardViewport.removeEventListener('resize', this.keyboardResizeHandler);
++        }
++        this.resetKeyboardAvoidance();
++        this.keyboardViewport = undefined;
++        this.keyboardResizeHandler = undefined;
++    }
++
++    private updateKeyboardAvoidance() {
++        if (!this.keyboardViewport || !this.host) return;
++
++        const active = document.activeElement as HTMLElement;
++        const inputFocused = !!active && active.classList.contains('xterm-helper-textarea');
++        const shrink = this.keyboardBaseViewportHeight - this.keyboardViewport.height;
++        if (!inputFocused || shrink < 120) {
++            this.resetKeyboardAvoidance();
++            if (!inputFocused) {
++                this.keyboardBaseViewportHeight = this.keyboardViewport.height;
++                this.keyboardBaseHostHeight = this.host.getBoundingClientRect().height;
++            }
++            return;
++        }
++
++        const opening = !this.keyboardVisible;
++        this.keyboardVisible = true;
++        const hostHeight = Math.max(160, Math.round(this.keyboardBaseHostHeight - shrink));
++        this.host.style.height = `${hostHeight}px`;
++        this.xterm.fit();
++        if (opening) this.xterm.scrollToBottom();
++    }
++
++    private resetKeyboardAvoidance() {
++        if (!this.host) return;
++        const changed = this.keyboardVisible || this.host.style.height !== '';
++        this.keyboardVisible = false;
++        this.host.style.height = '';
++        if (changed) this.xterm.fit();
++    }
++
 +    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {
          return (
 -            <div id={id} ref={c => (this.container = c as HTMLElement)}>
@@ -93,6 +162,7 @@ index b42bf15..28b275e 100644
 +                id={id}
 +                class={this.touchControls ? 'ttyd-touch-controls' : undefined}
 +                ref={c => {
++                    this.host = c as HTMLElement;
 +                    if (!this.touchControls) this.container = c as HTMLElement;
 +                }}
 +            >
@@ -124,10 +194,10 @@ index b42bf15..28b275e 100644
                  <Modal show={modal}>
                      <label class="file-label">
                          <input onChange={this.sendFile} class="file-input" type="file" multiple />
-@@ -45,6 +133,276 @@ export class Terminal extends Component<Props, State> {
+@@ -45,6 +203,280 @@ export class Terminal extends Component<Props, State> {
          );
      }
-
+ 
 +    @bind
 +    private renderMobileKey(key: MobileKey) {
 +        return (
@@ -266,11 +336,15 @@ index b42bf15..28b275e 100644
 +    private pressKeyboardDismiss(event: PointerEvent) {
 +        event.preventDefault();
 +        this.xterm.blur();
++        this.resetKeyboardAvoidance();
 +    }
 +
 +    @bind
 +    private clickKeyboardDismiss(event: MouseEvent) {
-+        if (event.detail === 0) this.xterm.blur();
++        if (event.detail === 0) {
++            this.xterm.blur();
++            this.resetKeyboardAvoidance();
++        }
 +    }
 +
 +    @bind
@@ -402,13 +476,13 @@ index b42bf15..28b275e 100644
      showModal() {
          this.setState({ modal: true });
 diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/terminal/xterm/index.ts
-index b643f92..b17b8e2 100644
+index b643f92..47391b5 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
 @@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
      return toDisposable(() => target.removeEventListener(type, listener));
  }
-
+ 
 +function addCapturedEventListener(
 +    target: EventTarget,
 +    type: string,
@@ -441,7 +515,7 @@ index b643f92..b17b8e2 100644
      private textEncoder = new TextEncoder();
 @@ -82,6 +109,7 @@ export class Xterm {
      private pending = 0;
-
+ 
      private terminal: Terminal;
 +    private desktopSelectionActive = false;
      private fitAddon = new FitAddon();
@@ -456,9 +530,9 @@ index b643f92..b17b8e2 100644
 +    private requestedRenderer: RendererType = 'canvas';
 +    private nativeSelectionCapable = false;
 +    private nativeSelectionMode = false;
-
+ 
      private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
-
+ 
      constructor(
          private options: XtermOptions,
 -        private sendCb: () => void
@@ -468,13 +542,28 @@ index b643f92..b17b8e2 100644
 +    ) {
 +        this.requestedRenderer = options.clientOptions.rendererType;
 +    }
-
+ 
      dispose() {
          for (const d of this.disposables) {
-@@ -122,6 +158,35 @@ export class Xterm {
+@@ -111,6 +147,14 @@ export class Xterm {
+         this.disposables.length = 0;
+     }
+ 
++    public fit() {
++        this.fitAddon.fit();
++    }
++
++    public scrollToBottom() {
++        this.terminal.scrollToBottom();
++    }
++
+     @bind
+     private register<T extends IDisposable>(d: T): T {
+         this.disposables.push(d);
+@@ -122,6 +166,35 @@ export class Xterm {
          this.zmodemAddon?.sendFile(files);
      }
-
+ 
 +    @bind
 +    public focus() {
 +        if (!shouldUseNativeTouchSelection(window)) {
@@ -507,7 +596,7 @@ index b643f92..b17b8e2 100644
      @bind
      public async refreshToken() {
          try {
-@@ -149,6 +214,8 @@ export class Xterm {
+@@ -149,6 +222,8 @@ export class Xterm {
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -516,15 +605,15 @@ index b643f92..b17b8e2 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +227,154 @@ export class Xterm {
+@@ -160,9 +235,154 @@ export class Xterm {
          terminal.loadAddon(new WebLinksAddon());
-
+ 
          terminal.open(parent);
 +        this.installNativeTouchSelection();
 +        this.installDesktopSelectionPreference();
          fitAddon.fit();
      }
-
+ 
 +    /**
 +     * Backport the mouse arbitration added upstream as xterm's
 +     * `mouseEventsRequireAlt` option. ttyd 1.7.7 is pinned to xterm 5.x, so we
@@ -671,7 +760,7 @@ index b643f92..b17b8e2 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +385,7 @@ export class Xterm {
+@@ -173,7 +393,7 @@ export class Xterm {
                  }
              })
          );
@@ -680,7 +769,7 @@ index b643f92..b17b8e2 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +435,10 @@ export class Xterm {
+@@ -223,7 +443,10 @@ export class Xterm {
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -689,13 +778,13 @@ index b643f92..b17b8e2 100644
 +            if (typeof data === 'string' && data === '\r') this.requestManualReconnect();
 +            return;
 +        }
-
+ 
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +453,15 @@ export class Xterm {
+@@ -238,6 +461,15 @@ export class Xterm {
          }
      }
-
+ 
 +    @bind
 +    private requestManualReconnect() {
 +        if (this.manualReconnectPending) return;
@@ -708,23 +797,23 @@ index b643f92..b17b8e2 100644
      @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +477,7 @@ export class Xterm {
+@@ -253,6 +485,7 @@ export class Xterm {
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
 +        this.manualReconnectPending = false;
-
+ 
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +499,7 @@ export class Xterm {
+@@ -274,6 +507,7 @@ export class Xterm {
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 +        this.manualReconnectPending = false;
-
+ 
          const { refreshToken, connect, doReconnect, overlayAddon } = this;
          overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +515,7 @@ export class Xterm {
+@@ -289,8 +523,7 @@ export class Xterm {
                  const event = e.domEvent;
                  if (event.key === 'Enter') {
                      keyDispose.dispose();
@@ -734,7 +823,7 @@ index b643f92..b17b8e2 100644
                  }
              });
              overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +604,8 @@ export class Xterm {
+@@ -379,7 +612,8 @@ export class Xterm {
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
@@ -750,7 +839,7 @@ index 0f9244b..c8b266c 100644
 +++ b/html/src/style/index.scss
 @@ -7,12 +7,129 @@ body {
  }
-
+ 
  #terminal-container {
 +  display: flex;
 +  flex-direction: column;
@@ -890,173 +979,3 @@ index e710c09..6cde839 100644
      <meta name="apple-mobile-web-app-capable" content="yes">
      <title><%= htmlWebpackPlugin.options.title %></title>
      <link inline rel="icon" type="image/png" href="favicon.png">
-diff --git a/html/src/components/app.tsx b/html/src/components/app.tsx
---- a/html/src/components/app.tsx
-+++ b/html/src/components/app.tsx
-@@ -51,7 +51,166 @@
-     lowWater: 4,
- } as FlowControl;
- 
-+const MOBILE_KEYBOARD_THRESHOLD = 120;
-+const MOBILE_KEYBOARD_MIN_HOST_HEIGHT = 160;
-+const MOBILE_VIEWPORT_BASELINE_TOLERANCE = 80;
-+
-+function shouldUseMobileKeyboardAvoidance(targetWindow: Window): boolean {
-+    const targetNavigator = targetWindow.navigator as Navigator & {
-+        maxTouchPoints?: number;
-+        userAgentData?: { mobile?: boolean };
-+    };
-+    const touchPoints = targetNavigator.maxTouchPoints ?? 0;
-+    if (touchPoints <= 0) return false;
-+
-+    const mobilePlatform =
-+        /Android|iPhone|iPad|iPod/i.test(targetNavigator.userAgent || '') ||
-+        (targetNavigator.platform === 'MacIntel' && touchPoints > 1) ||
-+        targetNavigator.userAgentData?.mobile === true;
-+    const coarsePrimaryPointer =
-+        targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
-+
-+    return mobilePlatform || coarsePrimaryPointer;
-+}
-+
-+function resolveKeyboardViewportWindow(): Window {
-+    try {
-+        if (window.top && window.top !== window && window.top.visualViewport) {
-+            void window.top.innerHeight;
-+            return window.top;
-+        }
-+    } catch {
-+        // Home Assistant ingress can be cross-origin in some deployments.
-+    }
-+    return window;
-+}
-+
- export class App extends Component {
-+    private keyboardCleanup: any;
-+    private keyboardFrame?: number;
-+    private keyboardViewport?: VisualViewport;
-+    private keyboardViewportBaselineHeight = 0;
-+    private keyboardViewportBaselineWidth = 0;
-+    private keyboardHostBaselineHeight = 0;
-+    private keyboardInputFocused = false;
-+    private keyboardVisible = false;
-+
-+    componentDidMount() {
-+        if (!shouldUseMobileKeyboardAvoidance(window)) return;
-+
-+        const host = document.getElementById('terminal-container');
-+        if (!host) return;
-+
-+        const viewportWindow = resolveKeyboardViewportWindow();
-+        const viewport = viewportWindow.visualViewport || window.visualViewport;
-+        if (!viewport) return;
-+
-+        this.keyboardViewport = viewport;
-+        this.captureKeyboardBaseline(host);
-+
-+        const schedule = () => this.scheduleKeyboardAvoidance(host);
-+        const onFocusIn = (event: Event) => {
-+            const target = event.target as HTMLElement | null;
-+            if (!target?.classList.contains('xterm-helper-textarea')) return;
-+            this.keyboardInputFocused = true;
-+            schedule();
-+        };
-+        const onFocusOut = (event: Event) => {
-+            const target = event.target as HTMLElement | null;
-+            if (!target?.classList.contains('xterm-helper-textarea')) return;
-+            this.keyboardInputFocused = false;
-+            this.resetKeyboardAvoidance(host);
-+            schedule();
-+        };
-+
-+        viewport.addEventListener('resize', schedule);
-+        viewport.addEventListener('scroll', schedule);
-+        viewportWindow.addEventListener('resize', schedule);
-+        document.addEventListener('focusin', onFocusIn, true);
-+        document.addEventListener('focusout', onFocusOut, true);
-+
-+        this.keyboardCleanup = () => {
-+            viewport.removeEventListener('resize', schedule);
-+            viewport.removeEventListener('scroll', schedule);
-+            viewportWindow.removeEventListener('resize', schedule);
-+            document.removeEventListener('focusin', onFocusIn, true);
-+            document.removeEventListener('focusout', onFocusOut, true);
-+            if (this.keyboardFrame !== undefined) {
-+                window.cancelAnimationFrame(this.keyboardFrame);
-+                this.keyboardFrame = undefined;
-+            }
-+            this.keyboardInputFocused = false;
-+            this.resetKeyboardAvoidance(host);
-+        };
-+    }
-+
-+    componentWillUnmount() {
-+        this.keyboardCleanup?.();
-+        this.keyboardCleanup = undefined;
-+    }
-+
-+    private captureKeyboardBaseline(host: HTMLElement) {
-+        const viewport = this.keyboardViewport;
-+        if (!viewport) return;
-+        this.keyboardViewportBaselineHeight = viewport.height;
-+        this.keyboardViewportBaselineWidth = viewport.width;
-+        const hostHeight = host.getBoundingClientRect().height;
-+        if (hostHeight > 0) this.keyboardHostBaselineHeight = hostHeight;
-+    }
-+
-+    private scheduleKeyboardAvoidance(host: HTMLElement) {
-+        if (this.keyboardFrame !== undefined) window.cancelAnimationFrame(this.keyboardFrame);
-+        this.keyboardFrame = window.requestAnimationFrame(() => {
-+            this.keyboardFrame = undefined;
-+            this.updateKeyboardAvoidance(host);
-+        });
-+    }
-+
-+    private updateKeyboardAvoidance(host: HTMLElement) {
-+        const viewport = this.keyboardViewport;
-+        if (!viewport || this.keyboardViewportBaselineHeight <= 0) return;
-+
-+        const widthChanged =
-+            Math.abs(viewport.width - this.keyboardViewportBaselineWidth) > MOBILE_VIEWPORT_BASELINE_TOLERANCE;
-+        if (widthChanged && !this.keyboardInputFocused) {
-+            this.resetKeyboardAvoidance(host);
-+            this.captureKeyboardBaseline(host);
-+            return;
-+        }
-+
-+        const shrink = this.keyboardViewportBaselineHeight - viewport.height;
-+        const keyboardOpen = this.keyboardInputFocused && shrink >= MOBILE_KEYBOARD_THRESHOLD;
-+        if (!keyboardOpen) {
-+            if (this.keyboardVisible) this.resetKeyboardAvoidance(host);
-+            if (
-+                !this.keyboardInputFocused &&
-+                viewport.height >= this.keyboardViewportBaselineHeight - MOBILE_VIEWPORT_BASELINE_TOLERANCE
-+            ) {
-+                this.captureKeyboardBaseline(host);
-+            }
-+            return;
-+        }
-+
-+        const opening = !this.keyboardVisible;
-+        this.keyboardVisible = true;
-+        const hostHeight = Math.max(
-+            MOBILE_KEYBOARD_MIN_HOST_HEIGHT,
-+            this.keyboardHostBaselineHeight - shrink
-+        );
-+        host.style.height = `${Math.round(hostHeight)}px`;
-+        host.classList.add('ttyd-keyboard-visible');
-+        window.term?.fit();
-+        if (opening) window.term?.scrollToBottom();
-+    }
-+
-+    private resetKeyboardAvoidance(host: HTMLElement) {
-+        const changed = this.keyboardVisible || host.style.height !== '';
-+        this.keyboardVisible = false;
-+        host.style.height = '';
-+        host.classList.remove('ttyd-keyboard-visible');
-+        if (changed) window.term?.fit();
-+    }
-+
-     render() {
-         return (
-             <Terminal
