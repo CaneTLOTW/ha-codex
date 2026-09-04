@@ -68,6 +68,7 @@ jobs:
         id: docker-build
         shell: bash
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARGET_IMAGE: ${{ matrix.image }}:${{ env.VERSION }}
         run: |
           set +e
@@ -91,11 +92,19 @@ jobs:
               echo "Pinned source: \`${TARGET_SHA}\`"
               echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
               echo
+              echo "### Error candidates"
+              echo '```text'
+              grep -nEi 'error TS|ERROR|Error:|failed|FAILED|exit code|not found|No such|patch.*fail' /tmp/gate5-build.log | tail -n 60 || true
+              echo '```'
+              echo
+              echo "### Build tail"
               echo '```text'
               tail -n 180 /tmp/gate5-build.log
               echo '```'
             } > /tmp/gate5-issue-comment.md
-            gh issue comment 18 --repo "${GITHUB_REPOSITORY}" --body-file /tmp/gate5-issue-comment.md || true
+            if ! gh issue comment 18 --repo "${GITHUB_REPOSITORY}" --body-file /tmp/gate5-issue-comment.md; then
+              echo "::warning::Failed to post Gate 5 build diagnostic to issue #18"
+            fi
             exit "${status}"
           fi
 
