@@ -196,6 +196,8 @@ def main():
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config = load_existing_config(config_path)
+    # The Home Assistant App is image-pinned. Runtime self-update prompts must stay disabled.
+    config["check_for_update_on_startup"] = False
     semantic_repairs = repair_incompatible_codex_values(config)
     if semantic_repairs and config_path.exists():
         backup_config(config_path, ".repaired.bak")

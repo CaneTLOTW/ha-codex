@@ -171,9 +171,32 @@ if [[ "$session_persist" == "true" ]]; then
     rm -f "$tmux_socket" || true
   fi
 
-  su-exec "$session_uid:$session_gid" env "${session_env[@]}" \
-    tmux -S "$tmux_socket" new-session -A -s codex -c "$work_dir" \
-    "exec /usr/local/bin/codex-shell"
+  tmux_env=(su-exec "$session_uid:$session_gid" env "${session_env[@]}")
+
+  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" has-session -t codex 2>/dev/null; then
+    if ! "${tmux_env[@]}" tmux -S "$tmux_socket" new-session -d -s codex -c "$work_dir" \
+      "exec /usr/local/bin/codex-shell"; then
+      echo "[WARN] Persistent tmux session could not be created; starting Codex without tmux for this connection." >&2
+      exec su-exec "$session_uid:$session_gid" env "${session_env[@]}" \
+        /usr/local/bin/codex-shell
+    fi
+  fi
+
+  # Keep tmux wheel/history support. The ttyd frontend separately prefers
+  # xterm's forced-selection path for plain desktop left-drag, while Alt can
+  # still be used for application mouse interaction.
+  if ! "${tmux_env[@]}" tmux -S "$tmux_socket" set-option -g mouse on; then
+    echo "[WARN] Unable to enable tmux mouse mode for the ttyd session." >&2
+  fi
+
+  # tmux binds right-click on a pane to its own display-menu by default.
+  # In a browser terminal that menu appears underneath the browser/OS
+  # context menu. Keep wheel/mouse reporting enabled, but remove only
+  # those pane-menu bindings so right-click no longer opens two menus.
+  "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n MouseDown3Pane >/dev/null 2>&1 || true
+  "${tmux_env[@]}" tmux -S "$tmux_socket" unbind-key -n M-MouseDown3Pane >/dev/null 2>&1 || true
+
+  "${tmux_env[@]}" tmux -S "$tmux_socket" attach-session -t codex
   tmux_status=$?
 
   if [[ "$tmux_status" -ne 0 ]]; then

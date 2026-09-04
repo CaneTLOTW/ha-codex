@@ -62,10 +62,12 @@ The published image includes a practical development and troubleshooting environ
 | Data/search | `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find` and GNU/core utilities |
 | Editors/session | `nano`, `vim`, `tmux` |
 | Archives | p7zip / `7z` |
-| Home Assistant | Home Assistant CLI (`ha`), bundled `hass-mcp` helper |
+| Home Assistant | Home Assistant CLI binary (`ha`), authenticated read-only wrapper (`ha-readonly`), bundled `hass-mcp` helper |
 | Sandbox/support | `bubblewrap`, ACL tools, customized ttyd |
 
 The App contains an **SSH client only**. It does not run or expose an inbound SSH server. All commands execute inside the App container and are constrained by its AppArmor profile, mounted Home Assistant paths and the selected Codex permission mode.
+
+The interactive Codex shell intentionally does **not** receive the Supervisor token. The raw `ha` CLI is present for completeness, but authenticated Core diagnostics are exposed through the narrow `ha-readonly` wrapper instead. It permits only `ha-readonly core info`, `ha-readonly core check`, and `ha-readonly core logs`; mutations remain unavailable through that wrapper. Entity/state work should normally use the managed `homeassistant` MCP server.
 
 ## Mobile Terminal
 

@@ -1,0 +1,106 @@
+name: Publish Codex Deployment
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - ".github/workflows/publish-deployment.yml"
+      - "codex/**"
+  workflow_dispatch:
+
+env:
+  ARCHITECTURES: '["amd64", "aarch64"]'
+  IMAGE_NAME: ha-codex
+  REGISTRY_PREFIX: ghcr.io/canetlotw
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    name: Initialize deployment build
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out deployment branch
+        uses: actions/checkout@v6
+
+      - name: Read Codex deployment version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -nE 's/^version:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' codex/config.yaml)"
+          if [[ -z "${version}" ]]; then
+            echo "::error::Unable to read version from codex/config.yaml"
+            exit 1
+          fi
+          if [[ "${version}" != *-dev.* ]]; then
+            echo "::error::Deployment versions must use the *-dev.N form; got ${version}"
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "Codex deployment version: ${version}"
+
+      - name: Prepare build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.06.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}
+
+  build:
+    name: Build deployment ${{ matrix.arch }}
+    needs: init
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Check out deployment branch
+        uses: actions/checkout@v6
+
+      - name: Build and publish deployment image
+        uses: home-assistant/builder/actions/build-image@2026.06.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: codex
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            deployment
+          labels: |
+            io.hass.name=Codex Deployment
+            io.hass.description=Experimental deployment channel for HA Codex runtime acceptance
+            io.hass.type=app
+          push: "true"
+          version: ${{ needs.init.outputs.version }}
+
+  manifest:
+    name: Publish deployment multi-arch manifest
+    needs:
+      - init
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - name: Publish deployment manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.06.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ env.IMAGE_NAME }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            deployment
+          registry-prefix: ${{ env.REGISTRY_PREFIX }}

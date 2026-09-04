@@ -114,6 +114,27 @@ Use the `homeassistant` MCP server to query entities and call services when MCP 
 
 Additional remote MCP servers configured in the App options are also managed in `~/.codex/config.toml`. Bearer-token values and explicitly configured environment variables are supplied to the Codex process environment instead of being written as plaintext values into `config.toml`.
 
+## Bundled Runtime Tools
+
+This App image includes a Home Assistant-oriented toolbox. Prefer these tools instead of assuming they need to be installed:
+
+- Runtime/scripting: `python3` (with PyYAML), `bash`, `node`, `npm`
+- Source control: `git`, `gh`
+- Search/data: `jq`, `yq`, `yamllint`, `rg`, `grep`, `sed`, `gawk`, `find`, `sqlite3`
+- Network/remote: `curl`, `openssl`, `ssh`, `scp`, `sftp`, `dig`, `nslookup`, `nc`, `mosquitto_pub`, `mosquitto_sub`, `rsync`
+- Files/session: `file`, `tree`, `7z`, `zip`, `unzip`, `nano`, `vim`, `tmux`
+- Home Assistant: the `homeassistant` MCP server and the authenticated read-only wrapper `ha-readonly`
+
+For Home Assistant state/entity queries, prefer the `homeassistant` MCP tools. For Supervisor-backed Core diagnostics use only:
+
+```bash
+ha-readonly core info
+ha-readonly core check
+ha-readonly core logs
+```
+
+The raw `ha` binary is installed, but the Supervisor token is intentionally removed from the interactive Codex shell. A direct `ha core ...` call can therefore return `unauthorized`; this is expected and is not a missing-tool error. `ha-readonly` exposes only the three diagnostic commands above and does not reveal the token to Codex.
+
 ## Reading Home Assistant Logs
 
 **Log levels (from most to least verbose):**
@@ -124,9 +145,9 @@ Additional remote MCP servers configured in the App options are also managed in 
 
 **Commands to read logs:**
 ```bash
-ha core logs 2>&1 | tail -100
-ha core logs 2>&1 | grep -i keyword
-ha core logs 2>&1 | grep -iE "(error|exception)"
+ha-readonly core logs 2>&1 | tail -100
+ha-readonly core logs 2>&1 | grep -i keyword
+ha-readonly core logs 2>&1 | grep -iE "(error|exception)"
 tail -100 /homeassistant/home-assistant.log
 ```
 EOF
