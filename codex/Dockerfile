@@ -3,7 +3,7 @@ FROM ghcr.io/home-assistant/base-python:3.13-alpine3.24
 
 ARG BUILD_VERSION
 ARG BUILD_ARCH
-ARG CODEX_VERSION=0.153.2
+ARG CODEX_VERSION=0.153.4
 ARG TTYD_VERSION=1.7.7
 
 LABEL maintainer="CaneTLOTW"
