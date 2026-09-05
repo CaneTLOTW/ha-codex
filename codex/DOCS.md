@@ -112,7 +112,7 @@ Desktop and mobile deliberately use different interaction paths. A narrow deskto
 | Input | Physical keyboard and normal ttyd/xterm controls | Two-row touch toolbar plus the iOS software keyboard |
 | Selection | Mouse drag | `Sel` mode, then native long-press/drag selection |
 | Copy/Paste | Browser/OS context menu and normal terminal shortcuts | Native iOS Copy/Paste while `Sel` is active |
-| Scrolling | Mouse wheel / terminal history | Vertical swipe or `PgUp` / `PgDn` |
+| Scrolling | Mouse wheel / terminal history | With `Sel` off: vertical swipe, handled stepwise rather than as live drag-scrolling. `PgUp` / `PgDn` also work while `Sel` is active. |
 | Software keyboard | Not applicable | `Kbd↑` shows it and `Kbd↓` hides it |
 | Keyboard avoidance | Not active | Terminal automatically moves/resizes above the software keyboard |
 
@@ -131,19 +131,21 @@ Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 | --- | --- |
 | `Enter` | Sends Enter. It also follows ttyd's manual reconnect path after a disconnect. |
 | `←` `↓` `↑` `→` | Sends the matching arrow key without forcing the software keyboard open. |
-| `Sel` | Turns iOS-native selection mode on/off. While active, long-press or drag terminal text and use the native Copy/Paste actions. Turn it off again for normal input and swipe behavior. |
-| `PgUp` / `PgDn` | Moves by one terminal page. With session persistence enabled, this uses tmux copy-mode navigation. |
+| `Sel` | Turns iOS-native selection mode on/off. While active, long-press or drag terminal text and use the native Copy/Paste actions. Native selection consumes the touch gesture path, so finger scrolling through history is not available until `Sel` is turned off again. |
+| `PgUp` / `PgDn` | Moves by one terminal page and remains usable while `Sel` is active. With session persistence enabled, this uses tmux copy-mode navigation. |
 | `Esc` | Sends Escape. |
 | `Tab` | Sends Tab. |
 | `Ctrl` / `Alt` / `Shift` | One-shot modifiers for the next eligible key. |
 | `⇪` | Persistent Shift Lock; tap again to release. |
 | `Kbd↑` | Focuses terminal input and opens the iOS software keyboard. |
 | `Kbd↓` | Hides the software keyboard and returns the terminal to its normal full-height layout. |
-| Vertical swipe | Performs page navigation without needing the software keyboard. |
+| Vertical swipe | Available with `Sel` off. History navigation is gesture/step based: the terminal updates after the finger movement instead of tracking it continuously like native live scrolling. |
 
 ### iOS selection, copy and paste
 
 On iOS, `Sel` temporarily enables a DOM-backed native-selection mode. Long-press/drag terminal output to use the native selection handles and Copy action. Native Paste at the prompt is routed through xterm and inserted once. Leaving `Sel` restores the normal renderer, swipe navigation and terminal input behavior.
+
+While `Sel` is active, normal finger scrolling through terminal history is intentionally unavailable because the touch interaction is handed to native selection. To browse history without leaving `Sel`, use `PgUp` / `PgDn`; to use finger scrolling, turn `Sel` off first. Finger scrolling in the normal mobile mode is usable but deliberately gesture-based and stepwise rather than a continuous live scroll that follows the finger pixel-for-pixel.
 
 `Sel` and the keyboard controls are independent: `Kbd↑` / `Kbd↓` only show or hide the software keyboard and do not change selection mode.
 
@@ -195,13 +197,13 @@ Check that:
 
 Use `/homeassistant/.codex/config.toml` and make sure `/homeassistant` is trusted by Codex before relying on project-specific configuration.
 
-### Mobile scrolling
+### Mobile scrolling on iOS
 
-Use vertical swipes or the `PgUp`/`PgDn` controls. With session persistence enabled, page navigation enters or uses tmux copy mode.
+For finger scrolling through terminal history, first turn `Sel` off. The swipe path is gesture-based and updates history in steps after the movement; it is not continuous native-style live scrolling. If you want to keep `Sel` active, use `PgUp` / `PgDn` instead; those page controls continue to work in selection mode. With session persistence enabled, page navigation enters or uses tmux copy mode.
 
 ### Mobile selection/copy/paste on iOS
 
-Enable `Sel`, select text with the native iOS handles and use Copy/Paste. Disable `Sel` again when finished.
+Enable `Sel`, select text with the native iOS handles and use Copy/Paste. Finger scrolling is unavailable while `Sel` owns the touch interaction, so use `PgUp` / `PgDn` or disable `Sel` again when you need to move through history.
 
 ### The iOS keyboard covers the terminal
 
