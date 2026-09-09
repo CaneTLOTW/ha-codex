@@ -29,6 +29,7 @@ map:
   - type: media
     read_only: false
   - type: backup
+  # Broad writable access to all local App source trees; intentional development/admin capability.
   - type: addons
     read_only: false
 options:
