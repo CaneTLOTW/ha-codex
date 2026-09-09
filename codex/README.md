@@ -47,8 +47,11 @@ Codex caches the login in its persistent home.
 | `/media` | Media files | read-write |
 | `/ssl` | SSL certificates | read-only |
 | `/backup` | Backups | read-only |
+| `/addons` | Local Home Assistant App source trees | read-write |
 
 When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.
+
+The `/addons` mount is intentionally broad and writable so Codex can develop and maintain local Home Assistant Apps directly. Treat it as privileged development access: a session can create, replace, or delete source files for any local App. This is different from `all_addon_configs`, which would expose installed Apps' public configuration directories under `/addon_configs`.
 
 ## Bundled command-line tools
 

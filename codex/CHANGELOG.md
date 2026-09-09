@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.10-dev.1] - 2026-09-09
+
+### Added
+- Add a writable Home Assistant `addons` mapping so local App source trees are available inside Codex at `/addons` for development and administrative workflows.
+- Extend the AppArmor policy and regression coverage for intentional read/write access to `/addons`.
+
+### Changed
+- Re-baseline the deployment channel on the current `0.4.9` stable state, retaining bundled Codex CLI `0.153.4`, before testing the new mount.
+- Document that `/addons` grants broad write access to all local App sources and is distinct from per-App configuration under `/addon_configs`.
+
 ## [0.4.9] - 2026-09-05
 
 ### Changed

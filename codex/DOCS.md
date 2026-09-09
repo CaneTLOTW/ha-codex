@@ -20,8 +20,11 @@ The App keeps Codex authentication and user configuration under `/data/codex-hom
 | `/media` | read-write | Home Assistant media |
 | `/ssl` | read-only | Home Assistant SSL files |
 | `/backup` | read-only | Home Assistant backups |
+| `/addons` | read-write | Local Home Assistant App source trees |
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
+
+`/addons` intentionally exposes the complete local Home Assistant App source tree with write access. This is intended for development/administration work such as creating or updating a local App. A Codex session that can write there can modify **any** local App source, not only the project currently being worked on. The separate `all_addon_configs` mapping would expose installed Apps' public configuration directories under `/addon_configs`; it is not enabled here.
 
 ## Included command-line tools
 

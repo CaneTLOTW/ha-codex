@@ -123,6 +123,7 @@ This project is a **Home Assistant App** (formerly called an add-on), not a cust
 - Automated Codex CLI/model-catalog tracking and image publishing.
 - Direct access to `/homeassistant`, `/share`, and `/media`.
 - Read-only access to `/ssl` and `/backup`.
+- Writable access to local Home Assistant App sources under `/addons` for development/administration workflows.
 - Bundled Home Assistant MCP integration for entity lookup and service calls.
 - Optional additional remote Streamable HTTP MCP servers.
 - Optional environment variables for Codex/MCP sessions.
