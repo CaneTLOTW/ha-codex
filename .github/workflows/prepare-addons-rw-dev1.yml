@@ -27,13 +27,10 @@ jobs:
           def replace_once(path: str, old: str, new: str) -> None:
               p = Path(path)
               text = p.read_text(encoding="utf-8")
-              if old not in text:
-                  raise SystemExit(f"expected text not found in {path}: {old!r}")
               if text.count(old) != 1:
                   raise SystemExit(f"expected exactly one match in {path}: {old!r}")
               p.write_text(text.replace(old, new, 1), encoding="utf-8")
 
-          # Re-baseline from current stable main but keep deployment-channel identity.
           replace_once("repository.yaml", "name: CaneTLOTW HA Codex App", "name: CaneTLOTW HA Codex (Deployment)")
 
           config = Path("codex/config.yaml")
@@ -52,7 +49,6 @@ jobs:
               text = text.replace(old, new, 1)
           config.write_text(text, encoding="utf-8")
 
-          # The bind mount alone is insufficient: permit the mounted tree in AppArmor too.
           replace_once(
               "codex/apparmor.txt",
               "  /backup/ r,\n  /backup/** r,\n",
@@ -62,22 +58,19 @@ jobs:
           changelog = Path("codex/CHANGELOG.md")
           text = changelog.read_text(encoding="utf-8")
           marker = "All notable changes to this project will be documented in this file.\n\n"
-          entry = """## [0.4.10-dev.1] - 2026-09-09
-
-### Added
-- Add a writable Home Assistant `addons` mapping so local App source trees are available inside Codex at `/addons` for development and administrative workflows.
-- Extend the AppArmor policy and regression coverage for intentional read/write access to `/addons`.
-
-### Changed
-- Re-baseline the deployment channel on the current `0.4.9` stable state, retaining bundled Codex CLI `0.153.4`, before testing the new mount.
-- Document that `/addons` grants broad write access to all local App sources and is distinct from per-App configuration under `/addon_configs`.
-
-"""
-          if marker not in text or entry in text:
+          entry = (
+              "## [0.4.10-dev.1] - 2026-09-09\n\n"
+              "### Added\n"
+              "- Add a writable Home Assistant `addons` mapping so local App source trees are available inside Codex at `/addons` for development and administrative workflows.\n"
+              "- Extend the AppArmor policy and regression coverage for intentional read/write access to `/addons`.\n\n"
+              "### Changed\n"
+              "- Re-baseline the deployment channel on the current `0.4.9` stable state, retaining bundled Codex CLI `0.153.4`, before testing the new mount.\n"
+              "- Document that `/addons` grants broad write access to all local App sources and is distinct from per-App configuration under `/addon_configs`.\n\n"
+          )
+          if text.count(marker) != 1 or entry in text:
               raise SystemExit("unexpected changelog state")
           changelog.write_text(text.replace(marker, marker + entry, 1), encoding="utf-8")
 
-          # Home Assistant App documentation shown in the App UI.
           replace_once(
               "codex/DOCS.md",
               "| `/backup` | read-only | Home Assistant backups |\n",
@@ -89,7 +82,6 @@ jobs:
               "Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.\n\n`/addons` intentionally exposes the complete local Home Assistant App source tree with write access. This is intended for development/administration work such as creating or updating a local App. A Codex session that can write there can modify **any** local App source, not only the project currently being worked on. The separate `all_addon_configs` mapping would expose installed Apps' public configuration directories under `/addon_configs`; it is not enabled here.\n",
           )
 
-          # Detailed repository/App guide.
           replace_once(
               "codex/README.md",
               "| `/backup` | Backups | read-only |\n",
@@ -101,14 +93,12 @@ jobs:
               "When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.\n\nThe `/addons` mount is intentionally broad and writable so Codex can develop and maintain local Home Assistant Apps directly. Treat it as privileged development access: a session can create, replace, or delete source files for any local App. This is different from `all_addon_configs`, which would expose installed Apps' public configuration directories under `/addon_configs`.\n",
           )
 
-          # Repository overview.
           replace_once(
               "README.md",
               "- Read-only access to `/ssl` and `/backup`.\n",
               "- Read-only access to `/ssl` and `/backup`.\n- Writable access to local Home Assistant App sources under `/addons` for development/administration workflows.\n",
           )
 
-          # Regression lock for both Supervisor mapping and AppArmor permission.
           tests = Path("codex/tests/test_modernization.py")
           text = tests.read_text(encoding="utf-8")
           const_marker = 'SUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"\n'
@@ -118,21 +108,20 @@ jobs:
           text = text.replace(const_marker, const_add, 1)
 
           method_marker = "    def test_web_session_keeps_scrollback(self):\n"
-          method = '''    def test_local_app_sources_are_rw_mapped_and_apparmor_allowed(self):
-        config = CONFIG.read_text(encoding="utf-8")
-        apparmor = APPARMOR.read_text(encoding="utf-8")
-        self.assertRegex(config, r"(?ms)^  - type: addons\\n    read_only: false$")
-        self.assertNotIn("all_addon_configs", config)
-        self.assertIn("/addons/ rw,", apparmor)
-        self.assertIn("/addons/** rwk,", apparmor)
-
-'''
+          method = (
+              "    def test_local_app_sources_are_rw_mapped_and_apparmor_allowed(self):\n"
+              "        config = CONFIG.read_text(encoding=\"utf-8\")\n"
+              "        apparmor = APPARMOR.read_text(encoding=\"utf-8\")\n"
+              "        self.assertRegex(config, r\"(?ms)^  - type: addons\\n    read_only: false$\")\n"
+              "        self.assertNotIn(\"all_addon_configs\", config)\n"
+              "        self.assertIn(\"/addons/ rw,\", apparmor)\n"
+              "        self.assertIn(\"/addons/** rwk,\", apparmor)\n\n"
+          )
           if text.count(method_marker) != 1:
               raise SystemExit("test method insertion marker mismatch")
           text = text.replace(method_marker, method + method_marker, 1)
           tests.write_text(text, encoding="utf-8")
 
-          # One-shot workflow must not remain in product history/tree.
           Path(".github/workflows/prepare-addons-rw-dev1.yml").unlink()
           PY
 
