@@ -2,6 +2,8 @@
 
 Target deployment version: `0.4.10-dev.1`
 
+Candidate validation branch: `feat/addons-rw-dev1`
+
 ## Purpose
 
 Verify that the Codex Deployment App can intentionally read and write local Home Assistant App source trees through the Supervisor `addons` mapping while retaining the current stable runtime baseline.
