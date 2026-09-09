@@ -20,8 +20,11 @@ The App keeps Codex authentication and user configuration under `/data/codex-hom
 | `/media` | read-write | Home Assistant media |
 | `/ssl` | read-only | Home Assistant SSL files |
 | `/backup` | read-only | Home Assistant backups |
+| `/addons` | read-write | Local Home Assistant App source trees |
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
+
+`/addons` intentionally exposes the complete local Home Assistant App source tree with write access. This is intended for development/administration work such as creating or updating a local App. A Codex session that can write there can modify **any** local App source, not only the project currently being worked on. The separate `all_addon_configs` mapping would expose installed Apps' public configuration directories under `/addon_configs`; it is not enabled here.
 
 ## Included command-line tools
 
@@ -33,7 +36,7 @@ The App image includes common tools for troubleshooting and project work:
 - `jq`, `ripgrep` (`rg`), `grep`, `sed`, `gawk`, `find` and core utilities;
 - `nano`, `vim` and `tmux`;
 - p7zip / `7z`;
-- Home Assistant CLI (`ha`) and the bundled `hass-mcp` helper;
+- Home Assistant CLI (`ha`), authenticated read-only wrapper (`ha-readonly`) and the bundled `hass-mcp` helper;
 - `bubblewrap`, ACL tooling and the customized ttyd web terminal.
 
 The image contains an SSH client, **not an SSH server**. It does not expose a separate inbound SSH service. Commands run inside the App container and remain subject to its AppArmor profile, mounted paths and selected Codex permission mode.
@@ -103,18 +106,59 @@ codex resume
 
 The Home Assistant App configuration UI follows the Home Assistant language setting where a shipped translation is available. Current App option translations are English, German, Spanish, and Brazilian Portuguese.
 
-## Mobile terminal controls
+## Terminal controls on Desktop and iOS
 
-On touch devices and narrow screens the terminal provides a fixed two-row toolbar:
+Desktop and mobile deliberately use different interaction paths. A narrow desktop browser window does not activate the touch toolbar; the mobile path requires actual touch capability and a mobile/touch platform signal.
+
+| Interaction | Desktop / PC | iPhone / iPad |
+| --- | --- | --- |
+| Input | Physical keyboard and normal ttyd/xterm controls | Two-row touch toolbar plus the iOS software keyboard |
+| Selection | Mouse drag | `Sel` mode, then native long-press/drag selection |
+| Copy/Paste | Browser/OS context menu and normal terminal shortcuts | Native iOS Copy/Paste while `Sel` is active |
+| Scrolling | Mouse wheel / terminal history | With `Sel` off: vertical swipe, handled stepwise rather than as live drag-scrolling. `PgUp` / `PgDn` also work while `Sel` is active. |
+| Software keyboard | Not applicable | `Kbd↑` shows it and `Kbd↓` hides it |
+| Keyboard avoidance | Not active | Terminal automatically moves/resizes above the software keyboard |
+
+### iOS mobile toolbar
+
+<img width="360" alt="Codex terminal on iOS with mobile controls and keyboard avoidance" src="../docs/assets/ios-keyboard-avoidance-0.4.8.webp" />
+
+*Anonymized stable `0.4.8` runtime screenshot with the iOS software keyboard open.*
 
 ```text
 Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
 Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 ```
 
-`Ctrl`, `Alt`, and `Shift` apply to the next eligible key; `⇪` keeps Shift locked. The arrow/page controls work without forcing the software keyboard open. `Kbd↑` and `Kbd↓` explicitly show or hide it. Vertical swipe gestures perform page navigation. With tmux persistence enabled, `PgUp`/`PgDn` and swipe navigation use tmux copy mode.
+| Control | What it does |
+| --- | --- |
+| `Enter` | Sends Enter. It also follows ttyd's manual reconnect path after a disconnect. |
+| `←` `↓` `↑` `→` | Sends the matching arrow key without forcing the software keyboard open. |
+| `Sel` | Turns iOS-native selection mode on/off. While active, long-press or drag terminal text and use the native Copy/Paste actions. Native selection consumes the touch gesture path, so finger scrolling through history is not available until `Sel` is turned off again. |
+| `PgUp` / `PgDn` | Moves by one terminal page and remains usable while `Sel` is active. With session persistence enabled, this uses tmux copy-mode navigation. |
+| `Esc` | Sends Escape. |
+| `Tab` | Sends Tab. |
+| `Ctrl` / `Alt` / `Shift` | One-shot modifiers for the next eligible key. |
+| `⇪` | Persistent Shift Lock; tap again to release. |
+| `Kbd↑` | Focuses terminal input and opens the iOS software keyboard. |
+| `Kbd↓` | Hides the software keyboard and returns the terminal to its normal full-height layout. |
+| Vertical swipe | Available with `Sel` off. History navigation is gesture/step based: the terminal updates after the finger movement instead of tracking it continuously like native live scrolling. |
 
-On iOS, `Sel` temporarily enables a DOM-backed native-selection mode. Long-press/drag terminal output to use the native selection handles and Copy action. Native Paste at the prompt is routed through xterm and inserted once. Leave `Sel` to restore the normal renderer, swipe navigation, and terminal input behavior.
+### iOS selection, copy and paste
+
+On iOS, `Sel` temporarily enables a DOM-backed native-selection mode. Long-press/drag terminal output to use the native selection handles and Copy action. Native Paste at the prompt is routed through xterm and inserted once. Leaving `Sel` restores the normal renderer, swipe navigation and terminal input behavior.
+
+While `Sel` is active, normal finger scrolling through terminal history is intentionally unavailable because the touch interaction is handed to native selection. To browse history without leaving `Sel`, use `PgUp` / `PgDn`; to use finger scrolling, turn `Sel` off first. Finger scrolling in the normal mobile mode is usable but deliberately gesture-based and stepwise rather than a continuous live scroll that follows the finger pixel-for-pixel.
+
+`Sel` and the keyboard controls are independent: `Kbd↑` / `Kbd↓` only show or hide the software keyboard and do not change selection mode.
+
+### iOS software-keyboard avoidance
+
+When the software keyboard opens, the usable visual viewport becomes shorter. The terminal detects that change, shortens the existing terminal host by the same amount, refits xterm and brings the active prompt into view. The terminal and toolbar therefore remain above the iOS keyboard instead of being covered by it.
+
+When the keyboard closes or `Kbd↓` is used, the temporary height is removed and the terminal is fitted back to the normal Home Assistant ingress viewport.
+
+The final iOS toolbar, native selection/copy/paste path, keyboard show/hide behavior and keyboard avoidance were accepted on-device for stable `0.4.8`. Desktop regression testing separately confirmed that the normal mouse/keyboard selection and input path remains intact.
 
 ### Android status / feedback requested
 
@@ -125,8 +169,6 @@ The current native `Sel` path is intentionally gated to Apple touch devices, so 
 Please report Android results in [GitHub issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6), including device/Android version, Companion or browser version, toolbar/modifier behavior, paging/swipe, keyboard show/hide and copy/paste behavior.
 
 The managed web session disables Codex's alternate screen so output remains available in xterm scrollback. The mobile frontend is maintained as one source patch against clean ttyd 1.7.7; no separate xterm fork or patch-on-patch chain is used.
-
-The `0.4.0` mobile path was validated with Home Assistant Companion on iPhone, Codex CLI `0.151.0`, `gpt-5.6-sol`, and `/homeassistant` as the working directory.
 
 ## Automatic Codex CLI updates
 
@@ -158,13 +200,17 @@ Check that:
 
 Use `/homeassistant/.codex/config.toml` and make sure `/homeassistant` is trusted by Codex before relying on project-specific configuration.
 
-### Mobile scrolling
+### Mobile scrolling on iOS
 
-Use vertical swipes or the `PgUp`/`PgDn` controls. With session persistence enabled, page navigation enters or uses tmux copy mode.
+For finger scrolling through terminal history, first turn `Sel` off. The swipe path is gesture-based and updates history in steps after the movement; it is not continuous native-style live scrolling. If you want to keep `Sel` active, use `PgUp` / `PgDn` instead; those page controls continue to work in selection mode. With session persistence enabled, page navigation enters or uses tmux copy mode.
 
 ### Mobile selection/copy/paste on iOS
 
-Use `Sel` for native iOS selection/copy/paste. Disable it again for normal terminal interaction.
+Enable `Sel`, select text with the native iOS handles and use Copy/Paste. Finger scrolling is unavailable while `Sel` owns the touch interaction, so use `PgUp` / `PgDn` or disable `Sel` again when you need to move through history.
+
+### The iOS keyboard covers the terminal
+
+Current versions should automatically shorten/refit the terminal while the software keyboard is open. Use `Kbd↓` to close the keyboard and reset the terminal height, then `Kbd↑` to reopen it. If the prompt or toolbar is still covered, report the iOS version, Home Assistant Companion/browser version and orientation.
 
 ### Android mobile behavior
 

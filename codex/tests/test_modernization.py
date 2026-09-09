@@ -20,6 +20,8 @@ OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 HA_READONLY = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly"
 HA_READONLY_ROOT = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly-root-helper"
 SUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"
+CONFIG = CODEX_DIR / "config.yaml"
+APPARMOR = CODEX_DIR / "apparmor.txt"
 
 
 class ModernizationTests(unittest.TestCase):
@@ -59,7 +61,9 @@ class ModernizationTests(unittest.TestCase):
             parsed = tomllib.loads(config.read_text(encoding="utf-8"))
             self.assertIs(parsed["check_for_update_on_startup"], False)
         self.assertIn("check_for_update_on_startup=false", shell_text)
-        self.assertIn("ARG CODEX_VERSION=0.152.1", dockerfile)
+        self.assertRegex(dockerfile, r"(?m)^ARG CODEX_VERSION=\d+\.\d+\.\d+$")
+        self.assertIn("npm install -g @openai/codex@${CODEX_VERSION}", dockerfile)
+        self.assertNotIn("npm install -g @openai/codex@latest", dockerfile)
 
     def test_mobile_terminal_patch_is_canonical_and_served(self):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
@@ -149,6 +153,14 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("ha-readonly core logs", start_text)
         self.assertIn("Supervisor token is intentionally removed", start_text)
         self.assertIn("ha-readonly", dockerfile)
+
+    def test_local_app_sources_are_rw_mapped_and_apparmor_allowed(self):
+        config = CONFIG.read_text(encoding="utf-8")
+        apparmor = APPARMOR.read_text(encoding="utf-8")
+        self.assertRegex(config, r"(?ms)^  - type: addons\n    read_only: false$")
+        self.assertNotIn("all_addon_configs", config)
+        self.assertIn("/addons/ rw,", apparmor)
+        self.assertIn("/addons/** rwk,", apparmor)
 
     def test_web_session_keeps_scrollback(self):
         shell_text = SHELL.read_text(encoding="utf-8")

@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.10-dev.1] - 2026-09-09
+
+### Added
+- Add a writable Home Assistant `addons` mapping so local App source trees are available inside Codex at `/addons` for development and administrative workflows.
+- Extend the AppArmor policy and regression coverage for intentional read/write access to `/addons`.
+
+### Changed
+- Re-baseline the deployment channel on the current `0.4.9` stable state, retaining bundled Codex CLI `0.153.4`, before testing the new mount.
+- Document that `/addons` grants broad write access to all local App sources and is distinct from per-App configuration under `/addon_configs`.
+
+## [0.4.9] - 2026-09-05
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.153.4.
+
+## [0.4.8] - 2026-09-04
+
+### Added
+- Add hardened iOS native terminal selection/paste handling and touch-only mobile terminal controls.
+- Add software-keyboard avoidance so the active terminal prompt remains visible above the iPhone/iPad keyboard in Home Assistant ingress.
+- Add read-only Home Assistant diagnostic helpers and expanded in-container troubleshooting tooling for Codex sessions.
+
+### Fixed
+- Preserve the accepted Desktop wheel, text-selection, clipboard, right-click, and reconnect behavior while keeping mobile-only handling isolated.
+- Canonicalize the ttyd 1.7.7 mobile patch with typed Visual Viewport handling and remove the temporary dev.12 Gate 5 build workaround.
+
+### Changed
+- Promote the iPhone- and Desktop-accepted `0.4.4-dev.12` deployment state to stable while retaining the newer stable Codex CLI version.
+
+## [0.4.7] - 2026-09-04
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.153.2.
+
+## [0.4.6] - 2026-09-03
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.153.0.
+
+## [0.4.5] - 2026-09-02
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.152.1.
+
+## [0.4.4] - 2026-09-01
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.152.0.
+
 ## [0.4.3] - 2026-08-31
 
 ### Changed
