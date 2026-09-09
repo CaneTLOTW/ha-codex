@@ -26,10 +26,29 @@ repair_codex_config() {
   fi
 }
 
+build_addons_override() {
+  local config_path="${CODEX_HOME:-${HOME}/.codex}/config.toml"
+  local addons_access
+  addons_access="$(cat /data/codex-managed/addons-access 2>/dev/null || printf 'read_only\n')"
+  python3 /usr/local/bin/codex-addons-sandbox "$config_path" "$addons_access"
+}
+
 if command -v codex >/dev/null 2>&1; then
   while true; do
     repair_codex_config
-    codex -c 'tui.alternate_screen="never"' -c 'check_for_update_on_startup=false'
+    codex_args=(
+      -c 'tui.alternate_screen="never"'
+      -c 'check_for_update_on_startup=false'
+    )
+    if [[ "${CODEX_PERMISSIONS:-workspace}" == "workspace" ]]; then
+      addons_roots="$(build_addons_override)" || {
+        echo "[ERROR] Unable to prepare /addons sandbox policy." >&2
+        break
+      }
+      codex_args+=( -c "sandbox_workspace_write.writable_roots=${addons_roots}" )
+    fi
+
+    codex "${codex_args[@]}"
     codex_status=$?
     if [[ "$codex_status" -eq 0 ]]; then
       break

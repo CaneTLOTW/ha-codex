@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Render the effective workspace-write writable roots for /addons access."""
+
+from __future__ import annotations
+
+import json
+import sys
+import tomllib
+from pathlib import PurePosixPath
+
+ADDONS = PurePosixPath("/addons")
+
+
+def covers_addons(root: str) -> bool:
+    try:
+        path = PurePosixPath(root)
+    except (TypeError, ValueError):
+        return False
+    if not path.is_absolute():
+        return False
+    return path == ADDONS or path.is_relative_to(ADDONS) or ADDONS.is_relative_to(path)
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print("usage: codex-addons-sandbox <config.toml> <read_only|read_write>", file=sys.stderr)
+        return 2
+
+    config_path, mode = sys.argv[1], sys.argv[2]
+    if mode not in {"read_only", "read_write"}:
+        print(f"invalid addons access mode: {mode}", file=sys.stderr)
+        return 2
+
+    try:
+        with open(config_path, "rb") as handle:
+            config = tomllib.load(handle)
+    except FileNotFoundError:
+        config = {}
+    except tomllib.TOMLDecodeError as error:
+        print(f"cannot parse Codex config: {error}", file=sys.stderr)
+        return 1
+
+    workspace = config.get("sandbox_workspace_write", {})
+    roots = workspace.get("writable_roots", []) if isinstance(workspace, dict) else []
+    if not isinstance(roots, list):
+        roots = []
+
+    result: list[str] = []
+    for root in roots:
+        if not isinstance(root, str) or not root:
+            continue
+        if covers_addons(root):
+            if mode == "read_only":
+                print(
+                    f"[WARN] Removing writable root {root!r} because /addons is configured read-only.",
+                    file=sys.stderr,
+                )
+            continue
+        if root not in result:
+            result.append(root)
+
+    if mode == "read_write":
+        result.append("/addons")
+
+    print(json.dumps(result, separators=(",", ":")))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

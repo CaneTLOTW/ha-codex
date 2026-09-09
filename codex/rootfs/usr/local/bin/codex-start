@@ -14,8 +14,32 @@ session_persist="$(jq -r '.session_persistence // false' /data/options.json)"
 work_dir="$(jq -r '.working_directory // "/homeassistant"' /data/options.json)"
 enable_mcp="$(jq -r '.enable_mcp' /data/options.json)"
 default_model="$(jq -r '.default_model // ""' /data/options.json)"
-codex_permissions="$(jq -r '.codex_permissions // "workspace"' /data/options.json)"
+configured_codex_permissions="$(jq -r '.codex_permissions // "workspace"' /data/options.json)"
 codex_approval_policy="$(jq -r '.codex_approval_policy // "on-request"' /data/options.json)"
+addons_access="$(jq -r '.addons_access // "read_only"' /data/options.json)"
+
+case "$addons_access" in
+  read_only|read_write) ;;
+  *)
+    echo "[WARN] Invalid addons_access value '$addons_access'; falling back to read_only." >&2
+    addons_access="read_only"
+    ;;
+esac
+
+codex_permissions="$configured_codex_permissions"
+if [[ "$addons_access" == "read_only" && "$codex_permissions" == "full_access" ]]; then
+  codex_permissions="workspace"
+  echo "[WARN] /addons is configured read-only; effective Codex access is reduced from full_access to workspace so /addons can remain outside writable roots." >&2
+fi
+
+case "$work_dir" in
+  /addons|/addons/*)
+    if [[ "$addons_access" == "read_only" ]]; then
+      echo "[WARN] Working directory '$work_dir' is below read-only /addons; falling back to /homeassistant." >&2
+      work_dir="/homeassistant"
+    fi
+    ;;
+esac
 
 export CODEX_STATE_ROOT="/data/codex-home"
 export CODEX_MANAGED_ROOT="/data/codex-managed"
@@ -25,6 +49,7 @@ export CODEX_ENABLE_MCP="$enable_mcp"
 export CODEX_DEFAULT_MODEL="$default_model"
 export CODEX_PERMISSIONS="$codex_permissions"
 export CODEX_APPROVAL_POLICY="$codex_approval_policy"
+export CODEX_ADDONS_ACCESS="$addons_access"
 export CODEX_HA_URL="http://supervisor/core"
 export CODEX_SUPERVISOR_TOKEN_FILE="/tmp/codex/ha-token"
 export CODEX_MCP_CONFIG="$CODEX_MANAGED_ROOT/mcp-servers.json"
@@ -36,6 +61,8 @@ mkdir -p \
   /tmp/codex
 
 chmod 700 /tmp/codex
+printf '%s\n' "$addons_access" > "$CODEX_MANAGED_ROOT/addons-access"
+chmod 644 "$CODEX_MANAGED_ROOT/addons-access"
 
 /usr/local/bin/codex-prepare-mcp \
   /data/options.json \
@@ -69,6 +96,9 @@ grant_group_root_access() {
 grant_group_root_access /homeassistant
 grant_group_root_access /share
 grant_group_root_access /media
+if [[ "$addons_access" == "read_write" ]]; then
+  grant_group_root_access /addons
+fi
 grant_group_root_access "$work_dir"
 
 printf '%s' "${SUPERVISOR_TOKEN:-}" > "$CODEX_SUPERVISOR_TOKEN_FILE"
@@ -76,8 +106,9 @@ chmod 600 "$CODEX_SUPERVISOR_TOKEN_FILE"
 unset SUPERVISOR_TOKEN
 
 echo "[INFO] Using image-installed Codex CLI: $(codex --version 2>/dev/null || echo unknown)"
+echo "[INFO] /addons access: ${addons_access}; effective Codex access: ${codex_permissions}"
 
-cat > "$CODEX_MANAGED_ROOT/AGENTS.md" <<'EOF'
+cat > "$CODEX_MANAGED_ROOT/AGENTS.md" <<'EOF_AGENTS'
 # Codex App for Home Assistant
 
 ## Path Mapping
@@ -97,6 +128,16 @@ When users mention `/config/...`, translate to `/homeassistant/...`
 | `/media` | Media files | read-write |
 | `/ssl` | SSL certificates | read-only |
 | `/backup` | Backups | read-only |
+| `/addons` | Local Home Assistant App sources | controlled by `addons_access` |
+
+## `/addons` access
+
+Home Assistant App mount permissions are static, so `/addons` is mounted into this container with host-level read-write capability. The `addons_access` App option is enforced at the Codex runtime layer:
+
+- `read_only` keeps `/addons` out of Codex writable roots. If `full_access` was configured, the effective Codex mode is reduced to `workspace` because `danger-full-access` cannot exclude one path.
+- `read_write` grants the unprivileged Codex runtime user filesystem access and, in workspace mode, adds `/addons` to Codex writable roots.
+
+A manual diagnostic shell opened after Codex exits is not a Codex sandbox boundary; use the Home Assistant App option and Codex session for controlled project work.
 
 ## Codex Configuration
 
@@ -150,7 +191,7 @@ ha-readonly core logs 2>&1 | grep -i keyword
 ha-readonly core logs 2>&1 | grep -iE "(error|exception)"
 tail -100 /homeassistant/home-assistant.log
 ```
-EOF
+EOF_AGENTS
 
 validate_home="$CODEX_MANAGED_ROOT/validate-home"
 rm -rf "$validate_home"

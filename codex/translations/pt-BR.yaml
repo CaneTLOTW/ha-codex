@@ -36,6 +36,12 @@ configuration:
     name: Política de aprovação do Codex
     description: >-
       Controla quando o Codex pede confirmação: on-request, untrusted ou never.
+  addons_access:
+    name: Acesso a Apps locais (/addons)
+    description: >-
+      read_only permite ao Codex ler as fontes de Apps locais. read_write também
+      permite alterações. Com read_only, full access é efetivamente reduzido a
+      workspace para manter /addons fora das raízes graváveis.
   mcp_servers:
     name: Servidores MCP adicionais
     description: >-

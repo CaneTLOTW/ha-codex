@@ -37,6 +37,12 @@ configuration:
     description: >-
       Legt fest, wann Codex vor Aktionen nachfragt: on-request, untrusted oder
       never.
+  addons_access:
+    name: Zugriff auf lokale Apps (/addons)
+    description: >-
+      read_only erlaubt Codex nur Lesezugriff. read_write erlaubt Änderungen an
+      lokalen Home-Assistant-Apps. Bei read_only wird ein konfigurierter
+      Vollzugriff aus Sicherheitsgründen effektiv auf Workspace begrenzt.
   mcp_servers:
     name: Zusätzliche MCP-Server
     description: >-
