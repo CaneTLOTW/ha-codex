@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.29] - 2026-10-30
+
+### Fixed
+- Avoid changing SSH private-key and owner-only file permissions when preparing Codex workspace access (Issue #26).
+- Prune protected SSH and other key directories, skip common private-key filenames, and avoid following symlinked workspaces into protected paths.
+- Stop creating recursive default group ACLs that could otherwise be inherited by newly created SSH keys; preserve the filtered chmod fallback.
+
+### Notes
+- Existing unwanted ACLs are not automatically repaired. Refer to `docs/SSH_KEY_PERMISSIONS.md` for targeted manual checks.
+- The existing Codex runtime UID and Supervisor/MCP integration remain unchanged; the broader permissions architecture will be reviewed separately.
+
 ## [0.4.28] - 2026-10-28
 
 ### Changed
