@@ -52,18 +52,8 @@ if [[ -d /homeassistant/.codex-home && ! -d "$CODEX_STATE_ROOT/legacy-global-hom
 fi
 
 grant_group_root_access() {
-  local target="$1"
-  if [[ ! -e "$target" ]]; then
-    return
-  fi
-
-  if ! setfacl -R -m g:root:rwx "$target" 2>/dev/null; then
-    chmod -R g+rwX "$target" 2>/dev/null || true
-  fi
-
-  if [[ -d "$target" ]]; then
-    setfacl -R -d -m g:root:rwx "$target" 2>/dev/null || true
-  fi
+  # Preserve SSH/private paths; never add inherited ACLs.
+  bash /usr/local/bin/codex-grant-access "$1"
 }
 
 grant_group_root_access /homeassistant

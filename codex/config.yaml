@@ -1,6 +1,6 @@
 name: Codex Deployment
 description: Experimental OpenAI Codex App for Home Assistant - deployment channel with writable local App source access
-version: "0.4.10-dev.1"
+version: "0.4.10-dev.2"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
