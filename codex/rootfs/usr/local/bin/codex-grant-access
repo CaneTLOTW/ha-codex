@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Grant workspace access without touching SSH material or other private files.
+# Do not follow symlinks. This deliberately does not install default ACLs:
+# they could be inherited by SSH keys created after the app starts.
+set -euo pipefail
+
+target="${1:?usage: codex-grant-access PATH}"
+[[ -e "$target" ]] || exit 0
+
+# Resolve the requested workspace itself. A working_directory symlink that
+# points inside .ssh must not bypass the exclusion.
+target="$(realpath -e -- "$target")"
+
+case "/${target#/}/" in
+  */.ssh/*|*/.gnupg/*|*/.aws/*|*/.kube/*)
+    echo "[INFO] Skipping protected directory: $target" >&2
+    exit 0
+    ;;
+esac
+
+case "${target##*/}" in
+  id_*|identity|*.pem|*.key|*.p12|*.pfx|*.ppk)
+    echo "[INFO] Skipping protected file: $target" >&2
+    exit 0
+    ;;
+esac
+
+# A 0600/0700 file is owner-private. Never make it group-writable.
+if [[ -f "$target" ]] && [[ $(stat -c '%a' -- "$target") =~ ^[0-7]*00$ ]]; then
+  echo "[INFO] Skipping owner-private file: $target" >&2
+  exit 0
+fi
+
+# The expression is intentionally repeated verbatim for both ACL and chmod.
+# -prune prevents descending into protected directories; symlinks are never
+# selected and find's default -P mode does not traverse them.
+access_find() {
+  local mode="$1"
+  local -a protected=(
+    \( -type d \( -name .ssh -o -name .gnupg -o -name .aws -o -name .kube \) \)
+    -o
+    \( -type f \( -name 'id_*' -o -name identity -o -name '*.pem' -o -name '*.key' -o -name '*.p12' -o -name '*.pfx' -o -name '*.ppk' -o ! -perm /077 \) \)
+  )
+  if [[ "$mode" == acl ]]; then
+    find -P "$target" \( "${protected[@]}" \) -prune -o \
+      -type d -exec setfacl -m g:root:rwx -- {} + -o \
+      -type f -perm /111 -exec setfacl -m g:root:rwx -- {} + -o \
+      -type f -exec setfacl -m g:root:rw- -- {} +
+  else
+    find -P "$target" \( "${protected[@]}" \) -prune -o \
+      \( -type d -o -type f \) -exec chmod g+rwX -- {} +
+  fi
+}
+
+if ! command -v setfacl >/dev/null 2>&1 || ! access_find acl; then
+  echo "[WARN] ACL grant failed; falling back to filtered chmod for $target" >&2
+  access_find chmod
+fi
