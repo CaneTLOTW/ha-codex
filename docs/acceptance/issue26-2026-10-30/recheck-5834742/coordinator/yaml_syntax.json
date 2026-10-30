@@ -1,0 +1,42 @@
+[
+  {
+    "path": "codex/translations/pt-BR.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": "codex/translations/en.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": "codex/translations/es.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": "codex/translations/de.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": "codex/config.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": "repository.yaml",
+    "status": "PASS"
+  },
+  {
+    "path": ".github/workflows/propose-codex-cli-update.yml",
+    "status": "PASS"
+  },
+  {
+    "path": ".github/workflows/validate-codex.yml",
+    "status": "PASS"
+  },
+  {
+    "path": ".github/workflows/publish-codex.yml",
+    "status": "PASS"
+  },
+  {
+    "path": ".github/workflows/publish-deployment.yml",
+    "status": "PASS"
+  }
+]

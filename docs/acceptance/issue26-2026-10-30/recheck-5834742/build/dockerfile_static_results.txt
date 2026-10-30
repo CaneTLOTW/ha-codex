@@ -1,0 +1,16 @@
+Dockerfile: codex/Dockerfile; bounded logical instruction scan: PASS (30 instructions)
+PASS bash -n: RUN at Dockerfile line 24
+PASS COPY source exists in codex context: line 68: ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch
+PASS bash -n: RUN at Dockerfile line 69
+PASS bash -n: RUN at Dockerfile line 97
+PASS bash -n: RUN at Dockerfile line 101
+PASS bash -n: RUN at Dockerfile line 124
+PASS bash -n: RUN at Dockerfile line 132
+PASS COPY source exists in codex context: line 139: rootfs/
+PASS bash -n: RUN at Dockerfile line 141
+PASS bash -n: RUN at Dockerfile line 170
+PASS bash -n: RUN at Dockerfile line 183
+PASS JSON ENTRYPOINT at Dockerfile line 192: []
+PASS JSON CMD at Dockerfile line 193: ['/usr/local/bin/codex-start']
+RUN shell payloads syntax-checked, not executed: 9
+Scope limitation: this is not full Dockerfile frontend/parser validation; no build, image pull, package resolution, architecture compilation, or runtime test was performed.

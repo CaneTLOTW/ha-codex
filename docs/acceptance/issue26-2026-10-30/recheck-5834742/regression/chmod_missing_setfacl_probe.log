@@ -1,0 +1,6 @@
+run=1 rc=0 stdout='' stderr='[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-oducyjqx/workspace\n'
+run=1 owner_uid=22000 normal_mode=0664 normal_W_OK=True executable_mode=0775 executable_X_OK=True ssh_mode=0700 key_mode=0600 private_mode=0600
+run=2 rc=0 stdout='' stderr='[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-oducyjqx/workspace\n'
+run=2 owner_uid=22000 normal_mode=0664 normal_W_OK=True executable_mode=0775 executable_X_OK=True ssh_mode=0700 key_mode=0600 private_mode=0600
+temporary_root=/tmp/ha-codex-issue26-chmod-fallback-oducyjqx
+uid_limitation: checks ran as current Codex uid only; distinct UID behavior is unverified

@@ -1,0 +1,24 @@
+{
+  "production": {
+    "slug": "e6fb3748_codex",
+    "installed_version": "0.4.28",
+    "latest_version": "0.4.28",
+    "auto_update": false,
+    "in_progress": false,
+    "active_hostname": "e6fb3748-codex"
+  },
+  "deployment": {
+    "slug": "1e25a555_codex",
+    "installed_version": "0.4.10-dev.1",
+    "latest_version": "0.4.10-dev.1",
+    "auto_update": false,
+    "in_progress": false,
+    "running_state": "UNKNOWN (state/switch entities integration-disabled)"
+  },
+  "test": {
+    "slug": "codex_issue26",
+    "full_supervisor_slug": "NOT VERIFIED",
+    "installed_by_this_run": false
+  },
+  "management_access": "No authenticated add-on management client; anonymous GET http://supervisor/addons returns HTTP401; no credential recovery attempted"
+}

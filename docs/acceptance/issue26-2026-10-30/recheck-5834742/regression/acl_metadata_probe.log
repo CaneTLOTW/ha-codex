@@ -1,0 +1,1 @@
+{"default_acls_absent": true, "evidence": "acl_metadata_before_after.json", "executable_group_acl": "rwx", "normal_yaml_group_acl": "rw-", "preexisting_protected_acl_preserved": true, "protected_paths_unchanged": true, "result": "PASS", "runs": 2, "uid": 22000}

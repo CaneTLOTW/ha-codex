@@ -1,0 +1,27 @@
+test_apparmor_allows_runtime_policy_to_offer_both_modes (test_addons_access.AddonsAccessTests.test_apparmor_allows_runtime_policy_to_offer_both_modes) ... ok
+test_home_assistant_mount_and_option_are_present (test_addons_access.AddonsAccessTests.test_home_assistant_mount_and_option_are_present) ... ok
+test_read_only_removes_addons_and_parent_writable_roots (test_addons_access.AddonsAccessTests.test_read_only_removes_addons_and_parent_writable_roots) ... ok
+test_read_write_preserves_other_roots_and_adds_addons (test_addons_access.AddonsAccessTests.test_read_write_preserves_other_roots_and_adds_addons) ... ok
+test_shell_applies_effective_writable_roots_override (test_addons_access.AddonsAccessTests.test_shell_applies_effective_writable_roots_override) ... ok
+test_startup_fail_safe_downgrades_full_access_for_read_only_addons (test_addons_access.AddonsAccessTests.test_startup_fail_safe_downgrades_full_access_for_read_only_addons) ... ok
+test_ios_viewport_is_part_of_canonical_ttyd_patch (test_ios_viewport.IOSViewportTests.test_ios_viewport_is_part_of_canonical_ttyd_patch) ... ok
+test_explicit_mcp_false_is_preserved (test_modernization.ModernizationTests.test_explicit_mcp_false_is_preserved) ... ok
+test_merge_remote_mcp_and_disable_bundled_server (test_modernization.ModernizationTests.test_merge_remote_mcp_and_disable_bundled_server) ... ok
+test_mobile_terminal_patch_is_canonical_and_served (test_modernization.ModernizationTests.test_mobile_terminal_patch_is_canonical_and_served) ... ok
+test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection (test_modernization.ModernizationTests.test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection) ... ok
+test_prepare_mcp_keeps_bearer_value_out_of_server_json (test_modernization.ModernizationTests.test_prepare_mcp_keeps_bearer_value_out_of_server_json) ... ok
+test_readonly_ha_helper_and_agent_guidance (test_modernization.ModernizationTests.test_readonly_ha_helper_and_agent_guidance) ... ok
+test_remote_mcp_restores_previous_same_name_user_server (test_modernization.ModernizationTests.test_remote_mcp_restores_previous_same_name_user_server) ... ok
+test_runtime_codex_self_update_is_disabled (test_modernization.ModernizationTests.test_runtime_codex_self_update_is_disabled) ... ok
+test_web_session_keeps_scrollback (test_modernization.ModernizationTests.test_web_session_keeps_scrollback) ... ok
+test_acl_prunes_private_paths_and_executable_is_preserved (test_ssh_acl_protection.GrantAccessTests.test_acl_prunes_private_paths_and_executable_is_preserved) ... ok
+test_chmod_fallback_uses_same_exclusions (test_ssh_acl_protection.GrantAccessTests.test_chmod_fallback_uses_same_exclusions) ... ok
+test_real_chmod_fallback_keeps_private_modes (test_ssh_acl_protection.GrantAccessTests.test_real_chmod_fallback_keeps_private_modes) ... ok
+test_repeated_startups_do_not_touch_ssh (test_ssh_acl_protection.GrantAccessTests.test_repeated_startups_do_not_touch_ssh) ... ok
+test_workdir_inside_ssh_and_symlink_to_ssh_are_skipped (test_ssh_acl_protection.GrantAccessTests.test_workdir_inside_ssh_and_symlink_to_ssh_are_skipped) ... ok
+test_touch_keyboard_avoidance_stays_in_canonical_ttyd_patch (test_ttyd_keyboard_avoidance.MobileKeyboardAvoidanceTests.test_touch_keyboard_avoidance_stays_in_canonical_ttyd_patch) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.396s
+
+OK

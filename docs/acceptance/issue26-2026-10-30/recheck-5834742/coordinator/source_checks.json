@@ -1,0 +1,56 @@
+[
+  {
+    "command": [
+      "bash",
+      "-n",
+      "codex/rootfs/usr/local/bin/codex-start"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bash",
+      "-n",
+      "codex/rootfs/usr/local/bin/codex-grant-access"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "5834742e21c21a23bb7ec8a9630f7f1e912cebf1",
+      "HEAD"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "yaml_manifest_checks": {
+      "name": true,
+      "slug": true,
+      "version": true,
+      "no_image": true,
+      "boot_manual": true,
+      "experimental": true,
+      "architectures": true,
+      "enable_mcp": true
+    }
+  }
+]

@@ -1,0 +1,162 @@
+{
+  "payload_files": 26,
+  "payload_bytes": 109903,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "bytes": 10890,
+      "lines": 83,
+      "sha256": "75642e532892713b332970cd2ac2b491d96124b68f113dbe0e1c5067c3464f55"
+    },
+    {
+      "path": "build/REPORT.md",
+      "bytes": 5199,
+      "lines": 39,
+      "sha256": "6984e76cab5a5e47980e9cf63ce5695e23902a52f148c36f8fbb836d3dbe8069"
+    },
+    {
+      "path": "build/check_dockerfile_static.py",
+      "bytes": 4574,
+      "lines": 102,
+      "sha256": "2fc991608fda291ac6f0b31762f35665bdcacce15432c0ceb164633770b2c0e3"
+    },
+    {
+      "path": "build/dockerfile_static_results.txt",
+      "bytes": 951,
+      "lines": 16,
+      "sha256": "6f87a19fe61ef1ac6fb24f8505f9d8ef56011a41a94f47f50d2eff4c86dc4141"
+    },
+    {
+      "path": "build/static_checks.txt",
+      "bytes": 2206,
+      "lines": 41,
+      "sha256": "41b7a50d81ea7fe4c75a8c9b40a44a40ea5d270ba4871c52059f45b8f64687df"
+    },
+    {
+      "path": "coordinator/installation_inventory.json",
+      "bytes": 758,
+      "lines": 24,
+      "sha256": "12205a1a0d342b209a51aa5fe32b86f31c3268475cc52b00113cef4ee2bcf766"
+    },
+    {
+      "path": "coordinator/production_after.json",
+      "bytes": 3954,
+      "lines": 109,
+      "sha256": "af27da3e056594b13af90136d6f32e6434f6658c4fbf829995719101783a6337"
+    },
+    {
+      "path": "coordinator/production_before.json",
+      "bytes": 3954,
+      "lines": 109,
+      "sha256": "c8eaaf3f6199fdc9e0d3575eb9d9b6696a9acd6fe87b6f597e84f03d6bb31631"
+    },
+    {
+      "path": "coordinator/production_metadata_comparison.json",
+      "bytes": 60,
+      "lines": 5,
+      "sha256": "4f01fc382594fb70554ec61f15758fe947ef8b278d306cbebf8247675d6247ee"
+    },
+    {
+      "path": "coordinator/source_checks.json",
+      "bytes": 915,
+      "lines": 56,
+      "sha256": "26fb25d5df5b4f9084faa3d5acba2a2de539d3055fc5b550be4448f3fa2b5064"
+    },
+    {
+      "path": "coordinator/tested_source_hashes.json",
+      "bytes": 977,
+      "lines": 32,
+      "sha256": "ac1d135bf73027d41579a6ffd5fcb66025240a209e4212e891c3a3757a11817c"
+    },
+    {
+      "path": "coordinator/yaml_syntax.json",
+      "bytes": 759,
+      "lines": 42,
+      "sha256": "814bb5734a8f1f26749bb2456bb3a71bf072f7a1b81b1401785231891465bdf9"
+    },
+    {
+      "path": "regression/RESULTS.md",
+      "bytes": 4007,
+      "lines": 24,
+      "sha256": "eb125e1b80a093c42ee7b79e088c0d6a17e12fd0bee29847a61c771d32f588e7"
+    },
+    {
+      "path": "regression/acl_metadata_before_after.json",
+      "bytes": 5322,
+      "lines": 198,
+      "sha256": "e988c6598cfffd2aa225828b820bc74d5f8b5399cca3ca43cab8568880131020"
+    },
+    {
+      "path": "regression/acl_metadata_probe.log",
+      "bytes": 262,
+      "lines": 1,
+      "sha256": "7a88569ffc0f8a82a110883b1ac433a94b93abdedd52845b9f79e7c466d841d5"
+    },
+    {
+      "path": "regression/acl_metadata_probe.py",
+      "bytes": 3489,
+      "lines": 87,
+      "sha256": "b70c4dc8481cfaa9289a589bf8ad300429e9194d4daeafaff35bdfb17cadd415"
+    },
+    {
+      "path": "regression/chmod_missing_setfacl_before_after.json",
+      "bytes": 3554,
+      "lines": 134,
+      "sha256": "962998bf3dcfdcd5732da10e4f6052650d3818fadfee2744f7076bcce3292386"
+    },
+    {
+      "path": "regression/chmod_missing_setfacl_probe.log",
+      "bytes": 735,
+      "lines": 6,
+      "sha256": "62732e937888111a67d1cdf633490bb7ae14c48f132c0d644a1ebf3d751b2f2e"
+    },
+    {
+      "path": "regression/find_wrapper_shell_repro.log",
+      "bytes": 43,
+      "lines": 2,
+      "sha256": "ef2e11c444f25975b0a2647ff3e7ac25f58d1509144eef18d35abb3f3cc3fc6e"
+    },
+    {
+      "path": "regression/real_acl_probe.log",
+      "bytes": 1389,
+      "lines": 12,
+      "sha256": "99c2f2ff48214f0e0b5f69acf47e44c139cc3c95b5f18c9012147de2c60c5601"
+    },
+    {
+      "path": "regression/real_acl_probe.py",
+      "bytes": 2894,
+      "lines": 37,
+      "sha256": "f3882cd302b6ac41556af6a18c82a8abfe24b10161ac3257325f97bb5fedc0c4"
+    },
+    {
+      "path": "regression/real_chmod_fallback_probe.py",
+      "bytes": 3445,
+      "lines": 51,
+      "sha256": "c5bdfd3c468f326dba4d68e19161bd5c1ab6ef6743d8125aea56f8f918a03ddb"
+    },
+    {
+      "path": "regression/real_setfacl_failure_before_after.json",
+      "bytes": 38834,
+      "lines": 189,
+      "sha256": "3d6f4caf3f7ae3222c1b3bcc7bf37144719243000ff311c2b1b64ce770234449"
+    },
+    {
+      "path": "regression/real_setfacl_failure_probe.log",
+      "bytes": 305,
+      "lines": 1,
+      "sha256": "117d2d82d6f13149d53102065983c11085ee1ce353aa5a282684b894972cf9d6"
+    },
+    {
+      "path": "regression/real_setfacl_failure_probe.py",
+      "bytes": 7022,
+      "lines": 159,
+      "sha256": "2b1afc1b3acef3ec56862aa39274ad1d600436c5aa61c0003c554b867ea57408"
+    },
+    {
+      "path": "regression/unittest-discovery.txt",
+      "bytes": 3405,
+      "lines": 27,
+      "sha256": "a915f910abb266fec39e56e00525c405db989fe51f4f09d8b3aca9683ed88777"
+    }
+  ]
+}

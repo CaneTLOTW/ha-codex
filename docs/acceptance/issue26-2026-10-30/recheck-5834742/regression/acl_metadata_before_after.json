@@ -1,0 +1,198 @@
+{
+  "before": {
+    "workspace": {
+      "acl": "user::rwx\ngroup::r-x\nother::r-x",
+      "gid": 0,
+      "mode": "0755",
+      "uid": 22000
+    },
+    "workspace/.ssh": {
+      "acl": "user::rwx\ngroup::---\nother::---",
+      "gid": 0,
+      "mode": "0700",
+      "uid": 22000
+    },
+    "workspace/.ssh/id_ed25519": {
+      "acl": "user::rw-\ngroup::---\ngroup:root:r--\nmask::r--\nother::---",
+      "gid": 0,
+      "mode": "0640",
+      "uid": 22000
+    },
+    "workspace/.ssh/nested": {
+      "acl": "user::rwx\ngroup::r-x\nother::r-x",
+      "gid": 0,
+      "mode": "0755",
+      "uid": 22000
+    },
+    "workspace/.ssh/nested/inside.txt": {
+      "acl": "user::rw-\ngroup::r--\nother::r--",
+      "gid": 0,
+      "mode": "0644",
+      "uid": 22000
+    },
+    "workspace/linkedssh": {
+      "is_symlink": true,
+      "lstat_mode": "0777",
+      "target": "/tmp/issue26-acl-metadata-yqqqj2iv/workspace/.ssh"
+    },
+    "workspace/normal.yaml": {
+      "acl": "user::rw-\ngroup::r--\nother::r--",
+      "gid": 0,
+      "mode": "0644",
+      "uid": 22000
+    },
+    "workspace/outside.key": {
+      "acl": "user::rw-\ngroup::r--\nother::r--",
+      "gid": 0,
+      "mode": "0644",
+      "uid": 22000
+    },
+    "workspace/private0600": {
+      "acl": "user::rw-\ngroup::---\nother::---",
+      "gid": 0,
+      "mode": "0600",
+      "uid": 22000
+    },
+    "workspace/run.sh": {
+      "acl": "user::rwx\ngroup::r-x\nother::r-x",
+      "gid": 0,
+      "mode": "0755",
+      "uid": 22000
+    }
+  },
+  "runs": [
+    {
+      "after": {
+        "workspace": {
+          "acl": "user::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/.ssh": {
+          "acl": "user::rwx\ngroup::---\nother::---",
+          "gid": 0,
+          "mode": "0700",
+          "uid": 22000
+        },
+        "workspace/.ssh/id_ed25519": {
+          "acl": "user::rw-\ngroup::---\ngroup:root:r--\nmask::r--\nother::---",
+          "gid": 0,
+          "mode": "0640",
+          "uid": 22000
+        },
+        "workspace/.ssh/nested": {
+          "acl": "user::rwx\ngroup::r-x\nother::r-x",
+          "gid": 0,
+          "mode": "0755",
+          "uid": 22000
+        },
+        "workspace/.ssh/nested/inside.txt": {
+          "acl": "user::rw-\ngroup::r--\nother::r--",
+          "gid": 0,
+          "mode": "0644",
+          "uid": 22000
+        },
+        "workspace/linkedssh": {
+          "is_symlink": true,
+          "lstat_mode": "0777",
+          "target": "/tmp/issue26-acl-metadata-yqqqj2iv/workspace/.ssh"
+        },
+        "workspace/normal.yaml": {
+          "acl": "user::rw-\ngroup::r--\ngroup:root:rw-\nmask::rw-\nother::r--",
+          "gid": 0,
+          "mode": "0664",
+          "uid": 22000
+        },
+        "workspace/outside.key": {
+          "acl": "user::rw-\ngroup::r--\nother::r--",
+          "gid": 0,
+          "mode": "0644",
+          "uid": 22000
+        },
+        "workspace/private0600": {
+          "acl": "user::rw-\ngroup::---\nother::---",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        },
+        "workspace/run.sh": {
+          "acl": "user::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        }
+      },
+      "returncode": 0,
+      "run": 1,
+      "stderr": ""
+    },
+    {
+      "after": {
+        "workspace": {
+          "acl": "user::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/.ssh": {
+          "acl": "user::rwx\ngroup::---\nother::---",
+          "gid": 0,
+          "mode": "0700",
+          "uid": 22000
+        },
+        "workspace/.ssh/id_ed25519": {
+          "acl": "user::rw-\ngroup::---\ngroup:root:r--\nmask::r--\nother::---",
+          "gid": 0,
+          "mode": "0640",
+          "uid": 22000
+        },
+        "workspace/.ssh/nested": {
+          "acl": "user::rwx\ngroup::r-x\nother::r-x",
+          "gid": 0,
+          "mode": "0755",
+          "uid": 22000
+        },
+        "workspace/.ssh/nested/inside.txt": {
+          "acl": "user::rw-\ngroup::r--\nother::r--",
+          "gid": 0,
+          "mode": "0644",
+          "uid": 22000
+        },
+        "workspace/linkedssh": {
+          "is_symlink": true,
+          "lstat_mode": "0777",
+          "target": "/tmp/issue26-acl-metadata-yqqqj2iv/workspace/.ssh"
+        },
+        "workspace/normal.yaml": {
+          "acl": "user::rw-\ngroup::r--\ngroup:root:rw-\nmask::rw-\nother::r--",
+          "gid": 0,
+          "mode": "0664",
+          "uid": 22000
+        },
+        "workspace/outside.key": {
+          "acl": "user::rw-\ngroup::r--\nother::r--",
+          "gid": 0,
+          "mode": "0644",
+          "uid": 22000
+        },
+        "workspace/private0600": {
+          "acl": "user::rw-\ngroup::---\nother::---",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        },
+        "workspace/run.sh": {
+          "acl": "user::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        }
+      },
+      "returncode": 0,
+      "run": 2,
+      "stderr": ""
+    }
+  ],
+  "uid": 22000
+}

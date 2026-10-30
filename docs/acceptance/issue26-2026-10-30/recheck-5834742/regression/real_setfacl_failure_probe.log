@@ -1,0 +1,1 @@
+{"default_acls": "absent", "evidence": "real_setfacl_failure_before_after.json", "executable": "0755 -> 0775, executable", "helper_fallback": "real chmod", "normal_yaml": "0644 -> 0664, writable", "protected_metadata_unchanged": true, "real_setfacl_invoked_and_failed": true, "result": "PASS", "runs": 2}

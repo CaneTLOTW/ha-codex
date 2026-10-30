@@ -1,0 +1,32 @@
+[
+  {
+    "path": "codex/rootfs/usr/local/bin/codex-start",
+    "sha256": "d6015ee1941231a53567b78f09439f3d5d9b7c3543d001ea30db3fd46073d7f5",
+    "bytes": 9803,
+    "matches_reference_5834742": true
+  },
+  {
+    "path": "codex/rootfs/usr/local/bin/codex-grant-access",
+    "sha256": "cc240cbdf802a5e0e7ca723dda4a8ba01c4f44ad0dd514b1093f7f6d8bc71bcd",
+    "bytes": 2099,
+    "matches_reference_5834742": true
+  },
+  {
+    "path": "codex/tests/test_ssh_acl_protection.py",
+    "sha256": "ad0af21697bd3b57fef6b0316c6ec9d79b7977a86debafed8e21f8e2ca7f73ab",
+    "bytes": 6161,
+    "matches_reference_5834742": true
+  },
+  {
+    "path": "codex/Dockerfile",
+    "sha256": "39c6f7bd3e715f47637d293ea324b237ab61e9908a1815675337809d2a2d0826",
+    "bytes": 5488,
+    "matches_reference_5834742": true
+  },
+  {
+    "path": "codex/config.yaml",
+    "sha256": "2e2d6832887dd80aecad445036c681d14364d83d59fc24ca8bcbe683d3788770",
+    "bytes": 1589,
+    "matches_reference_5834742": true
+  }
+]

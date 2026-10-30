@@ -1,0 +1,41 @@
+Issue 26 build/deployment static review evidence
+
+Branch: issue26-local-test
+HEAD: 5834742e21c21a23bb7ec8a9630f7f1e912cebf1
+origin/pr27 ref: d01d178ea5e1bbd2e6c7606a2efe03c8dca12c34
+
+Manifest:
+name=Codex SSH Hotfix Test
+slug=codex_issue26
+version=0.4.28-test.26.1
+image field=absent (Supervisor local Dockerfile build expected)
+arch=amd64,aarch64
+boot=manual
+stage=experimental
+
+Docker/helper static relationships:
+codex/Dockerfile: COPY rootfs/ /
+codex/Dockerfile: CMD ["/usr/local/bin/codex-start"]
+codex/rootfs/usr/local/bin/codex-start: bash /usr/local/bin/codex-grant-access "$1"
+
+PR27 exact shared-source comparison:
+The following paths have no diff between origin/pr27 and HEAD:
+- codex/rootfs/usr/local/bin/codex-grant-access
+- codex/rootfs/usr/local/bin/codex-start
+- codex/tests/test_ssh_acl_protection.py
+
+Architecture notes:
+- Manifest declares amd64 and aarch64.
+- Dockerfile maps BUILD_ARCH to matching Home Assistant CLI downloads for both architectures.
+- Alpine package/native ttyd compilation and full image build were not executed; both architecture builds are NOT TESTED.
+
+Supervisor collision/authorization:
+- No read-only add-on inventory or authorized Supervisor management API is available in this session.
+- Full repository-qualified test slug and collision status require visual confirmation before installation.
+- No Supervisor token or SSH private-key contents were accessed.
+
+Bounded Dockerfile static check command:
+python3 docs/acceptance/issue26-2026-10-30/recheck-5834742/build/check_dockerfile_static.py
+Result: PASS; 30 logical instructions scanned; 9 shell-form RUN payloads accepted by bash -n (not executed); both JSON ENTRYPOINT/CMD arrays parsed; both local non-heredoc COPY sources exist; COPY heredoc bodies skipped. This is not full Dockerfile frontend validation. See dockerfile_static_results.txt for per-instruction output.
+
+Installation gate: provisional READY FOR TEST INSTALLATION only after Luna A's genuine-failing-setfacl probe and the coordinator gate pass. Do not install while pending. The UI may not show a commit SHA; branch/version confirmation plus the coordinator Git pin is sufficient. A final docs-only descendant of 5834742e... is acceptable.

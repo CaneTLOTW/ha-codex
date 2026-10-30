@@ -1,0 +1,134 @@
+{
+  "before": {
+    "workspace": {
+      "acl": "user::rwx\ngroup::r-x\nother::r-x\n\n",
+      "gid": 0,
+      "mode": "0755",
+      "uid": 22000
+    },
+    "workspace/.ssh": {
+      "acl": "user::rwx\ngroup::---\nother::---\n\n",
+      "gid": 0,
+      "mode": "0700",
+      "uid": 22000
+    },
+    "workspace/.ssh/id_ed25519": {
+      "acl": "user::rw-\ngroup::---\nother::---\n\n",
+      "gid": 0,
+      "mode": "0600",
+      "uid": 22000
+    },
+    "workspace/executable.sh": {
+      "acl": "user::rwx\ngroup::r-x\nother::r-x\n\n",
+      "gid": 0,
+      "mode": "0755",
+      "uid": 22000
+    },
+    "workspace/normal.yaml": {
+      "acl": "user::rw-\ngroup::r--\nother::r--\n\n",
+      "gid": 0,
+      "mode": "0644",
+      "uid": 22000
+    },
+    "workspace/private0600": {
+      "acl": "user::rw-\ngroup::---\nother::---\n\n",
+      "gid": 0,
+      "mode": "0600",
+      "uid": 22000
+    }
+  },
+  "result": "PASS",
+  "runs": [
+    {
+      "after": {
+        "workspace": {
+          "acl": "user::rwx\ngroup::rwx\nother::r-x\n\n",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/.ssh": {
+          "acl": "user::rwx\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0700",
+          "uid": 22000
+        },
+        "workspace/.ssh/id_ed25519": {
+          "acl": "user::rw-\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        },
+        "workspace/executable.sh": {
+          "acl": "user::rwx\ngroup::rwx\nother::r-x\n\n",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/normal.yaml": {
+          "acl": "user::rw-\ngroup::rw-\nother::r--\n\n",
+          "gid": 0,
+          "mode": "0664",
+          "uid": 22000
+        },
+        "workspace/private0600": {
+          "acl": "user::rw-\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        }
+      },
+      "executable": true,
+      "fallback": "chmod",
+      "normal_writable": true,
+      "run": 1,
+      "warning": "[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-oducyjqx/workspace\n"
+    },
+    {
+      "after": {
+        "workspace": {
+          "acl": "user::rwx\ngroup::rwx\nother::r-x\n\n",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/.ssh": {
+          "acl": "user::rwx\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0700",
+          "uid": 22000
+        },
+        "workspace/.ssh/id_ed25519": {
+          "acl": "user::rw-\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        },
+        "workspace/executable.sh": {
+          "acl": "user::rwx\ngroup::rwx\nother::r-x\n\n",
+          "gid": 0,
+          "mode": "0775",
+          "uid": 22000
+        },
+        "workspace/normal.yaml": {
+          "acl": "user::rw-\ngroup::rw-\nother::r--\n\n",
+          "gid": 0,
+          "mode": "0664",
+          "uid": 22000
+        },
+        "workspace/private0600": {
+          "acl": "user::rw-\ngroup::---\nother::---\n\n",
+          "gid": 0,
+          "mode": "0600",
+          "uid": 22000
+        }
+      },
+      "executable": true,
+      "fallback": "chmod",
+      "normal_writable": true,
+      "run": 2,
+      "warning": "[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-oducyjqx/workspace\n"
+    }
+  ],
+  "uid": 22000
+}
