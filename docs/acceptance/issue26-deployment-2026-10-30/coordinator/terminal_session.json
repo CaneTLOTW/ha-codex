@@ -1,0 +1,19 @@
+{
+  "endpoint": "ws://1e25a555-codex:7681/ws",
+  "credentials_read": false,
+  "authentication_headers_spoofed": false,
+  "codex_apps_401_observed": true,
+  "diagnostic_shell_ready": true,
+  "session_result": {
+    "hostname": "1e25a555-codex",
+    "uid": 22000,
+    "gid": 0,
+    "normal_file_read_write": "PASS",
+    "executable_mode": "0o775",
+    "mcp_tools_count": 29,
+    "homeassistant_mcp": "PASS",
+    "ha_version_response": [
+      "2026.10.4"
+    ]
+  }
+}

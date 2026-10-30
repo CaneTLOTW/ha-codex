@@ -1,0 +1,23 @@
+{
+  "runs": [
+    {
+      "workflow": "canary",
+      "job_seconds": 91.0,
+      "rounded_job_minutes": 3,
+      "jobs": 2
+    },
+    {
+      "workflow": "deployment_validation",
+      "job_seconds": 123.0,
+      "rounded_job_minutes": 3,
+      "jobs": 2
+    },
+    {
+      "workflow": "deployment_publish",
+      "job_seconds": 316.0,
+      "rounded_job_minutes": 8,
+      "jobs": 4
+    }
+  ],
+  "billing_quota_and_tariff": "not accessible; rounded job minutes are not a bill"
+}

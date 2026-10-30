@@ -1,0 +1,22 @@
+2026-10-30T07:50:52.4209062Z test_ios_viewport_is_part_of_canonical_ttyd_patch (test_ios_viewport.IOSViewportTests.test_ios_viewport_is_part_of_canonical_ttyd_patch) ... ok
+2026-10-30T07:50:52.4212380Z test_explicit_mcp_false_is_preserved (test_modernization.ModernizationTests.test_explicit_mcp_false_is_preserved) ... ok
+2026-10-30T07:50:52.4215605Z test_local_app_sources_are_rw_mapped_and_apparmor_allowed (test_modernization.ModernizationTests.test_local_app_sources_are_rw_mapped_and_apparmor_allowed) ... ok
+2026-10-30T07:50:52.4679590Z test_merge_remote_mcp_and_disable_bundled_server (test_modernization.ModernizationTests.test_merge_remote_mcp_and_disable_bundled_server) ... ok
+2026-10-30T07:50:52.4685157Z test_mobile_terminal_patch_is_canonical_and_served (test_modernization.ModernizationTests.test_mobile_terminal_patch_is_canonical_and_served) ... ok
+2026-10-30T07:50:52.4689585Z test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection (test_modernization.ModernizationTests.test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection) ... ok
+2026-10-30T07:50:52.4980311Z test_prepare_mcp_keeps_bearer_value_out_of_server_json (test_modernization.ModernizationTests.test_prepare_mcp_keeps_bearer_value_out_of_server_json) ... ok
+2026-10-30T07:50:52.4983938Z test_readonly_ha_helper_and_agent_guidance (test_modernization.ModernizationTests.test_readonly_ha_helper_and_agent_guidance) ... ok
+2026-10-30T07:50:52.5720700Z test_remote_mcp_restores_previous_same_name_user_server (test_modernization.ModernizationTests.test_remote_mcp_restores_previous_same_name_user_server) ... ok
+2026-10-30T07:50:52.6085464Z test_runtime_codex_self_update_is_disabled (test_modernization.ModernizationTests.test_runtime_codex_self_update_is_disabled) ... ok
+2026-10-30T07:50:52.6087001Z test_web_session_keeps_scrollback (test_modernization.ModernizationTests.test_web_session_keeps_scrollback) ... ok
+2026-10-30T07:50:52.6786534Z test_acl_prunes_private_paths_and_executable_is_preserved (test_ssh_acl_protection.GrantAccessTests.test_acl_prunes_private_paths_and_executable_is_preserved) ... ok
+2026-10-30T07:50:52.7120153Z test_chmod_fallback_uses_same_exclusions (test_ssh_acl_protection.GrantAccessTests.test_chmod_fallback_uses_same_exclusions) ... ok
+2026-10-30T07:50:52.7205258Z test_real_chmod_fallback_keeps_private_modes (test_ssh_acl_protection.GrantAccessTests.test_real_chmod_fallback_keeps_private_modes) ... ok
+2026-10-30T07:50:52.7532215Z test_repeated_startups_do_not_touch_ssh (test_ssh_acl_protection.GrantAccessTests.test_repeated_startups_do_not_touch_ssh) ... ok
+2026-10-30T07:50:52.8115379Z test_workdir_inside_ssh_and_symlink_to_ssh_are_skipped (test_ssh_acl_protection.GrantAccessTests.test_workdir_inside_ssh_and_symlink_to_ssh_are_skipped) ... ok
+2026-10-30T07:50:52.8117049Z test_touch_keyboard_avoidance_stays_in_canonical_ttyd_patch (test_ttyd_keyboard_avoidance.MobileKeyboardAvoidanceTests.test_touch_keyboard_avoidance_stays_in_canonical_ttyd_patch) ... ok
+2026-10-30T07:50:52.8118095Z
+2026-10-30T07:50:52.8118328Z ----------------------------------------------------------------------
+2026-10-30T07:50:52.8118846Z Ran 17 tests in 0.391s
+2026-10-30T07:50:52.8119035Z
+2026-10-30T07:50:52.8119489Z OK

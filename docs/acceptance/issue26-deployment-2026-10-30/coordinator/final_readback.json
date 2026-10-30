@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-10-30T08:06:45.797669+00:00",
+  "production_addon": "e6fb3748_codex",
+  "production_version": "0.4.28",
+  "production_in_progress": false,
+  "production_active": true,
+  "production_metadata_unchanged_paths": 12,
+  "production_runtime_script_hashes_unchanged": true,
+  "deployment_addon": "1e25a555_codex",
+  "deployment_version": "0.4.10-dev.2",
+  "deployment_latest_version": "0.4.10-dev.2",
+  "deployment_in_progress": false,
+  "deployment_final_state": "stopped (stop accepted, HTTP unreachable)",
+  "homeassistant_mcp": "PASS from test session",
+  "codex_apps": "FAIL HTTP401 (auth unchanged)",
+  "main_ref": "c2661e04ee6b74b25e8759d74d8217523458bbed\trefs/heads/main"
+}

@@ -1,0 +1,5 @@
+{
+  "test_addon": "1e25a555_codex",
+  "action": "final_stop_accepted",
+  "http_error": "URLError"
+}

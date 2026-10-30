@@ -1,0 +1,46 @@
+[
+  {
+    "action": "stop_before_update",
+    "target": "1e25a555_codex",
+    "service": "hassio.addon_stop",
+    "result": "accepted"
+  },
+  {
+    "action": "update",
+    "entity": "update.codex_deployment_update",
+    "service": "update.install",
+    "backup_requested": true,
+    "result": "client_timeout_10s",
+    "runtime_result": "installed0.4.10-dev.2 observed; in_progress false",
+    "backup_archive_id": "NOT VERIFIED"
+  },
+  {
+    "action": "start1",
+    "target": "1e25a555_codex",
+    "service": "hassio.addon_start",
+    "result": "client_timeout_10s",
+    "readback": "HTTP200 plus expected ACL changes"
+  },
+  {
+    "action": "stop_between",
+    "target": "1e25a555_codex",
+    "result": "accepted, HTTP unreachable"
+  },
+  {
+    "action": "start2",
+    "target": "1e25a555_codex",
+    "service": "hassio.addon_start",
+    "result": "client_timeout_10s",
+    "readback": "HTTP200, identical fixture metadata"
+  },
+  {
+    "action": "terminal_session",
+    "target": "1e25a555-codex",
+    "result": "UID22000; fixture read/write PASS; HA MCP29 tools, get_version2026.10.4; codex_apps401 observed"
+  },
+  {
+    "action": "final_stop",
+    "target": "1e25a555_codex",
+    "result": "accepted; HTTP unreachable"
+  }
+]

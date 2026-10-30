@@ -1,0 +1,179 @@
+{
+  "run": {
+    "id": 41022579641,
+    "name": "Validate Codex App",
+    "head_sha": "d577b280293d3f24ddb1e0418d47d3d42b5aea1b",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/CaneTLOTW/ha-codex/actions/runs/41022579641",
+    "created_at": "2026-10-30T07:50:44Z",
+    "run_started_at": "2026-10-30T07:50:44Z",
+    "updated_at": "2026-10-30T07:52:22Z"
+  },
+  "jobs": [
+    {
+      "id": 123953081013,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-30T07:50:48Z",
+      "completed_at": "2026-10-30T07:50:57Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-30T07:50:49Z",
+          "completed_at": "2026-10-30T07:50:50Z"
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-30T07:50:50Z",
+          "completed_at": "2026-10-30T07:50:51Z"
+        },
+        {
+          "name": "Run actions/setup-python@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-30T07:50:51Z",
+          "completed_at": "2026-10-30T07:50:51Z"
+        },
+        {
+          "name": "Install validation dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-30T07:50:51Z",
+          "completed_at": "2026-10-30T07:50:52Z"
+        },
+        {
+          "name": "Python regression tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-30T07:50:52Z",
+          "completed_at": "2026-10-30T07:50:52Z"
+        },
+        {
+          "name": "Shell syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-30T07:50:52Z",
+          "completed_at": "2026-10-30T07:50:52Z"
+        },
+        {
+          "name": "Parse Home Assistant YAML and translation coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-30T07:50:52Z",
+          "completed_at": "2026-10-30T07:50:52Z"
+        },
+        {
+          "name": "Reject legacy Home Assistant build.yaml",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-30T07:50:52Z",
+          "completed_at": "2026-10-30T07:50:52Z"
+        },
+        {
+          "name": "Validate canonical ttyd patch against clean 1.7.7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-30T07:50:52Z",
+          "completed_at": "2026-10-30T07:50:53Z"
+        },
+        {
+          "name": "Diff whitespace check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-30T07:50:53Z",
+          "completed_at": "2026-10-30T07:50:53Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-30T07:50:53Z",
+          "completed_at": "2026-10-30T07:50:53Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-30T07:50:53Z",
+          "completed_at": "2026-10-30T07:50:53Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-10-30T07:50:53Z",
+          "completed_at": "2026-10-30T07:50:53Z"
+        }
+      ]
+    },
+    {
+      "id": 123953145710,
+      "name": "build-amd64",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-30T07:51:00Z",
+      "completed_at": "2026-10-30T07:52:22Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-30T07:51:00Z",
+          "completed_at": "2026-10-30T07:51:01Z"
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-30T07:51:01Z",
+          "completed_at": "2026-10-30T07:51:02Z"
+        },
+        {
+          "name": "Build amd64 App image",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-30T07:51:02Z",
+          "completed_at": "2026-10-30T07:52:19Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-30T07:52:19Z",
+          "completed_at": "2026-10-30T07:52:20Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-30T07:52:20Z",
+          "completed_at": "2026-10-30T07:52:20Z"
+        }
+      ]
+    }
+  ]
+}

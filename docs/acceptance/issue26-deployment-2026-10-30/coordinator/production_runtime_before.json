@@ -1,0 +1,20 @@
+{
+  "time": "2026-10-30T07:54:45.150923+00:00",
+  "files": [
+    {
+      "path": "/usr/local/bin/codex-start",
+      "exists": true,
+      "sha256": "bbda0ffe778d4a8ce7083dffa725899abf92e2b299c5044d1ab578311f89569a"
+    },
+    {
+      "path": "/usr/local/bin/codex-shell",
+      "exists": true,
+      "sha256": "5961a673de47708f59bd382ca0ebd533881bd4a18e0b20daffa624db03fccf54"
+    },
+    {
+      "path": "/usr/local/bin/codex-session",
+      "exists": true,
+      "sha256": "14dfe1934631e015ce075126aa0b0161f1200955d39364391fc34a492e49dc15"
+    }
+  ]
+}

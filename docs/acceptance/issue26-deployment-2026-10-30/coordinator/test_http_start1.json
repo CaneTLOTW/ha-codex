@@ -1,0 +1,10 @@
+{
+  "host": "1e25a555-codex",
+  "port": 7681,
+  "addresses": [
+    "172.30.33.3",
+    "fd0c:ac1e:2100::a"
+  ],
+  "http_status": 200,
+  "content_type": "text/html"
+}

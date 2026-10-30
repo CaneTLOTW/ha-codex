@@ -1,0 +1,30 @@
+$ python3 docs/acceptance/issue26-deployment-2026-10-30/regression/real_acl_probe.py
+run=1 helper_rc=0 stdout='' stderr=''
+run=1 owner_uid=22000 ssh_mode=0700 key_mode=0600 owner_private_mode=0600 normal_os_access_W_OK=True executable_os_access_X_OK=True
+run=2 helper_rc=0 stdout='' stderr=''
+run=2 owner_uid=22000 ssh_mode=0700 key_mode=0600 owner_private_mode=0600 normal_os_access_W_OK=True executable_os_access_X_OK=True
+direct_target=workspace/.ssh rc=0 stderr='[INFO] Skipping protected directory: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/.ssh\n'
+direct_target=workspace/.ssh/nested rc=0 stderr='[INFO] Skipping protected directory: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/.ssh/nested\n'
+direct_target=workspace/linkedssh rc=0 stderr='[INFO] Skipping protected directory: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/.ssh\n'
+direct_target=workspace/.ssh/id_ed25519 rc=0 stderr='[INFO] Skipping protected directory: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/.ssh/id_ed25519\n'
+direct_target=workspace/private0600 rc=0 stderr='[INFO] Skipping owner-private file: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/private0600\n'
+direct_target=workspace/outside.key rc=0 stderr='[INFO] Skipping protected file: /tmp/ha-codex-issue26-real-acl-xwkx91ve/workspace/outside.key\n'
+temporary_root=/tmp/ha-codex-issue26-real-acl-xwkx91ve
+uid_limitation: checks ran as current Codex uid only; no distinct uid execution was attempted or established
+
+exit_code=0
+
+$ python3 docs/acceptance/issue26-deployment-2026-10-30/regression/real_chmod_fallback_probe.py
+run=1 rc=0 stdout='' stderr='[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-vj3n7ude/workspace\n'
+run=1 owner_uid=22000 normal_mode=0664 normal_W_OK=True executable_mode=0775 executable_X_OK=True ssh_mode=0700 key_mode=0600 private_mode=0600
+run=2 rc=0 stdout='' stderr='[WARN] ACL grant failed; falling back to filtered chmod for /tmp/ha-codex-issue26-chmod-fallback-vj3n7ude/workspace\n'
+run=2 owner_uid=22000 normal_mode=0664 normal_W_OK=True executable_mode=0775 executable_X_OK=True ssh_mode=0700 key_mode=0600 private_mode=0600
+temporary_root=/tmp/ha-codex-issue26-chmod-fallback-vj3n7ude
+uid_limitation: checks ran as current Codex uid only; distinct UID behavior is unverified
+
+exit_code=0
+
+$ python3 docs/acceptance/issue26-deployment-2026-10-30/regression/real_setfacl_failure_probe.py
+{"default_acls": "absent", "evidence": "real_setfacl_failure_before_after.json", "executable": "0755 -> 0775, executable", "helper_fallback": "real chmod", "normal_yaml": "0644 -> 0664, writable", "protected_metadata_unchanged": true, "real_setfacl_invoked_and_failed": true, "result": "PASS", "runs": 2}
+
+exit_code=0

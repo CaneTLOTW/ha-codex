@@ -1,0 +1,55 @@
+{
+  "registry": "canetlotw/ha-codex",
+  "tag": "0.4.10-dev.2",
+  "digest": "sha256:88e8860ba83857e88436499beda61959a9dfb93974eded871a5e066f4a6081c7",
+  "manifest": {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "manifests": [
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:186a63199590deb5c3a3badbb8b1f6e32b0164d9ad7f91f6ccf717fc7afcf781",
+        "size": 3529,
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      },
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:73551598a29f034774efd1106600f859e62113dd6d7d784fa05ac543930ec31a",
+        "size": 838,
+        "annotations": {
+          "vnd.docker.reference.digest": "sha256:186a63199590deb5c3a3badbb8b1f6e32b0164d9ad7f91f6ccf717fc7afcf781",
+          "vnd.docker.reference.type": "attestation-manifest"
+        },
+        "platform": {
+          "architecture": "unknown",
+          "os": "unknown"
+        }
+      },
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:a803ebb86305e69e53b71d1709c0cc7a8de09003a4551e4624212bac498d4aea",
+        "size": 3529,
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        }
+      },
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:7eec8a79386b57a18d1bfc42c039166f5e1a7f0c7dab2529223e32b2794d6662",
+        "size": 838,
+        "annotations": {
+          "vnd.docker.reference.digest": "sha256:a803ebb86305e69e53b71d1709c0cc7a8de09003a4551e4624212bac498d4aea",
+          "vnd.docker.reference.type": "attestation-manifest"
+        },
+        "platform": {
+          "architecture": "unknown",
+          "os": "unknown"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "time": "2026-10-30T08:01:32.590630+00:00",
+  "paths": [
+    {
+      "path": "/homeassistant",
+      "exists": true,
+      "uid": 0,
+      "gid": 0,
+      "mode": "0775",
+      "acl": "# file: /homeassistant\n# owner: root\n# group: root\nuser::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x\ndefault:user::rwx\ndefault:group::r-x\ndefault:group:root:rwx\ndefault:mask::rwx\ndefault:other::r-x\n\n"
+    },
+    {
+      "path": "/homeassistant/configuration.yaml",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0674",
+      "acl": "# file: /homeassistant/configuration.yaml\n# owner: codex\n# group: root\nuser::rw-\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r--\n\n"
+    },
+    {
+      "path": "/homeassistant/.ssh",
+      "exists": false
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0700",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh\n# owner: codex\n# group: root\nuser::rwx\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/homeassistant/remote/optolink-splitter",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0775",
+      "acl": "# file: /homeassistant/remote/optolink-splitter\n# owner: codex\n# group: root\nuser::rwx\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r-x\ndefault:user::rwx\ndefault:group::r-x\ndefault:group:root:rwx\ndefault:mask::rwx\ndefault:other::r-x\n\n"
+    },
+    {
+      "path": "/homeassistant/remote/optolink-splitter/known_hosts",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0674",
+      "acl": "# file: /homeassistant/remote/optolink-splitter/known_hosts\n# owner: codex\n# group: root\nuser::rw-\ngroup::r-x\ngroup:root:rwx\nmask::rwx\nother::r--\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/config",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0600",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/config\n# owner: codex\n# group: root\nuser::rw-\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/id_ed25519",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0600",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/id_ed25519\n# owner: codex\n# group: root\nuser::rw-\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/id_ed25519.pub",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0644",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/id_ed25519.pub\n# owner: codex\n# group: root\nuser::rw-\ngroup::r--\nother::r--\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/id_ed25519_e_c3_dashboard",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0600",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/id_ed25519_e_c3_dashboard\n# owner: codex\n# group: root\nuser::rw-\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/id_ed25519_e_c3_dashboard.pub",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0644",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/id_ed25519_e_c3_dashboard.pub\n# owner: codex\n# group: root\nuser::rw-\ngroup::r--\nother::r--\n\n"
+    },
+    {
+      "path": "/data/codex-home/users/anonymous/.ssh/known_hosts",
+      "exists": true,
+      "uid": 22000,
+      "gid": 0,
+      "mode": "0600",
+      "acl": "# file: /data/codex-home/users/anonymous/.ssh/known_hosts\n# owner: codex\n# group: root\nuser::rw-\ngroup::---\nother::---\n\n"
+    }
+  ],
+  "changes": [],
+  "ssh_metadata_unchanged": true
+}

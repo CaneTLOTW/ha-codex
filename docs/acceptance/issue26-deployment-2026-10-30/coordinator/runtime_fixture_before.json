@@ -1,0 +1,54 @@
+{
+  "root": "/share/issue26-runtime-r66c8lll",
+  "paths": [
+    {
+      "path": "/share/issue26-runtime-r66c8lll",
+      "mode": "0755",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rwx\ngroup::r-x\nother::r-x\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/.ssh",
+      "mode": "0700",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rwx\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/.ssh/id_ed25519",
+      "mode": "0600",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rw-\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/owner_private",
+      "mode": "0600",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rw-\ngroup::---\nother::---\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/normal.yaml",
+      "mode": "0644",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rw-\ngroup::r--\nother::r--\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/executable.sh",
+      "mode": "0755",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rwx\ngroup::r-x\nother::r-x\n\n"
+    },
+    {
+      "path": "/share/issue26-runtime-r66c8lll/outside.key",
+      "mode": "0644",
+      "uid": 22000,
+      "gid": 0,
+      "acl": "user::rw-\ngroup::r--\nother::r--\n\n"
+    }
+  ]
+}
