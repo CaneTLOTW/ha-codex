@@ -1,0 +1,13 @@
+Issue #26 source acceptance failure diagnosis
+Checkout: /share/ha-codex-issue26-local-test
+HEAD: ee5e4133d2ee2eae7d07353942dd423697fd0d37
+
+Cause: the three failures share an observed environment restriction; this does not establish product correctness or rule out other helper defects. GrantAccessTests creates executable fake setfacl/chmod scripts below tempfile.TemporaryDirectory(), which defaults to /tmp. In this runtime, direct execution of a newly created executable fails with PermissionError [Errno 13] (noexec-like execution restriction). The exact fake command files were mode 0755; PATH resolved setfacl/chmod to those files, while bash/find/realpath/stat resolved to /bin/bash, /usr/bin/find, /usr/bin/realpath, /bin/stat. BASH_ENV and ENV were unset. Helper stdout and stderr were both empty, return code 0: find -exec does not run the inaccessible fake commands, so MOCK_LOG is never created. This explains the two empty-log assertions and the repeated-startup test's FileNotFoundError.
+
+The execution restriction was independently reproduced for a script created under /share as well as /tmp, so setting TMPDIR would not fix this runtime. No suitable environment-only correction was established in the checked paths; no adjusted suite run was attempted. Baseline remains FAIL (22 tests, 19 pass / 2 fail / 1 error).
+
+Per-test helper stdout/stderr capture: each of the two first failing cases returned rc=0, stdout='', stderr='', action log absent. The repeated-startup first helper invocation had the same result, then test code raised FileNotFoundError unlinking absent actions.log.
+
+See baseline_unittest_output.txt for full baseline output and real_acl_probe.py plus real_acl_probe_results.txt for the isolated real ACL check. No repository source was modified. The real ACL check ran as UID 22000 only; it verified os.access(normal.yaml, W_OK)=True and os.access(executable.sh, X_OK)=True post-grant, but cannot establish permissions for a distinct Codex UID.
+
+Supplemental probes: real_acl_probe.py checks no default ACL on the workspace, unchanged mode/ACL for outside.key, and direct nested .ssh/nested targeting. real_chmod_fallback_probe.py intercepts only command -v setfacl, delegates other command invocations to the builtin, and runs the unchanged helper twice with genuine chmod. It confirms normal.yaml 0644 to 0664 and executable.sh 0755 to 0775, while .ssh=0700, private key=0600, owner-private=0600, and protected ACL metadata remain unchanged. os.access writable/executable checks pass for UID 22000.
