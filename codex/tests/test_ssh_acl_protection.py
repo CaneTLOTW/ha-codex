@@ -1,4 +1,5 @@
 import os
+import shutil
 import pathlib
 import subprocess
 import tempfile
@@ -75,6 +76,23 @@ class GrantAccessTests(unittest.TestCase):
         self.assertEqual(self.run_helper(self.ssh), '')
         self.assertEqual(self.run_helper(self.workspace / 'linkedssh'), '')
         self.assertEqual(self.run_helper(self.key), '')
+
+    def test_real_chmod_fallback_keeps_private_modes(self):
+        real_bin = self.root / 'realbin'
+        real_bin.mkdir()
+        (real_bin / 'setfacl').write_text('#!/bin/sh\nexit 1\n')
+        (real_bin / 'setfacl').chmod(0o755)
+        real_chmod = shutil.which('chmod')
+        self.assertIsNotNone(real_chmod)
+        (real_bin / 'chmod').symlink_to(real_chmod)
+        env = os.environ.copy()
+        env['PATH'] = str(real_bin) + ':' + env['PATH']
+        result = subprocess.run(['bash', str(HELPER), str(self.workspace)], text=True,
+                                capture_output=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.ssh.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(self.key.stat().st_mode & 0o777, 0o600)
+        self.assertNotEqual((self.workspace / 'normal.yaml').stat().st_mode & 0o020, 0)
 
     def test_repeated_startups_do_not_touch_ssh(self):
         self.run_helper(self.workspace)
