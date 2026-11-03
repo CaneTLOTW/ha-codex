@@ -37,6 +37,12 @@ configuration:
     description: >-
       Controls when Codex asks before running actions: on-request, untrusted,
       or never.
+  addons_access:
+    name: Local Apps Access (/addons)
+    description: >-
+      read_only lets Codex read local Home Assistant App sources. read_write
+      also permits changes. With read_only, configured full access is reduced
+      to effective workspace mode so /addons can stay outside writable roots.
   mcp_servers:
     name: Additional MCP Servers
     description: >-

@@ -1,5 +1,10 @@
 # `/addons` read/write runtime acceptance
 
+> Historical 0.4.10-dev.1 test plan. This does not describe the
+> `0.4.30-dev.1` candidate's default `addons_access: read_only`; do not run its
+> write probe as a current acceptance step without an explicitly selected test
+> App, `read_write` configuration, and the normal separate runtime approval.
+
 Target deployment version: `0.4.10-dev.1`
 
 Candidate validation branch: `feat/addons-rw-dev1`

@@ -2,15 +2,125 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.30-dev.1] - 2026-11-03
+
+### Changed
+- Rebase the deployment channel functionally onto stable 0.4.30 while preserving its manual boot and separate App identity.
+- Provide the stable `addons_access` control; local App writes require an explicit `read_write` setting.
+
+## [0.4.30] - 2026-10-30
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.166.0.
+
+## [0.4.29] - 2026-10-30
+
+### Fixed
+- Avoid changing SSH private-key and owner-only file permissions when preparing Codex workspace access (Issue #26).
+- Prune protected SSH and other key directories, skip common private-key filenames, and avoid following symlinked workspaces into protected paths.
+- Stop creating recursive default group ACLs that could otherwise be inherited by newly created SSH keys; preserve the filtered chmod fallback.
+
+### Notes
+- Existing unwanted ACLs are not automatically repaired. Refer to `docs/SSH_KEY_PERMISSIONS.md` for targeted manual checks.
+- The existing Codex runtime UID and Supervisor/MCP integration remain unchanged; the broader permissions architecture will be reviewed separately.
+
+## [0.4.28] - 2026-10-28
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.165.0.
+
+## [0.4.27] - 2026-10-23
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.164.0.
+
+## [0.4.26] - 2026-10-16
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.163.0.
+
+## [0.4.25] - 2026-10-10
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.162.1.
+
+## [0.4.24] - 2026-10-09
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.162.0.
+
+## [0.4.23] - 2026-10-08
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.161.0.
+
+## [0.4.22] - 2026-10-06
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.160.1.
+
+## [0.4.21] - 2026-10-02
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.160.0.
+
+## [0.4.20] - 2026-10-01
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.159.3.
+
+## [0.4.19] - 2026-09-30
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.159.2.
+
+## [0.4.18] - 2026-09-29
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.159.0.
+
+## [0.4.17] - 2026-09-28
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.158.0.
+
+## [0.4.16] - 2026-09-26
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.157.1.
+
+## [0.4.15] - 2026-09-25
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.157.0.
+
+## [0.4.14] - 2026-09-23
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.156.1.
+
+## [0.4.13] - 2026-09-19
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.155.1.
+
+## [0.4.12] - 2026-09-18
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.155.0.
+
+## [0.4.11] - 2026-09-10
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.154.0.
+
 ## [0.4.10-dev.1] - 2026-09-09
 
 ### Added
-- Add a writable Home Assistant `addons` mapping so local App source trees are available inside Codex at `/addons` for development and administrative workflows.
-- Extend the AppArmor policy and regression coverage for intentional read/write access to `/addons`.
+- Add writable Home Assistant `addons` mapping and AppArmor coverage for local App development.
 
 ### Changed
-- Re-baseline the deployment channel on the current `0.4.9` stable state, retaining bundled Codex CLI `0.153.4`, before testing the new mount.
-- Document that `/addons` grants broad write access to all local App sources and is distinct from per-App configuration under `/addon_configs`.
+- Re-baseline the deployment channel on stable 0.4.9 and document the broad local-App access boundary.
 
 ## [0.4.9] - 2026-09-05
 

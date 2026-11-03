@@ -56,7 +56,7 @@ profile codex flags=(attach_disconnected,mediate_deleted) {
   /media/** rwk,
   /backup/ r,
   /backup/** r,
-  /addons/ rw,
+  /addons/ r,
   /addons/** rwk,
   /addon_configs/ r,
   /addon_configs/** rwk,

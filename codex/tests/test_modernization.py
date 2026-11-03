@@ -159,7 +159,7 @@ class ModernizationTests(unittest.TestCase):
         apparmor = APPARMOR.read_text(encoding="utf-8")
         self.assertRegex(config, r"(?ms)^  - type: addons\n    read_only: false$")
         self.assertNotIn("all_addon_configs", config)
-        self.assertIn("/addons/ rw,", apparmor)
+        self.assertIn("/addons/ r,", apparmor)
         self.assertIn("/addons/** rwk,", apparmor)
 
     def test_web_session_keeps_scrollback(self):

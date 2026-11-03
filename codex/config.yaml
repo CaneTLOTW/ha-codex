@@ -1,6 +1,6 @@
 name: Codex Deployment
-description: Experimental OpenAI Codex App for Home Assistant - deployment channel with writable local App source access
-version: "0.4.10-dev.2"
+description: Experimental OpenAI Codex App for Home Assistant - deployment channel
+version: "0.4.30-dev.1"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
@@ -29,7 +29,6 @@ map:
   - type: media
     read_only: false
   - type: backup
-  # Broad writable access to all local App source trees; intentional development/admin capability.
   - type: addons
     read_only: false
 options:
@@ -41,6 +40,8 @@ options:
   default_model: "gpt-5.6-sol"
   codex_permissions: workspace
   codex_approval_policy: on-request
+  # Preserve stable's controlled default; explicitly opt in to writes if needed.
+  addons_access: read_only
   mcp_servers: []
   environment_variables: []
 schema:
@@ -49,9 +50,10 @@ schema:
   terminal_theme: list(dark|light)
   working_directory: str
   session_persistence: bool
-  default_model: list(gpt-6-astra|gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna|gpt-5.5|gpt-5.2)
+  default_model: list(gpt-6-astra|gpt-6.1-sol|gpt-6.1-terra|gpt-6-sol|gpt-6-luna|gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna|gpt-5.5)
   codex_permissions: list(workspace|full_access)
   codex_approval_policy: list(on-request|never|untrusted)
+  addons_access: list(read_only|read_write)
   mcp_servers:
     - name: str
       url: url
