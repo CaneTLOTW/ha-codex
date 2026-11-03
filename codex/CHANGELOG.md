@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.30-dev.2] - 2026-11-03
+
+### Added
+- Optional settings switch for the official Codex Remote Control service, disabled by default.
+- Native Unix-socket app-server in a managed unprivileged sidecar, independent of ttyd, with bounded crash restarts and clean App-stop handling.
+
+### Notes
+- HAOS runtime behavior and manual iOS pairing require a separate acceptance before deployment installation. No inbound TCP port was added.
+
 ## [0.4.30-dev.1] - 2026-11-03
 
 ### Changed
