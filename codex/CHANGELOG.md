@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 - Rebase the deployment channel functionally onto stable 0.4.30 while preserving its manual boot and separate App identity.
 - Provide the stable `addons_access` control; local App writes require an explicit `read_write` setting.
 
+### Security preparation
+- Canonicalize and validate the configured working directory and writable roots before applying the `/addons` policy. Roots must be existing directories. Runtime sandbox enforcement remains to be verified separately.
+
 ## [0.4.30] - 2026-10-30
 
 ### Changed

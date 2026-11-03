@@ -28,6 +28,8 @@ addons_access: read_only
 
 The App also refuses to use a working directory below `/addons` while the path is configured read-only and falls back to `/homeassistant`.
 
+Writable roots and the configured working directory are resolved to canonical paths before Codex starts. Roots must exist and resolve to directories when a session starts; relative, missing, non-directory, or unresolvable roots are rejected with a warning. A working directory that is a parent of `/addons` is rejected in both access modes to avoid unnecessarily broad ACL preparation. Previously, nonexistent writable roots could be passed through to Codex. Configurations that relied on Codex or a later command creating such a root must create the directory before starting the session. Rejecting it prevents a path that appears later, including as a symlink, from becoming writable without passing the `/addons` filter.
+
 ## Security boundary
 
 The option controls Codex sessions. The diagnostic Bash shell that is opened after Codex itself exits is intentionally not presented as a Codex sandbox boundary. Home Assistant AppArmor remains active, and the App still runs interactive Codex as the unprivileged UID 22000 rather than root.

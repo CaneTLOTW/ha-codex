@@ -26,6 +26,17 @@ case "$addons_access" in
     ;;
 esac
 
+# Resolve and validate the configured directory before either granting ACLs or
+# handing it to the Codex session. This rejects aliases into read-only /addons
+# and fails closed if the path cannot be resolved.
+if ! work_dir="$(python3 /usr/local/bin/codex-addons-sandbox --resolve-working-directory "$work_dir" "$addons_access")"; then
+  echo "[WARN] Invalid or disallowed working directory; falling back to /homeassistant." >&2
+  if ! work_dir="$(python3 /usr/local/bin/codex-addons-sandbox --resolve-working-directory /homeassistant "$addons_access")"; then
+    echo "[ERROR] /homeassistant is not a valid working directory for the configured /addons access mode." >&2
+    exit 1
+  fi
+fi
+
 codex_permissions="$configured_codex_permissions"
 if [[ "$addons_access" == "read_only" && "$codex_permissions" == "full_access" ]]; then
   codex_permissions="workspace"
