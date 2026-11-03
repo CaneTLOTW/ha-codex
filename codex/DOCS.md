@@ -215,3 +215,12 @@ Current versions should automatically shorten/refit the terminal while the softw
 ### Android mobile behavior
 
 Android is still a requested test target. The generic toolbar/paging path should be tested now; the current native `Sel` path is Apple-only. Report results in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6).
+
+
+## Codex Remote Control (optional, Deployment preview)
+
+The App Configuration tab provides **Enable Remote Control**, disabled by default. Save the setting and restart **Codex Deployment** for changes to take effect; switching it does not hot-reload a running service.
+
+When enabled, the App starts the official Codex Remote Control app-server on a **Unix-domain control socket**, as the existing unprivileged Codex user with the same persistent login/home as the web terminal. No additional TCP port or custom remote-control protocol is used. In the terminal, manually use the official Codex pairing command (`codex remote-control pair`) and complete pairing in the supported ChatGPT iOS app. Do not share pairing codes through logs or screenshots.
+
+The service starts and stops with the Home Assistant App, independently of ttyd and tmux. A failed service is retried only a limited number of times; after repeated failures the terminal remains available and the App logs the error. An existing working terminal must not be treated as proof of a successful remote session. HAOS process behavior and actual iOS pairing still require manual runtime acceptance. See Issue #24.

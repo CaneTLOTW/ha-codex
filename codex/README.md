@@ -313,3 +313,8 @@ Android is still an explicit feedback/test area. The generic toolbar should be t
 
 - [Repository](https://github.com/CaneTLOTW/ha-codex)
 - [Issues](https://github.com/CaneTLOTW/ha-codex/issues)
+
+
+## Optional Codex Remote Control
+
+Home Assistant App Configuration includes a **Remote Control** boolean option (`remote_control_enabled`) which defaults to **off**. The official Codex app-server runs alongside ttyd only when enabled, with no additional inbound TCP ports. Apply changes by saving options and restarting the App. Use a separate test project when pairing from the ChatGPT iOS app. Initial support is staged on the Deployment channel; HAOS/iOS acceptance remains mandatory before a stable release.

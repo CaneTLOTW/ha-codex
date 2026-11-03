@@ -11,12 +11,21 @@ fi
 
 theme="$(jq -r '.terminal_theme // "dark"' /data/options.json)"
 session_persist="$(jq -r '.session_persistence // false' /data/options.json)"
+remote_control_enabled="$(jq -r '.remote_control_enabled // false' /data/options.json)"
 work_dir="$(jq -r '.working_directory // "/homeassistant"' /data/options.json)"
 enable_mcp="$(jq -r '.enable_mcp' /data/options.json)"
 default_model="$(jq -r '.default_model // ""' /data/options.json)"
 configured_codex_permissions="$(jq -r '.codex_permissions // "workspace"' /data/options.json)"
 codex_approval_policy="$(jq -r '.codex_approval_policy // "on-request"' /data/options.json)"
 addons_access="$(jq -r '.addons_access // "read_only"' /data/options.json)"
+
+case "$remote_control_enabled" in
+  true|false) ;;
+  *)
+    echo "[WARN] Invalid Remote Control flag; keeping it disabled." >&2
+    remote_control_enabled="false"
+    ;;
+esac
 
 case "$addons_access" in
   read_only|read_write) ;;
@@ -227,21 +236,46 @@ else
   colors='background=#eff1f5,foreground=#4c4f69,cursor=#dc8a78'
 fi
 
-exec ttyd \
-  --debug 3 \
-  --port 7681 \
-  --writable \
-  --ping-interval 30 \
-  --max-clients 5 \
-  --index /usr/share/ttyd/mobile-index.html \
-  -t "fontSize=${font_size}" \
-  -t fontFamily=Monaco,Consolas,monospace \
-  -t rendererType=canvas \
-  -t scrollSensitivity=1 \
-  -t fastScrollSensitivity=5 \
-  -t scrollOnUserInput=true \
-  -t smoothScrollDuration=0 \
-  -t macOptionClickForcesSelection=true \
-  -t scrollback=5000 \
-  -t "theme=${colors}" \
+ttyd_args=(
+  --debug 3
+  --port 7681
+  --writable
+  --ping-interval 30
+  --max-clients 5
+  --index /usr/share/ttyd/mobile-index.html
+  -t "fontSize=${font_size}"
+  -t fontFamily=Monaco,Consolas,monospace
+  -t rendererType=canvas
+  -t scrollSensitivity=1
+  -t fastScrollSensitivity=5
+  -t scrollOnUserInput=true
+  -t smoothScrollDuration=0
+  -t macOptionClickForcesSelection=true
+  -t scrollback=5000
+  -t "theme=${colors}"
   /usr/local/bin/codex-session
+)
+
+# Keep the existing ttyd-as-main-process behavior while disabled.
+if [[ "$remote_control_enabled" != "true" ]]; then
+  exec ttyd "${ttyd_args[@]}"
+fi
+
+# With Remote Control enabled, supervise both processes. ttyd controls the
+# App lifetime; the optional remote-control sidecar can fail independently.
+/usr/local/bin/codex-remote-control &
+remote_control_pid=$!
+ttyd "${ttyd_args[@]}" &
+ttyd_pid=$!
+
+stop_children() {
+  trap - TERM INT HUP
+  kill -TERM "$remote_control_pid" "$ttyd_pid" 2>/dev/null || true
+  wait "$remote_control_pid" 2>/dev/null || true
+  wait "$ttyd_pid" 2>/dev/null || true
+}
+trap 'stop_children; exit 143' TERM INT HUP
+ttyd_status=0
+wait "$ttyd_pid" || ttyd_status=$?
+stop_children
+exit "$ttyd_status"

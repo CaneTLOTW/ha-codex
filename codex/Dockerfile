@@ -147,6 +147,7 @@ RUN chmod +x \
     /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \
     /usr/local/bin/codex-session \
+    /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 

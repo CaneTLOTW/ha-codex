@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Optional official Codex Remote Control; no new port or managed daemon binary.
+set -euo pipefail
+
+state_root="${CODEX_STATE_ROOT:-/data/codex-home}"
+managed_root="${CODEX_MANAGED_ROOT:-/data/codex-managed}"
+user_root="${state_root}/users/anonymous"
+codex_home="${user_root}/.codex"
+npm_cache="${user_root}/.npm"
+npm_prefix="${user_root}/.local"
+npm_bin="${npm_prefix}/bin"
+config_lock="${user_root}/.config.lock"
+work_dir="${CODEX_WORK_DIR:-/homeassistant}"
+managed_mcp_config="${CODEX_MCP_CONFIG:-${managed_root}/mcp-servers.json}"
+managed_mcp_environment="${CODEX_MCP_ENVIRONMENT:-${managed_root}/mcp-environment.json}"
+
+if ! command -v codex >/dev/null 2>&1; then
+  echo "[ERROR] Remote Control: Codex CLI missing; terminal remains available." >&2
+  exit 1
+fi
+
+mkdir -p "$codex_home" "$npm_cache" "$npm_bin"
+chown 22000:0 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$npm_bin"
+chmod 700 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix"
+chmod 755 "$npm_bin"
+if [[ -f "${managed_root}/AGENTS.md" ]]; then
+  ln -sfn "${managed_root}/AGENTS.md" "${codex_home}/AGENTS.md"
+  chown -h 22000:0 "${codex_home}/AGENTS.md"
+fi
+
+# The ttyd session uses the same config lock; do not race on config.toml.
+locked=false
+for ((n=0; n<100; n++)); do
+  if mkdir "$config_lock" 2>/dev/null; then locked=true; break; fi
+  sleep 0.1
+done
+if [[ "$locked" != "true" ]]; then
+  echo "[ERROR] Remote Control: Codex config lock timeout." >&2
+  exit 1
+fi
+unlock() { rmdir "$config_lock" 2>/dev/null || true; }
+trap unlock EXIT
+/usr/local/bin/codex-merge-config \
+  "${codex_home}/config.toml" \
+  "${CODEX_DEFAULT_MODEL:-}" \
+  "${CODEX_ENABLE_MCP:-true}" \
+  "${CODEX_PERMISSIONS:-workspace}" \
+  "${CODEX_APPROVAL_POLICY:-on-request}" \
+  "$managed_mcp_config"
+chown 22000:0 "${codex_home}/config.toml"
+chmod 600 "${codex_home}/config.toml"
+unlock
+trap - EXIT
+
+session_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}:$npm_bin"
+remote_env=(
+  "HOME=$user_root"
+  "CODEX_HOME=$codex_home"
+  "CODEX_USER_ID=anonymous"
+  "CODEX_PERMISSIONS=${CODEX_PERMISSIONS:-workspace}"
+  "CODEX_APPROVAL_POLICY=${CODEX_APPROVAL_POLICY:-on-request}"
+  "LOGNAME=codex"
+  "USER=codex"
+  "PATH=$session_path"
+  "TERM=${TERM:-xterm-256color}"
+  "NPM_CONFIG_CACHE=$npm_cache"
+  "NPM_CONFIG_PREFIX=$npm_prefix"
+)
+
+# Reuse the remote MCP environment without logging secret values.
+if [[ -r "$managed_mcp_environment" ]]; then
+  while IFS= read -r -d '' env_name && IFS= read -r -d '' env_value; do
+    if [[ "$env_name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      remote_env+=("$env_name=$env_value")
+    fi
+  done < <(jq -j '.[] | .name, "\u0000", .value, "\u0000"' "$managed_mcp_environment")
+fi
+
+codex_args=(-c 'check_for_update_on_startup=false')
+if [[ "${CODEX_PERMISSIONS:-workspace}" == "workspace" ]]; then
+  addons_roots="$(python3 /usr/local/bin/codex-addons-sandbox \
+    "${codex_home}/config.toml" "${CODEX_ADDONS_ACCESS:-read_only}")" || {
+    echo "[ERROR] Remote Control: unable to prepare /addons policy." >&2
+    exit 1
+  }
+  codex_args+=(-c "sandbox_workspace_write.writable_roots=$addons_roots")
+fi
+
+cd "$work_dir"
+
+# Five failed exits in a short period stop retries; a healthy 5-minute
+# run resets the counter. ttyd continues if this optional sidecar fails.
+stopping=false
+active_pid=""
+on_stop() {
+  stopping=true
+  if [[ -n "$active_pid" ]]; then
+    kill -TERM "$active_pid" 2>/dev/null || true
+  fi
+}
+trap on_stop TERM INT HUP
+failures=0
+
+while [[ "$stopping" == "false" ]]; do
+  started_at="$(date +%s)"
+  echo "[INFO] Starting official Codex Remote Control (Unix socket, UID 22000)." >&2
+  su-exec 22000:0 env -u SUPERVISOR_TOKEN "${remote_env[@]}" \
+    codex "${codex_args[@]}" app-server --listen unix:// --remote-control &
+  active_pid=$!
+  status=0
+  wait "$active_pid" || status=$?
+  active_pid=""
+  if [[ "$stopping" == "true" ]]; then break; fi
+
+  runtime_seconds=$(( $(date +%s) - started_at ))
+  if (( runtime_seconds >= 300 )); then failures=0; fi
+  failures=$((failures + 1))
+  if (( failures >= 5 )); then
+    echo "[ERROR] Remote Control stopped after five failures; ttyd remains available." >&2
+    break
+  fi
+  delay=$((failures * 5))
+  echo "[WARN] Remote Control exited ($status); retry $failures/4 in ${delay}s." >&2
+  sleep "$delay" &
+  active_pid=$!
+  wait "$active_pid" || true
+  active_pid=""
+done
+echo "[INFO] Remote Control sidecar stopped." >&2

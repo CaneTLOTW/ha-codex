@@ -17,6 +17,12 @@ configuration:
     description: >-
       Default working directory when Codex starts. Use /homeassistant for
       direct access to Home Assistant configuration files.
+  remote_control_enabled:
+    name: Enable Remote Control
+    description: >-
+      Run the official Codex Remote Control service alongside the terminal.
+      Off by default. Save settings and restart the App to apply the switch;
+      pair the iOS client separately.
   session_persistence:
     name: Session Persistence
     description: >-
