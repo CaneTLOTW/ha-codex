@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Render the effective workspace-write writable roots for /addons access."""
+
+from __future__ import annotations
+
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+ADDONS = Path("/addons")
+
+
+def resolved_directory(path: str | Path) -> Path:
+    resolved_path = Path(path).resolve(strict=True)
+    if not resolved_path.is_dir():
+        raise NotADirectoryError(str(path))
+    return resolved_path
+
+
+def covers_addons(root: Path, addons: Path) -> bool:
+    return root == addons or root.is_relative_to(addons) or addons.is_relative_to(root)
+
+
+def resolve_working_directory(
+    working_directory: str, addons_root: str | Path = ADDONS, mode: str = "read_only"
+) -> Path:
+    path = resolved_directory(working_directory)
+    addons = resolved_directory(addons_root)
+    # A workspace above /addons (especially /) would also cause the startup
+    # ACL preparation to traverse a broader tree, even in read_write mode.
+    if path != addons and addons.is_relative_to(path):
+        raise ValueError("working directory is a parent of /addons")
+    if mode == "read_only" and covers_addons(path, addons):
+        raise ValueError("working directory resolves into read-only /addons")
+    return path
+
+
+def filter_roots(roots: list[object], mode: str, addons_root: str | Path = ADDONS) -> list[str]:
+    try:
+        addons = resolved_directory(addons_root)
+    except (OSError, RuntimeError, TypeError, ValueError) as error:
+        print(f"[WARN] Cannot resolve protected /addons directory; removing all writable roots: {error}", file=sys.stderr)
+        return []
+
+    result: list[str] = []
+    for root in roots:
+        if not isinstance(root, str) or not root:
+            continue
+        root_path = Path(root)
+        if not root_path.is_absolute():
+            print(f"[WARN] Removing relative writable root {root!r}.", file=sys.stderr)
+            continue
+        try:
+            canonical_root = resolved_directory(root_path)
+        except (OSError, RuntimeError, TypeError, ValueError) as error:
+            print(f"[WARN] Removing unresolvable writable root {root!r}: {error}", file=sys.stderr)
+            continue
+        if covers_addons(canonical_root, addons):
+            if mode == "read_only":
+                print(
+                    f"[WARN] Removing writable root {root!r} because /addons is configured read-only.",
+                    file=sys.stderr,
+                )
+            continue
+        canonical_value = str(canonical_root)
+        if canonical_value not in result:
+            result.append(canonical_value)
+    if mode == "read_write":
+        canonical_addons = str(addons)
+        if canonical_addons not in result:
+            result.append(canonical_addons)
+    return result
+
+
+def main() -> int:
+    if len(sys.argv) == 4 and sys.argv[1] == "--resolve-working-directory":
+        working_directory, mode = sys.argv[2], sys.argv[3]
+        if mode not in {"read_only", "read_write"}:
+            return 2
+        try:
+            print(resolve_working_directory(working_directory, mode=mode))
+        except (OSError, RuntimeError, ValueError) as error:
+            print(f"[WARN] Rejecting working directory: {error}", file=sys.stderr)
+            return 1
+        return 0
+    if len(sys.argv) != 3:
+        print(
+            "usage: codex-addons-sandbox <config.toml> <read_only|read_write>\n"
+            "       codex-addons-sandbox --resolve-working-directory <path> <read_only|read_write>",
+            file=sys.stderr,
+        )
+        return 2
+
+    config_path, mode = sys.argv[1], sys.argv[2]
+    if mode not in {"read_only", "read_write"}:
+        print(f"invalid addons access mode: {mode}", file=sys.stderr)
+        return 2
+
+    try:
+        with open(config_path, "rb") as handle:
+            config = tomllib.load(handle)
+    except FileNotFoundError:
+        config = {}
+    except tomllib.TOMLDecodeError as error:
+        print(f"cannot parse Codex config: {error}", file=sys.stderr)
+        return 1
+
+    workspace = config.get("sandbox_workspace_write", {})
+    roots = workspace.get("writable_roots", []) if isinstance(workspace, dict) else []
+    if not isinstance(roots, list):
+        roots = []
+
+    print(json.dumps(filter_roots(roots, mode), separators=(",", ":")))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
