@@ -17,6 +17,12 @@ configuration:
     description: >-
       Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
       direkten Zugriff auf die Home-Assistant-Konfiguration.
+  remote_control_enabled:
+    name: Remote Control aktivieren
+    description: >-
+      Startet den offiziellen Codex-Remote-Control-Dienst zusätzlich zum
+      Terminal. Standardmäßig aus. Nach Speichern die App neu starten;
+      iOS-Verbindung separat koppeln.
   session_persistence:
     name: Sitzung beibehalten
     description: >-
