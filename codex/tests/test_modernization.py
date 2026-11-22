@@ -10,6 +10,7 @@ from pathlib import Path
 CODEX_DIR = Path(__file__).resolve().parents[1]
 START = CODEX_DIR / "rootfs/usr/local/bin/codex-start"
 SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
+TUI = CODEX_DIR / "rootfs/usr/local/bin/codex-tui"
 SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"
 MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
@@ -60,7 +61,8 @@ class ModernizationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             parsed = tomllib.loads(config.read_text(encoding="utf-8"))
             self.assertIs(parsed["check_for_update_on_startup"], False)
-        self.assertIn("check_for_update_on_startup=false", shell_text)
+        self.assertIn("/usr/local/bin/codex-tui", shell_text)
+        self.assertIn("check_for_update_on_startup=false", TUI.read_text(encoding="utf-8"))
         self.assertRegex(dockerfile, r"(?m)^ARG CODEX_VERSION=\d+\.\d+\.\d+$")
         self.assertIn("npm install -g @openai/codex@${CODEX_VERSION}", dockerfile)
         self.assertNotIn("npm install -g @openai/codex@latest", dockerfile)
@@ -184,8 +186,10 @@ class ModernizationTests(unittest.TestCase):
 
     def test_web_session_keeps_scrollback(self):
         shell_text = SHELL.read_text(encoding="utf-8")
-        self.assertIn("tui.alternate_screen", shell_text)
-        self.assertIn('"never"', shell_text)
+        self.assertIn("/usr/local/bin/codex-tui", shell_text)
+        tui_text = TUI.read_text(encoding="utf-8")
+        self.assertIn("tui.alternate_screen", tui_text)
+        self.assertIn('"never"', tui_text)
 
     def test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection(self):
         session_text = SESSION.read_text(encoding="utf-8")

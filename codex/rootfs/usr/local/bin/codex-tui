@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Single safe entry point for interactive Codex sessions, including manual
+# restarts after Ctrl+C.  Keep daemon and /addons sandbox options identical
+# whether launched by codex-shell or from the interactive diagnostic shell.
+set -euo pipefail
+
+# An explicit user invocation of "codex --no-daemon" should not duplicate
+# this CLI flag.  The launcher enforces it for interactive sessions anyway.
+if [[ "${1:-}" == "--no-daemon" ]]; then
+  shift
+fi
+
+codex_home="${CODEX_HOME:-${HOME}/.codex}"
+config_path="${codex_home}/config.toml"
+
+# Reapply managed defaults without erasing user settings, just as codex-shell
+# did before its initial launch.
+if [[ -x /usr/local/bin/codex-merge-config ]]; then
+  /usr/local/bin/codex-merge-config \
+    "$config_path" \
+    "${CODEX_DEFAULT_MODEL:-}" \
+    "${CODEX_ENABLE_MCP:-true}" \
+    "${CODEX_PERMISSIONS:-workspace}" \
+    "${CODEX_APPROVAL_POLICY:-on-request}" \
+    "${CODEX_MCP_CONFIG:-}" || {
+      echo "[WARN] Unable to repair Codex config before launch." >&2
+    }
+fi
+
+codex_args=(
+  --no-daemon
+  -c 'tui.alternate_screen="never"'
+  -c 'check_for_update_on_startup=false'
+)
+
+# Preserve the same writable-root guard as the initial TUI launch.  Typing
+# "codex" manually must not silently widen /addons access.
+if [[ "${CODEX_PERMISSIONS:-workspace}" == "workspace" ]]; then
+  addons_access="$(cat /data/codex-managed/addons-access 2>/dev/null || printf 'read_only\n')"
+  addons_roots="$(python3 /usr/local/bin/codex-addons-sandbox "$config_path" "$addons_access")" || {
+    echo "[ERROR] Unable to prepare /addons sandbox policy." >&2
+    exit 1
+  }
+  codex_args+=( -c "sandbox_workspace_write.writable_roots=${addons_roots}" )
+fi
+
+# This is a standalone noninteractive script, so the bashrc codex() function
+# is never in scope; exec runs the image-installed CLI, not the managed daemon.
+exec codex "${codex_args[@]}" "$@"
