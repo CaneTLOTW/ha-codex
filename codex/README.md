@@ -18,6 +18,12 @@ For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS
 
 OpenAI authentication stays in Codex's persistent home. Credentials explicitly configured for remote MCP servers or environment variables are stored in Home Assistant App options and supplied to the Codex process environment.
 
+## Current Home Assistant 2026.11 notes
+
+The **Supervisor App Store** is separate from the integrated HACS-based Marketplace. Install this App through **Settings → Apps → App Store → Repositories**, not through Settings → Marketplace. For the experimental developer channel use the branch-qualified repository URL `https://github.com/CaneTLOTW/ha-codex#deployment`.
+
+For operator guidance see [project workflow](../docs/AGENT_WORKFLOW.md), [model selection](../docs/MODELS.md), [dependency policy](../docs/DEPENDENCY_POLICY.md), and [external storage compatibility](../docs/EXTERNAL_STORAGE_ACCESS.md).
+
 ## Install
 
 1. Add `https://github.com/CaneTLOTW/ha-codex` to **Settings → Apps → App Store → Repositories**.

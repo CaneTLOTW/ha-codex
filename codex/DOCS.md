@@ -2,6 +2,10 @@
 
 Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it through Home Assistant ingress.
 
+For HA 2026.11, the built-in Marketplace (formerly HACS) is **not** the Supervisor App Store for this container App. Install/upgrade **Codex Deployment** from the `#deployment` app repository and do not change the Stable Codex installation during runtime acceptance.
+
+Further guidance: [project workflow](../docs/AGENT_WORKFLOW.md), [model choice](../docs/MODELS.md), [dependency lifecycle](../docs/DEPENDENCY_POLICY.md), and [external storage](../docs/EXTERNAL_STORAGE_ACCESS.md).
+
 ## First start
 
 1. Start the App.
