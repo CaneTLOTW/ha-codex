@@ -132,6 +132,25 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
         self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
 
+    def test_ingress_websocket_reconnect_is_bounded_and_manual_fallback_remains(self):
+        patch = MOBILE_PATCH.read_text(encoding="utf-8")
+        # This patch is applied to clean ttyd 1.7.7 during the normal build.
+        # Verify the reconnect-specific integration without introducing a second patch.
+        self.assertIn("private reconnectDelay = 1000;", patch)
+        self.assertIn("private readonly reconnectMaxDelay = 30000;", patch)
+        self.assertIn("private scheduleReconnect()", patch)
+        self.assertIn("this.reconnectDelay = Math.min(delay * 2, this.reconnectMaxDelay);", patch)
+        self.assertIn("private onReconnectVisibility()", patch)
+        self.assertIn("this.reconnectVisibilityDispose = addEventListener(document, 'visibilitychange'", patch)
+        self.assertIn("this.reconnectKeyDispose = this.terminal.onKey", patch)
+        self.assertIn("if (e.domEvent.key === 'Enter') this.requestManualReconnect();", patch)
+        self.assertIn("this.reconnectKeyDispose?.dispose();", patch)
+        self.assertIn("clearTimeout(this.reconnectTimer);", patch)
+        self.assertIn("this.scheduleReconnect();", patch)
+        self.assertIn("+        register(addEventListener(socket, 'error', () => console.warn(", patch)
+        self.assertIn("if (this.doReconnect) {", patch)
+        self.assertIn("this.overlayAddon.showOverlay('Press ⏎ to Reconnect');", patch)
+
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")
         wrapper = HA_READONLY.read_text(encoding="utf-8")
