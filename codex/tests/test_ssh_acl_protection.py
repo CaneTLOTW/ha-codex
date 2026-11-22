@@ -145,6 +145,27 @@ class GrantAccessTests(unittest.TestCase):
         self.assertEqual(mode(self.normal), 0o664)
         self.assertTrue(mode(self.script) & stat.S_IXGRP)
 
+    def test_find_is_filesystem_bound_and_acl_fallback_is_nonfatal(self):
+        helper = HELPER.read_text(encoding="utf-8")
+        # Never recurse into mounted external media under /media or /share.
+        self.assertEqual(helper.count('find -P "$target" -xdev'), 2)
+        self.assertIn("if ! access_find chmod; then", helper)
+        self.assertIn("continuing startup with existing permissions", helper)
+
+        # Test both access mechanisms failing in an isolated shell. A shell
+        # function replaces find only in this subprocess; no real filesystem
+        # traversal or permission changes are made.
+        script = (
+            'find() { return 1; }\n'
+            'source "$1" "$2"\n'
+        )
+        result = subprocess.run(
+            ["bash", "-c", script, "acl-test", str(HELPER), str(self.workspace)],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("continuing startup with existing permissions", result.stderr)
+
     def test_repeated_startups_do_not_touch_ssh(self):
         before = self.protected_snapshot()
         for _ in range(2):
