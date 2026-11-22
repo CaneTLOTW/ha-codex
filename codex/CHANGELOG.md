@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.1] - 2026-11-22
+
+### Fixed
+- Recover automatically from Home Assistant ingress ttyd WebSocket disconnects, including close code 1000, with bounded exponential retry, visibility-triggered retry, and Enter fallback (#34, draft #35).
+- Avoid permission traversal into external filesystems and continue with explicit warnings when both ACL and chmod fail (#32, draft #36).
+- Preserve canonicalized /addons writable-root checks and protected SSH-key exclusions from the earlier deployment safety preparation.
+
+### Added
+- Carry forward the optional official Remote Control app-server with Home Assistant UI switch (disabled by default), independent of the ttyd terminal (#24).
+- Refresh the bundled OpenAI Codex CLI to 0.171.0 and the current stable model catalog.
+- Add current Home Assistant 2026.11 App Store vs Marketplace guidance and test/rollout acceptance plans.
+- Add reviewed documentation/acceptance matrices for Android, other-App configuration mounts, image upload, terminal edge-scroll, dependency lifecycle, model selection, project workflow and ecosystem comparison (#6, #11-16, #25).
+
+### Release gates
+- This is an **experimental deployment-channel candidate**. It requires both architecture builds, multiarch manifest publication and real HAOS/desktop/iOS testing. CI success does not count as runtime acceptance.
+- Remote Control real pairing and live Codex/MCP authentication previously failed due to a token-refresh HTTP 401; a manual re-login/acceptance remains required.
+- No image upload server, extra other-App configuration mount, or new desktop selection engine was enabled without separate security/hardware review.
+- Stable production Codex and its update settings remain unchanged.
+
 ## [0.4.36] - 2026-11-20
 
 ### Changed
