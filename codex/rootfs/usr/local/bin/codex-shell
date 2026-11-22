@@ -9,52 +9,10 @@ if [[ ! -d "$work_dir" ]]; then
 fi
 cd "$work_dir" 2>/dev/null || cd /homeassistant
 
-repair_codex_config() {
-  local codex_home="${CODEX_HOME:-${HOME}/.codex}"
-  local config_path="${codex_home}/config.toml"
-
-  if [[ -x /usr/local/bin/codex-merge-config ]]; then
-    /usr/local/bin/codex-merge-config \
-      "$config_path" \
-      "${CODEX_DEFAULT_MODEL:-}" \
-      "${CODEX_ENABLE_MCP:-true}" \
-      "${CODEX_PERMISSIONS:-workspace}" \
-      "${CODEX_APPROVAL_POLICY:-on-request}" \
-      "${CODEX_MCP_CONFIG:-}" || {
-        echo "[WARN] Unable to repair Codex config before launch." >&2
-      }
-  fi
-}
-
-build_addons_override() {
-  local config_path="${CODEX_HOME:-${HOME}/.codex}/config.toml"
-  local addons_access
-  addons_access="$(cat /data/codex-managed/addons-access 2>/dev/null || printf 'read_only\n')"
-  python3 /usr/local/bin/codex-addons-sandbox "$config_path" "$addons_access"
-}
-
 if command -v codex >/dev/null 2>&1; then
   while true; do
-    repair_codex_config
-    codex_args=(
-      # The HA AppArmor profile intentionally forbids executing downloaded
-      # binaries from writable /data. Codex's managed background daemon is
-      # staged inside CODEX_HOME on /data and fails with EACCES (os error 13).
-      # Use the official in-process backend for this interactive terminal.
-      # The optional Remote Control sidecar starts separately from /usr/local.
-      --no-daemon
-      -c 'tui.alternate_screen="never"'
-      -c 'check_for_update_on_startup=false'
-    )
-    if [[ "${CODEX_PERMISSIONS:-workspace}" == "workspace" ]]; then
-      addons_roots="$(build_addons_override)" || {
-        echo "[ERROR] Unable to prepare /addons sandbox policy." >&2
-        break
-      }
-      codex_args+=( -c "sandbox_workspace_write.writable_roots=${addons_roots}" )
-    fi
-
-    codex "${codex_args[@]}"
+    # Same launcher is also exposed by the interactive bashrc after Ctrl+C.
+    /usr/local/bin/codex-tui
     codex_status=$?
     if [[ "$codex_status" -eq 0 ]]; then
       break
@@ -69,7 +27,7 @@ if command -v codex >/dev/null 2>&1; then
   done
 
   echo
-  echo "[INFO] Codex closed. Starting a shell; run 'codex' to reopen Codex."
+  echo "[INFO] Codex closed. Starting a shell; run 'codex' or 'codex resume' to reopen without the managed daemon."
 else
   echo "[ERROR] Codex CLI is not installed or is not on PATH."
 fi
