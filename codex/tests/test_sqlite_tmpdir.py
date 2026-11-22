@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SESSION = ROOT / "rootfs/usr/local/bin/codex-session"
 REMOTE = ROOT / "rootfs/usr/local/bin/codex-remote-control"
+CHECKER = ROOT / "rootfs/usr/local/bin/codex-check-sqlite-tmpdir"
 
 
 class SqliteTmpdirTests(unittest.TestCase):
@@ -27,8 +28,9 @@ class SqliteTmpdirTests(unittest.TestCase):
             self.assertIn('[[ -L "$sqlite_tmpdir" ]]', script)
             self.assertIn('"$sqlite_tmpdir"', script)
             self.assertIn('chmod 700', script)
-            self.assertIn('test -w "$sqlite_tmpdir"', script)
-            self.assertIn('test -x "$sqlite_tmpdir"', script)
+            self.assertIn('/bin/sh /usr/local/bin/codex-check-sqlite-tmpdir "$sqlite_tmpdir"', script)
+            self.assertNotIn(' test -w "$sqlite_tmpdir"', script)
+            self.assertNotIn(' test -x "$sqlite_tmpdir"', script)
             self.assertIn('"SQLITE_TMPDIR=$sqlite_tmpdir"', script)
             self.assertIn('"TMPDIR=$sqlite_tmpdir"', script)
             self.assertNotIn("CODEX_SQLITE_HOME=", script)
@@ -49,6 +51,46 @@ class SqliteTmpdirTests(unittest.TestCase):
         for script in (SESSION, REMOTE):
             run = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, f"{script}: {run.stderr}")
+        run = subprocess.run(["/bin/sh", "-n", str(CHECKER)], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+
+    def test_checker_ignores_shadowed_test_entrypoint(self):
+        helper = CHECKER.read_text(encoding="utf-8")
+        self.assertIn('[ -d "$scratch" ]', helper)
+        self.assertIn('[ -w "$scratch" ]', helper)
+        self.assertIn('[ -x "$scratch" ]', helper)
+        self.assertIn('mktemp "$scratch/.sqlite-write-probe.XXXXXXXX"', helper)
+
+        with tempfile.TemporaryDirectory() as root:
+            base = Path(root)
+            bin_dir = base / "bin"
+            bin_dir.mkdir()
+            fake_test = bin_dir / "test"
+            fake_test.write_text("#!/bin/sh\nexit 99\n", encoding="utf-8")
+            fake_test.chmod(0o755)
+            scratch = base / "private-sqlite-tmp"
+            scratch.mkdir(mode=0o700)
+
+            env = os.environ.copy()
+            env["PATH"] = str(bin_dir) + os.pathsep + os.environ.get("PATH", "")
+            good = subprocess.run(
+                ["/bin/sh", str(CHECKER), str(scratch)],
+                env=env, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(good.returncode, 0, good.stderr)
+            self.assertFalse(list(scratch.glob(".sqlite-write-probe.*")))
+
+            # Do not accept an executable regular file or an aliased symlink.
+            bad = base / "not-a-directory"
+            bad.write_text("irrelevant", encoding="utf-8")
+            link = base / "symlink-directory"
+            link.symlink_to(scratch, target_is_directory=True)
+            for candidate in (bad, link):
+                result = subprocess.run(
+                    ["/bin/sh", str(CHECKER), str(candidate)],
+                    env=env, capture_output=True, text=True, check=False,
+                )
+                self.assertNotEqual(result.returncode, 0, str(candidate))
 
     def test_isolated_sqlite_temp_workload_keeps_existing_db(self):
         with tempfile.TemporaryDirectory() as root:
