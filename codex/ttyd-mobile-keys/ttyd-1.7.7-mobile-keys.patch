@@ -860,7 +860,7 @@ index b643f92..47391b5 100644
  
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,26 +553,20 @@
+@@ -274,26 +553,24 @@
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
@@ -881,7 +881,11 @@ index b643f92..47391b5 100644
 +        });
 +        if (this.doReconnect) {
 +            // Recover from close code 1000 and errors, not only abnormal closes.
-+            this.reconnectVisibilityDispose = addEventListener(document, 'visibilitychange', this.onReconnectVisibility);
++            this.reconnectVisibilityDispose = addEventListener(
++                document,
++                'visibilitychange',
++                this.onReconnectVisibility
++            );
 +            this.scheduleReconnect();
          } else {
 -            const { terminal } = this;
@@ -898,7 +902,7 @@ index b643f92..47391b5 100644
          }
      }
  
-@@ -379,7 +652,8 @@
+@@ -379,7 +656,8 @@
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
