@@ -152,13 +152,12 @@ class GrantAccessTests(unittest.TestCase):
         self.assertIn("if ! access_find chmod; then", helper)
         self.assertIn("continuing startup with existing permissions", helper)
 
-        # Reproduce an unsupported-ACL filesystem with commands that fail,
-        # without mounting real disks or modifying actual user files.
+        # Test both access mechanisms failing in an isolated shell. A shell
+        # function replaces find only in this subprocess; no real filesystem
+        # traversal or permission changes are made.
         script = (
-            'command() { if [[ "$#" -eq 2 && "$1" == "-v" && "$2" == "setfacl" ]]; '
-            'then return 1; fi; builtin command "$@"; }\\n'
-            'chmod() { return 1; }\\n'
-            'source "$1" "$2"\\n'
+            'find() { return 1; }\n'
+            'source "$1" "$2"\n'
         )
         result = subprocess.run(
             ["bash", "-c", script, "acl-test", str(HELPER), str(self.workspace)],
