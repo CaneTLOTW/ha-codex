@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.4] - 2026-11-23
+
+### Fixed
+- Fix the manual `codex` command after Ctrl+C exits the Home Assistant terminal UI. The automatic first launch used `--no-daemon`, but the interactive fallback Bash shell started an unmodified Codex CLI and hit AppArmor's intended non-executable `/data` boundary, returning `Permission denied (os error 13)` (#47).
+- Use one shared image-installed TUI launcher for both the initial ttyd session and subsequent interactive `codex`, `codex resume`, `codex fork`, and supported TUI options. It consistently preserves `--no-daemon`, model/session configuration and the `addons_access` writable-roots guard.
+- Leave CLI management operations (e.g. `codex login`, `codex exec`, `codex mcp`, `codex app-server`, `codex --version`) unmodified in the interactive shell.
+- Add a fake-CLI regression test that exercises the actual Dockerfile Bash startup configuration and verifies the manual restart, resume/fork arguments, no duplicate daemon flags, `/addons` restrictions and pass-through commands.
+
+### Acceptance
+- Test Ctrl+C → `codex` → Ctrl+C → `codex resume --last` repeatedly on a real HAOS Developer instance. Confirm history, SQLite temporary directory, session identity and Home Assistant MCP remain intact and that neither the CLI daemon execution denial nor the earlier SQLite startup error reappears.
+- Require successful combined CI, AMD64/AARCH64 image publication and signed multiarch manifest before Developer installation. Stable `main` and production remain untouched until a separate approval.
+
 ## [0.5.0-dev.3] - 2026-11-22
 
 ### Fixed
