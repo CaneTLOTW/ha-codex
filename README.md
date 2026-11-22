@@ -106,7 +106,7 @@ Home Assistant 2026.11 integrates HACS as **Settings → Marketplace** for commu
 
 For a separate developer test installation, add the branch-qualified repository URL `https://github.com/CaneTLOTW/ha-codex#deployment` in the Supervisor App Store. Home Assistant keeps this repository channel independent from `#main`. The experimental app is called **Codex Deployment**, boots manually and uses only `-dev.N` version tags; the Stable app is **Codex**.
 
-Version `0.5.0-dev.1` is an experimental acceptance candidate. Its testing and gated production handoff are in [development acceptance](docs/acceptance/HA_CODEX_0_5_0_DEV1.md) and [production installation order](docs/INSTALL_PRODUCTION_0_5_0_AFTER_ACCEPTANCE.md).
+Version `0.5.0-dev.3` is an experimental acceptance candidate. Its testing and gated production handoff are in [development acceptance](docs/acceptance/HA_CODEX_0_5_0_DEV3.md) and [production installation order](docs/INSTALL_PRODUCTION_0_5_0_AFTER_ACCEPTANCE.md).
 
 ## Install
 

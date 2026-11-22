@@ -14,7 +14,7 @@ SIDECAR = ROOT / "rootfs/usr/local/bin/codex-remote-control"
 class RemoteControlTests(unittest.TestCase):
     def test_configuration_switch_and_all_translations(self):
         cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-        self.assertEqual(cfg["version"], "0.5.0-dev.2")
+        self.assertEqual(cfg["version"], "0.5.0-dev.3")
         self.assertIs(cfg["options"]["remote_control_enabled"], False)
         self.assertEqual(cfg["schema"]["remote_control_enabled"], "bool")
         for path in (ROOT / "translations").glob("*.yaml"):

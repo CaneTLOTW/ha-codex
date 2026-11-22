@@ -85,7 +85,7 @@ fi
 rm -f "${user_codex_home}/AGENTS.md"
 chown -R "$session_uid:$session_gid" "$user_root" || fail_open_shell "$?" "Unable to set Codex state ownership."
 chmod 700 "$user_root" "$user_codex_home" "$user_npm_cache" "$user_npm_prefix" "$sqlite_tmpdir" || fail_open_shell "$?" "Unable to secure Codex state directories."
-if ! su-exec "$session_uid:$session_gid" test -w "$sqlite_tmpdir" || ! su-exec "$session_uid:$session_gid" test -x "$sqlite_tmpdir"; then
+if ! su-exec "$session_uid:$session_gid" /bin/sh /usr/local/bin/codex-check-sqlite-tmpdir "$sqlite_tmpdir"; then
   fail_open_shell 1 "Codex SQLite temporary directory is not writable for UID $session_uid."
 fi
 chmod 755 "$user_npm_bin" || fail_open_shell "$?" "Unable to prepare npm bin directory."

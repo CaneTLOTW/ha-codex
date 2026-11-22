@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.3] - 2026-11-22
+
+### Fixed
+- Fix a startup regression introduced in dev.2: `su-exec ... test` resolved a Python wrapper at `/usr/local/bin/test` that imports unavailable `pytest`, incorrectly reporting the SQLite scratch directory as unwritable. Replaced it with a shared POSIX-shell verifier using built-in tests plus a disposable `mktemp` write probe for terminal and Remote Control (#45).
+- Avoid the new Codex CLI's managed background daemon installation under writable `/data` for the interactive ttyd terminal, using the officially supported `--no-daemon` mode. The Home Assistant AppArmor profile intentionally has no execute rights for `/data/**`; do not loosen that boundary. The optional Remote Control sidecar remains separate and off by default.
+- Add a test that poisons `PATH` with a broken external `test` executable, ensures the real temp-directory checker still works and rejects symlinks/non-directories, and checks the AppArmor no-execute rule.
+
+### Acceptance
+- Requires a fresh successful CI run and both-architecture signed multiarch publication. A successful build does **not** establish real Home Assistant OS operation.
+- Verify the normal Codex profile opens without entering a fallback shell, creates no unintended files, and retains existing history; inspect SQLite migration, auth/MCP and reconnect behavior.
+- If a daemon-mode feature is actually needed later, evaluate a safe architecture rather than granting execution from all of `/data`. Stable remains 0.4.36 until separately accepted.
+
 ## [0.5.0-dev.2] - 2026-11-22
 
 ### Fixed
