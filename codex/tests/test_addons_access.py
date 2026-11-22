@@ -12,6 +12,7 @@ CONFIG = CODEX_DIR / "config.yaml"
 APPARMOR = CODEX_DIR / "apparmor.txt"
 START = CODEX_DIR / "rootfs/usr/local/bin/codex-start"
 SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
+TUI = CODEX_DIR / "rootfs/usr/local/bin/codex-tui"
 HELPER = CODEX_DIR / "rootfs/usr/local/bin/codex-addons-sandbox"
 addons_sandbox = runpy.run_path(str(HELPER))
 
@@ -215,9 +216,11 @@ class AddonsAccessTests(unittest.TestCase):
 
     def test_shell_applies_effective_writable_roots_override(self):
         shell = SHELL.read_text(encoding="utf-8")
-        self.assertIn("codex-addons-sandbox", shell)
-        self.assertIn("sandbox_workspace_write.writable_roots=", shell)
-        self.assertIn("/data/codex-managed/addons-access", shell)
+        tui = TUI.read_text(encoding="utf-8")
+        self.assertIn("/usr/local/bin/codex-tui", shell)
+        self.assertIn("codex-addons-sandbox", tui)
+        self.assertIn("sandbox_workspace_write.writable_roots=", tui)
+        self.assertIn("/data/codex-managed/addons-access", tui)
 
 
 if __name__ == "__main__":
