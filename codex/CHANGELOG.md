@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.2] - 2026-11-22
+
+### Fixed
+- Initialize a persistent private SQLite temporary directory under each Codex user home and pass `SQLITE_TMPDIR` plus `TMPDIR` into both the interactive Codex session and optional Remote Control sidecar. This persists the proven workaround for CLI 0.171.0 migration 64 / SQLite error code 14 across app restarts (#43).
+- Verify that the directory is not a symlink, is accessible by the unprivileged Codex UID and has mode 0700; do not edit, replace, delete or migrate the existing state_5.sqlite database.
+- Regression-test the environment/permission contract and preserve user-provided explicit environment overrides.
+
+### Notes
+- Stable remains at 0.4.36 until separately approved; developer 0.5.0-dev.2 requires new CI, AMD64/AARCH64 publish/manifest, and actual HAOS runtime acceptance before production promotion.
+- This addresses the demonstrated temporary-filesystem failure mode; further SQLite diagnostics are required if state initialization still fails despite the writable temporary directory.
+
 ## [0.5.0-dev.1] - 2026-11-22
 
 ### Fixed
