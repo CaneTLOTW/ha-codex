@@ -100,6 +100,14 @@ This repository therefore:
 - maintains the Home Assistant MCP configuration without overwriting unrelated user settings;
 - supports additional remote Streamable HTTP MCP servers and explicit Codex environment variables.
 
+## Home Assistant 2026.11: App Store vs Marketplace
+
+Home Assistant 2026.11 integrates HACS as **Settings → Marketplace** for community integrations, themes and frontend components. **HA-Codex is a Supervisor container App**, not a Marketplace/HACS integration: continue using **Settings → Apps → App Store** with this repository. Do not attempt to migrate or reinstall HA-Codex through Marketplace.
+
+For a separate developer test installation, add the branch-qualified repository URL `https://github.com/CaneTLOTW/ha-codex#deployment` in the Supervisor App Store. Home Assistant keeps this repository channel independent from `#main`. The experimental app is called **Codex Deployment**, boots manually and uses only `-dev.N` version tags; the Stable app is **Codex**.
+
+Version `0.5.0-dev.1` is an experimental acceptance candidate. Its testing and gated production handoff are in [development acceptance](docs/acceptance/HA_CODEX_0_5_0_DEV1.md) and [production installation order](docs/INSTALL_PRODUCTION_0_5_0_AFTER_ACCEPTANCE.md).
+
 ## Install
 
 [![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCaneTLOTW%2Fha-codex)
