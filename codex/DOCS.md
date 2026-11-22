@@ -2,6 +2,10 @@
 
 Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it through Home Assistant ingress.
 
+For HA 2026.11, the built-in Marketplace (formerly HACS) is **not** the Supervisor App Store for this container App. Install/upgrade **Codex Deployment** from the `#deployment` app repository and do not change the Stable Codex installation during runtime acceptance.
+
+Further guidance: [project workflow](../docs/AGENT_WORKFLOW.md), [model choice](../docs/MODELS.md), [dependency lifecycle](../docs/DEPENDENCY_POLICY.md), and [external storage](../docs/EXTERNAL_STORAGE_ACCESS.md).
+
 ## First start
 
 1. Start the App.
@@ -20,8 +24,11 @@ The App keeps Codex authentication and user configuration under `/data/codex-hom
 | `/media` | read-write | Home Assistant media |
 | `/ssl` | read-only | Home Assistant SSL files |
 | `/backup` | read-only | Home Assistant backups |
+| `/addons` | read-only by default; optional read-write | Local Home Assistant App source trees |
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
+
+The `/addons` mount has host-level read-write access. The `addons_access` option defaults to `read_only` for the Codex runtime; `read_write` explicitly enables modifying local App sources. A session with write access can modify **any** local App source. See `docs/ADDONS_ACCESS.md` for the runtime boundary and its limitations. The separate `all_addon_configs` mapping is not enabled.
 
 ## Included command-line tools
 
@@ -212,3 +219,12 @@ Current versions should automatically shorten/refit the terminal while the softw
 ### Android mobile behavior
 
 Android is still a requested test target. The generic toolbar/paging path should be tested now; the current native `Sel` path is Apple-only. Report results in [issue #6](https://github.com/CaneTLOTW/ha-codex/issues/6).
+
+
+## Codex Remote Control (optional, Deployment preview)
+
+The App Configuration tab provides **Enable Remote Control**, disabled by default. Save the setting and restart **Codex Deployment** for changes to take effect; switching it does not hot-reload a running service.
+
+When enabled, the App starts the official Codex Remote Control app-server on a **Unix-domain control socket**, as the existing unprivileged Codex user with the same persistent login/home as the web terminal. No additional TCP port or custom remote-control protocol is used. In the terminal, manually use the official Codex pairing command (`codex remote-control pair`) and complete pairing in the supported ChatGPT iOS app. Do not share pairing codes through logs or screenshots.
+
+The service starts and stops with the Home Assistant App, independently of ttyd and tmux. A failed service is retried only a limited number of times; after repeated failures the terminal remains available and the App logs the error. An existing working terminal must not be treated as proof of a successful remote session. HAOS process behavior and actual iOS pairing still require manual runtime acceptance. See Issue #24.
