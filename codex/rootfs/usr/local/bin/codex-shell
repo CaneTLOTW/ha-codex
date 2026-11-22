@@ -37,6 +37,12 @@ if command -v codex >/dev/null 2>&1; then
   while true; do
     repair_codex_config
     codex_args=(
+      # The HA AppArmor profile intentionally forbids executing downloaded
+      # binaries from writable /data. Codex's managed background daemon is
+      # staged inside CODEX_HOME on /data and fails with EACCES (os error 13).
+      # Use the official in-process backend for this interactive terminal.
+      # The optional Remote Control sidecar starts separately from /usr/local.
+      --no-daemon
       -c 'tui.alternate_screen="never"'
       -c 'check_for_update_on_startup=false'
     )
