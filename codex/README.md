@@ -18,6 +18,12 @@ For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS
 
 OpenAI authentication stays in Codex's persistent home. Credentials explicitly configured for remote MCP servers or environment variables are stored in Home Assistant App options and supplied to the Codex process environment.
 
+## Current Home Assistant 2026.11 notes
+
+The **Supervisor App Store** is separate from the integrated HACS-based Marketplace. Install this App through **Settings → Apps → App Store → Repositories**, not through Settings → Marketplace. For the experimental developer channel use the branch-qualified repository URL `https://github.com/CaneTLOTW/ha-codex#deployment`.
+
+For operator guidance see [project workflow](../docs/AGENT_WORKFLOW.md), [model selection](../docs/MODELS.md), [dependency policy](../docs/DEPENDENCY_POLICY.md), and [external storage compatibility](../docs/EXTERNAL_STORAGE_ACCESS.md).
+
 ## Install
 
 1. Add `https://github.com/CaneTLOTW/ha-codex` to **Settings → Apps → App Store → Repositories**.
@@ -47,8 +53,11 @@ Codex caches the login in its persistent home.
 | `/media` | Media files | read-write |
 | `/ssl` | SSL certificates | read-only |
 | `/backup` | Backups | read-only |
+| `/addons` | Local Home Assistant App source trees | read-only by default; optional read-write |
 
 When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.
+
+The `/addons` mount has host-level read-write access, while `addons_access` defaults to `read_only` for the Codex runtime. Opting into `read_write` permits modifying any local App source; see `docs/ADDONS_ACCESS.md` for the security boundary. This is different from `all_addon_configs`, which is not enabled.
 
 ## Bundled command-line tools
 
@@ -310,3 +319,8 @@ Android is still an explicit feedback/test area. The generic toolbar should be t
 
 - [Repository](https://github.com/CaneTLOTW/ha-codex)
 - [Issues](https://github.com/CaneTLOTW/ha-codex/issues)
+
+
+## Optional Codex Remote Control
+
+Home Assistant App Configuration includes a **Remote Control** boolean option (`remote_control_enabled`) which defaults to **off**. The official Codex app-server runs alongside ttyd only when enabled, with no additional inbound TCP ports. Apply changes by saving options and restarting the App. Use a separate test project when pairing from the ChatGPT iOS app. Initial support is staged on the Deployment channel; HAOS/iOS acceptance remains mandatory before a stable release.
