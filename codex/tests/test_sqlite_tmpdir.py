@@ -98,8 +98,11 @@ class SqliteTmpdirTests(unittest.TestCase):
         shell = SHELL.read_text(encoding="utf-8")
         apparmor = APPARMOR.read_text(encoding="utf-8")
         remote = REMOTE.read_text(encoding="utf-8")
-        self.assertIn("      --no-daemon", shell)
-        self.assertIn('    codex "${codex_args[@]}"', shell)
+        tui = (ROOT / "rootfs/usr/local/bin/codex-tui").read_text(encoding="utf-8")
+        self.assertIn("/usr/local/bin/codex-tui", shell)
+        self.assertIn("  --no-daemon", tui)
+        self.assertIn('exec codex "', tui)
+        self.assertIn("sandbox_workspace_write.writable_roots=", tui)
         self.assertIn("  /data/** rwk,", apparmor)
         self.assertNotRegex(apparmor, r"(?m)^\s*/data/.*[ix][^#]*,")
         # Remote Control starts its explicit app-server from the pinned CLI,
