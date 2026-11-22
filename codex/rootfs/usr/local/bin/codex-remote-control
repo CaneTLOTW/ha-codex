@@ -6,6 +6,7 @@ state_root="${CODEX_STATE_ROOT:-/data/codex-home}"
 managed_root="${CODEX_MANAGED_ROOT:-/data/codex-managed}"
 user_root="${state_root}/users/anonymous"
 codex_home="${user_root}/.codex"
+sqlite_tmpdir="${codex_home}/_sqlite_tmp"
 npm_cache="${user_root}/.npm"
 npm_prefix="${user_root}/.local"
 npm_bin="${npm_prefix}/bin"
@@ -19,10 +20,18 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p "$codex_home" "$npm_cache" "$npm_bin"
-chown 22000:0 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$npm_bin"
-chmod 700 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix"
+if [[ -L "$sqlite_tmpdir" ]]; then
+  echo "[ERROR] Remote Control: refusing symlink for SQLite temporary directory." >&2
+  exit 1
+fi
+mkdir -p "$codex_home" "$npm_cache" "$npm_bin" "$sqlite_tmpdir"
+chown 22000:0 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$npm_bin" "$sqlite_tmpdir"
+chmod 700 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$sqlite_tmpdir"
 chmod 755 "$npm_bin"
+if ! su-exec 22000:0 test -w "$sqlite_tmpdir" || ! su-exec 22000:0 test -x "$sqlite_tmpdir"; then
+  echo "[ERROR] Remote Control: SQLite temporary directory is not writable." >&2
+  exit 1
+fi
 if [[ -f "${managed_root}/AGENTS.md" ]]; then
   ln -sfn "${managed_root}/AGENTS.md" "${codex_home}/AGENTS.md"
   chown -h 22000:0 "${codex_home}/AGENTS.md"
@@ -65,6 +74,9 @@ remote_env=(
   "TERM=${TERM:-xterm-256color}"
   "NPM_CONFIG_CACHE=$npm_cache"
   "NPM_CONFIG_PREFIX=$npm_prefix"
+  # Match the interactive Codex session when SQLite runs migrations.
+  "SQLITE_TMPDIR=$sqlite_tmpdir"
+  "TMPDIR=$sqlite_tmpdir"
 )
 
 # Reuse the remote MCP environment without logging secret values.
