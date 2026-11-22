@@ -3,7 +3,7 @@
 **Status:** PREPARED, **NOT APPROVED TO EXECUTE**. This is an installation checklist, not authorization to merge code, publish Stable or update a Home Assistant app.
 
 ## Preconditions
-- Developer `0.5.0-dev.3` has been built and published on `deployment` (both `amd64`, `aarch64`, and multiarch manifest), installed in **Codex Deployment**, and passed the complete runtime acceptance in `docs/acceptance/HA_CODEX_0_5_0_DEV3.md`.
+- Developer `0.5.0-dev.4` has been built and published on `deployment` (both `amd64`, `aarch64`, and multiarch manifest), installed in **Codex Deployment**, and passed the complete runtime acceptance in `docs/acceptance/HA_CODEX_0_5_0_DEV4.md`.
 - The operator has verified real Firefox/HA ingress reconnect reliability without sidebar switching; both foreground and background cases, with the original close code **1000** reproduced.
 - The developer runtime has completed a real Codex ChatGPT token refresh, a real Home Assistant MCP call, and a real iOS Remote-Control pairing with a disposable test project. If Remote Control is intentionally deferred for a partial release, obtain a separate explicit scope decision rather than silently claiming PASS.
 - No regressions to SSH key ACLs, /addons policy, iOS Sel, desktop copy/paste, HA App Store installation or external-media startup.
