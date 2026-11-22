@@ -4,6 +4,13 @@ Codex App puts the OpenAI Codex CLI inside Home Assistant so you can inspect, ed
 
 For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS.md).
 
+## Practical guides
+
+- [Project workflow and available tools](../docs/AGENT_WORKFLOW.md)
+- [Model choice and usage](../docs/MODELS.md)
+- [Dependency lifecycle and security updates](../docs/DEPENDENCY_POLICY.md)
+- [External storage handling](../docs/EXTERNAL_STORAGE_ACCESS.md) (candidate proposal; not yet available in stable)
+
 ## How It Works
 
 1. Home Assistant opens Codex through ingress.
