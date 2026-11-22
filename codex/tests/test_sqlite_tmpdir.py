@@ -101,7 +101,7 @@ class SqliteTmpdirTests(unittest.TestCase):
         self.assertIn("      --no-daemon", shell)
         self.assertIn('    codex "${codex_args[@]}"', shell)
         self.assertIn("  /data/** rwk,", apparmor)
-        self.assertNotRegex(apparmor, r"(?m)^\\s*/data/.*[ix][^#]*,")
+        self.assertNotRegex(apparmor, r"(?m)^\s*/data/.*[ix][^#]*,")
         # Remote Control starts its explicit app-server from the pinned CLI,
         # not the TUI's downloaded managed background daemon.
         self.assertIn("app-server --listen unix:// --remote-control", remote)
