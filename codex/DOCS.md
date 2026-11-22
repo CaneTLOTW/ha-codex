@@ -2,6 +2,8 @@
 
 Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it through Home Assistant ingress.
 
+For deeper guidance: [project workflow](../docs/AGENT_WORKFLOW.md), [model choices](../docs/MODELS.md), and [dependency policy](../docs/DEPENDENCY_POLICY.md). These pages describe the existing App behavior; they do not change permissions, startup options or runtime packages.
+
 ## First start
 
 1. Start the App.
