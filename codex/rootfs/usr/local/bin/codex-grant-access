@@ -42,17 +42,22 @@ access_find() {
     \( -type f \( -name 'id_*' -o -name identity -o -name '*.pem' -o -name '*.key' -o -name '*.p12' -o -name '*.pfx' -o -name '*.ppk' -o ! -perm /077 \) \)
   )
   if [[ "$mode" == acl ]]; then
-    find -P "$target" \( "${protected[@]}" \) -prune -o \
+    find -P "$target" -xdev \( "${protected[@]}" \) -prune -o \
       -type d -exec setfacl -m g:root:rwx -- {} + -o \
       -type f -perm /111 -exec setfacl -m g:root:rwx -- {} + -o \
       -type f -exec setfacl -m g:root:rw- -- {} +
   else
-    find -P "$target" \( "${protected[@]}" \) -prune -o \
+    find -P "$target" -xdev \( "${protected[@]}" \) -prune -o \
       \( -type d -o -type f \) -exec chmod g+rwX -- {} +
   fi
 }
 
 if ! command -v setfacl >/dev/null 2>&1 || ! access_find acl; then
   echo "[WARN] ACL grant failed; falling back to filtered chmod for $target" >&2
-  access_find chmod
+  if ! access_find chmod; then
+    # External/foreign filesystems may reject chmod too (e.g. exFAT disks
+    # mounted under /media or /share). Do not make the terminal unavailable.
+    # Access to unsupported paths may remain restricted; report this visibly.
+    echo "[WARN] Filesystem denied both ACL and chmod access for $target; continuing startup with existing permissions" >&2
+  fi
 fi
