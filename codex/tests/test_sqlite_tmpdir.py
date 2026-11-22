@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SESSION = ROOT / "rootfs/usr/local/bin/codex-session"
 REMOTE = ROOT / "rootfs/usr/local/bin/codex-remote-control"
 CHECKER = ROOT / "rootfs/usr/local/bin/codex-check-sqlite-tmpdir"
+SHELL = ROOT / "rootfs/usr/local/bin/codex-shell"
+APPARMOR = ROOT / "apparmor.txt"
 
 
 class SqliteTmpdirTests(unittest.TestCase):
@@ -91,6 +93,18 @@ class SqliteTmpdirTests(unittest.TestCase):
                     env=env, capture_output=True, text=True, check=False,
                 )
                 self.assertNotEqual(result.returncode, 0, str(candidate))
+
+    def test_interactive_codex_does_not_execute_daemon_from_writable_data(self):
+        shell = SHELL.read_text(encoding="utf-8")
+        apparmor = APPARMOR.read_text(encoding="utf-8")
+        remote = REMOTE.read_text(encoding="utf-8")
+        self.assertIn("      --no-daemon", shell)
+        self.assertIn('    codex "${codex_args[@]}"', shell)
+        self.assertIn("  /data/** rwk,", apparmor)
+        self.assertNotRegex(apparmor, r"(?m)^\\s*/data/.*[ix][^#]*,")
+        # Remote Control starts its explicit app-server from the pinned CLI,
+        # not the TUI's downloaded managed background daemon.
+        self.assertIn("app-server --listen unix:// --remote-control", remote)
 
     def test_isolated_sqlite_temp_workload_keeps_existing_db(self):
         with tempfile.TemporaryDirectory() as root:
