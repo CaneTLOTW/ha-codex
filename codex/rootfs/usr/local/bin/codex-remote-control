@@ -28,7 +28,7 @@ mkdir -p "$codex_home" "$npm_cache" "$npm_bin" "$sqlite_tmpdir"
 chown 22000:0 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$npm_bin" "$sqlite_tmpdir"
 chmod 700 "$user_root" "$codex_home" "$npm_cache" "$npm_prefix" "$sqlite_tmpdir"
 chmod 755 "$npm_bin"
-if ! su-exec 22000:0 test -w "$sqlite_tmpdir" || ! su-exec 22000:0 test -x "$sqlite_tmpdir"; then
+if ! su-exec 22000:0 /bin/sh /usr/local/bin/codex-check-sqlite-tmpdir "$sqlite_tmpdir"; then
   echo "[ERROR] Remote Control: SQLite temporary directory is not writable." >&2
   exit 1
 fi
