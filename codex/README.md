@@ -9,7 +9,7 @@ For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS
 - [Project workflow and available tools](../docs/AGENT_WORKFLOW.md)
 - [Model choice and usage](../docs/MODELS.md)
 - [Dependency lifecycle and security updates](../docs/DEPENDENCY_POLICY.md)
-- [External storage handling](../docs/EXTERNAL_STORAGE_ACCESS.md) (candidate proposal; not yet available in stable)
+- [External storage startup regression (Issue #32)](https://github.com/CaneTLOTW/ha-codex/issues/32) (proposed fix under review)
 
 ## How It Works
 
