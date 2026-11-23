@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.5] - 2026-11-23
+
+### Experimental additions
+- Add opt-in ttyd 1.7.7 `trzsz` file transfer (server package pinned to 1.1.7), enabling upload of images and arbitrary files via browser file picker after `Ctrl+C` and `codex-upload`. `codex-upload --directory` supports directories. Uploads use per-user private Codex state. The `file_transfer_enabled` App option defaults OFF (#13).
+- Mount other Home Assistant Apps' **public configuration folders** at `/app_configs` read-only, **Developer only**, with an `app_configs_visibility` guidance preference. This preference does not revoke the static Supervisor mount or hide secrets from app processes; turning it off is not a security control (#12).
+- Add translated App options, explicit security notes and end-to-end HAOS acceptance test plan for Firefox LAN ingress, HTTPS browser behavior, file integrity, directories, non-regression and rollback.
+
+### Deliberately not implemented yet
+- Clipboard image `Ctrl+V` directly into an active Codex prompt, an always-visible Upload button, and attaching received images to the active conversation are follow-up UX work, not guaranteed by ttyd's transport.
+- Desktop selection edge-scrolling (#25) and real Android device acceptance (#6) remain separate. The original desktop reporter was asked whether they are willing to test an eventual candidate; Android volunteers have been requested before assigning tests.
+- No extra public port, no read-write access to /app_configs and no Stable release changes.
+
+### Release gate
+- Requires combined static/unit tests, AMD64/AARCH64 publish and signed multiarch manifest, then actual Firefox/HAOS Developer test with retained Codex login and sessions. Do not infer browser upload support from successful CI alone.
+
 ## [0.5.0-dev.4] - 2026-11-23
 
 ### Fixed
