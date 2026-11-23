@@ -55,6 +55,7 @@ state_root="${CODEX_STATE_ROOT:-/data/codex-home}"
 managed_root="${CODEX_MANAGED_ROOT:-/data/codex-managed}"
 user_root="${state_root}/users/${safe_user}"
 user_codex_home="${user_root}/.codex"
+sqlite_tmpdir="${user_codex_home}/_sqlite_tmp"
 user_npm_cache="${user_root}/.npm"
 user_npm_prefix="${user_root}/.local"
 user_npm_bin="${user_npm_prefix}/bin"
@@ -71,7 +72,11 @@ system_user="codex"
 session_gid=0
 session_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}:${user_npm_bin}"
 
-mkdir -p "$user_codex_home" "$user_root" "$user_npm_cache" "$user_npm_bin" || fail_open_shell "$?" "Unable to create Codex state directories."
+# A symlink here could redirect temporary data outside the private Codex home.
+if [[ -L "$sqlite_tmpdir" ]]; then
+  fail_open_shell 1 "Refusing symlink for private SQLite temporary directory."
+fi
+mkdir -p "$user_codex_home" "$user_root" "$user_npm_cache" "$user_npm_bin" "$sqlite_tmpdir" || fail_open_shell "$?" "Unable to create Codex state directories."
 
 if ! id -u "$system_user" >/dev/null 2>&1; then
   fail_open_shell 1 "Codex runtime user is missing from the image."
@@ -79,7 +84,10 @@ fi
 
 rm -f "${user_codex_home}/AGENTS.md"
 chown -R "$session_uid:$session_gid" "$user_root" || fail_open_shell "$?" "Unable to set Codex state ownership."
-chmod 700 "$user_root" "$user_codex_home" "$user_npm_cache" "$user_npm_prefix" || fail_open_shell "$?" "Unable to secure Codex state directories."
+chmod 700 "$user_root" "$user_codex_home" "$user_npm_cache" "$user_npm_prefix" "$sqlite_tmpdir" || fail_open_shell "$?" "Unable to secure Codex state directories."
+if ! su-exec "$session_uid:$session_gid" /bin/sh /usr/local/bin/codex-check-sqlite-tmpdir "$sqlite_tmpdir"; then
+  fail_open_shell 1 "Codex SQLite temporary directory is not writable for UID $session_uid."
+fi
 chmod 755 "$user_npm_bin" || fail_open_shell "$?" "Unable to prepare npm bin directory."
 
 if [[ -f "${managed_root}/AGENTS.md" ]]; then
@@ -154,6 +162,10 @@ session_env=(
   "SHELL=/bin/bash"
   "TERM=$TERM"
   "TMUX_TMPDIR=$user_root"
+  # Keep SQLite migration temporary files on a writable private /data filesystem.
+  # No modification, deletion, or relocation of the existing state_5.sqlite.
+  "SQLITE_TMPDIR=$sqlite_tmpdir"
+  "TMPDIR=$sqlite_tmpdir"
   "USER=$system_user"
 )
 
