@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.10] - 2026-11-24
+
+### Changed (Developer only — iPhone upload menu refinement)
+- Keep the original **two-row, eight-column iPhone terminal key layout** unchanged, including Enter, arrow keys, native selection, PgUp, PgDn, Esc, Tab, Ctrl, Alt, Shift, and dedicated keyboard show/hide controls.
+- Replace **only** the old caps-lock (⇧) key in row two, column six with a single **Upload** toggle. Remove the additional Datei/Bild/Anhänge key row and `Mehr` mode introduced in dev.9. Tap the same Upload key again to collapse the menu. The Upload key indicates its expanded state.
+- iOS upload panel is **collapsed initially** and contains one `Datei auswählen` action when opened; the native iOS picker supplies photo library, camera and Files selection. Existing attachment status chips remain. File/folder and image controls on desktop remain unchanged.
+- Match terminal styling on mobile with a **flat, square-edged, darker, more compact** inline panel. Remove the custom rounded top corners, which exposed white parent background at the edges. Native iOS photo/file chooser retains Apple-provided styling.
+- Retain image Ctrl+V, ordinary text paste, direct WebSocket upload, legacy `trzsz`, and existing permissions. No Stable changes; real iPhone keyboard/input and upload tests are still required.
+
 ## [0.5.0-dev.9] - 2026-11-23
 
 ### Added (Developer prototype — HAOS desktop/iPhone acceptance pending)
