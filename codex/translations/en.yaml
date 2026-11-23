@@ -17,6 +17,20 @@ configuration:
     description: >-
       Default working directory when Codex starts. Use /homeassistant for
       direct access to Home Assistant configuration files.
+  file_transfer_enabled:
+    name: Enable file transfer (experimental)
+    description: >-
+      Enables trzsz file and folder uploads in the ttyd terminal. Exit Codex
+      with Ctrl+C and run codex-upload in the shell. Screenshot Ctrl+V is not
+      implemented yet. Save and restart the App. Browser security restrictions
+      may affect file pickers on non-HTTPS local origins.
+  app_configs_visibility:
+    name: Show other App config paths in Codex guidance
+    description: >-
+      Controls ONLY whether Codex receives /app_configs usage guidance. This
+      Developer image always mounts public App config directories read-only.
+      This is NOT an access-control switch. Removing this privilege requires
+      installing an App image without the static Supervisor mount.
   remote_control_enabled:
     name: Enable Remote Control
     description: >-
