@@ -1,6 +1,6 @@
 name: Codex Deployment
 description: Experimental Codex App for Home Assistant - development acceptance channel
-version: "0.5.0-dev.5"
+version: "0.5.0-dev.6"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
@@ -44,6 +44,7 @@ options:
   session_persistence: false
   remote_control_enabled: false
   file_transfer_enabled: false
+  clipboard_image_paste: true
   app_configs_visibility: hidden_from_guidance
   default_model: "gpt-5.6-sol"
   codex_permissions: workspace
@@ -59,6 +60,7 @@ schema:
   session_persistence: bool
   remote_control_enabled: bool
   file_transfer_enabled: bool
+  clipboard_image_paste: bool
   app_configs_visibility: list(hidden_from_guidance|show_read_only)
   default_model: list(gpt-6.2-sol|gpt-6.2-astra|gpt-6-astra|gpt-6.1-sol|gpt-6.1-terra|gpt-6-sol|gpt-6-luna|gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna|gpt-5.5)
   codex_permissions: list(workspace|full_access)

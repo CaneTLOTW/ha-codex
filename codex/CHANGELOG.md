@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.6] - 2026-11-23
+
+### Added (Developer experiment)
+- Support **direct Ctrl+V of PNG screenshots in the running Codex terminal** without first exiting the TUI, using the same authenticated ttyd WebSocket as terminal input. Captured PNG bytes are capped at 10 MiB, saved under the current private Codex user state with unpredictable mode-0600 filenames, and the generated absolute path is pasted using the terminal's bracketed-paste protocol.
+- Reuse the image-path paste handler already included in the bundled Codex CLI 0.171.0 (verified against upstream tag `rust-v0.171.0`). The user can add a question before pressing Enter; the screenshot alone is never automatically submitted.
+- `clipboard_image_paste` Developer option (default ON, can be disabled), with DE/EN/ES/PT-BR translations and regression tests. Normal text paste, manual file/folder uploads through `trzsz`, and existing ttyd mobile-selection and reconnect paths remain available.
+- No extra HTTP endpoint, port, proxy, image upload server, new Supervisor capabilities or AppArmor privileges. WebSocket transfer is gated both in the browser and on the ttyd server, and can only save PNG screenshots into a fixed private directory.
+
+### Acceptance limitations
+- Image attachment and recognition must be confirmed on the operator's actual Home Assistant + Windows Firefox browser; automated CI only validates source, image C code, typescript and bundled runtime build.
+- PNG screenshot paste is targeted first. JPEG/WebP clipboard images, direct non-image Ctrl+V and a paperclip picker inside the running TUI are follow-on enhancements.
+- Each copied screenshot persists as a private file in Codex state. Do not upload secrets; retention/quota management will be reviewed after practical acceptance.
+- Stable `main` remains on 0.5.0; no Stable upgrade is included. The separate RO mount of other Apps' public configuration from dev.5 is unchanged and is not disabled by the agent-guidance preference.
+
 ## [0.5.0-dev.5] - 2026-11-23
 
 ### Experimental additions

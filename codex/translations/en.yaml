@@ -17,6 +17,13 @@ configuration:
     description: >-
       Default working directory when Codex starts. Use /homeassistant for
       direct access to Home Assistant configuration files.
+  clipboard_image_paste:
+    name: Paste screenshots with Ctrl+V (Developer)
+    description: >-
+      Paste PNG screenshots directly into a running Codex TUI using Ctrl+V.
+      The existing authenticated HA ingress WebSocket stores images privately
+      and pastes their paths into Codex. No extra port. Limit 10 MiB per PNG.
+      Enabled by default in Developer; restart the App after changing it.
   file_transfer_enabled:
     name: Enable file transfer (experimental)
     description: >-

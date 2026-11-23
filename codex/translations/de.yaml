@@ -17,6 +17,14 @@ configuration:
     description: >-
       Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
       direkten Zugriff auf die Home-Assistant-Konfiguration.
+  clipboard_image_paste:
+    name: Screenshots direkt mit Strg+V einfügen (Developer)
+    description: >-
+      Ermöglicht PNG-Screenshots direkt in der laufenden Codex-TUI per Strg+V.
+      Die Bilder werden über die bestehende HA-Ingress-WebSocket-Verbindung
+      privat gespeichert und als Bilddateipfad an Codex übergeben. Kein
+      zusätzlicher Port. Maximal 10 MiB pro PNG. Standardmäßig in Developer
+      aktiv; zum Abschalten speichern und App neu starten.
   file_transfer_enabled:
     name: Dateiübertragung aktivieren (experimentell)
     description: >-

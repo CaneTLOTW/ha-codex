@@ -13,6 +13,7 @@ theme="$(jq -r '.terminal_theme // "dark"' /data/options.json)"
 session_persist="$(jq -r '.session_persistence // false' /data/options.json)"
 remote_control_enabled="$(jq -r '.remote_control_enabled // false' /data/options.json)"
 file_transfer_enabled="$(jq -r '.file_transfer_enabled // false' /data/options.json)"
+clipboard_image_paste="$(jq -r '.clipboard_image_paste // true' /data/options.json)"
 app_configs_visibility="$(jq -r '.app_configs_visibility // "hidden_from_guidance"' /data/options.json)"
 work_dir="$(jq -r '.working_directory // "/homeassistant"' /data/options.json)"
 enable_mcp="$(jq -r '.enable_mcp' /data/options.json)"
@@ -27,6 +28,11 @@ case "$remote_control_enabled" in
     echo "[WARN] Invalid Remote Control flag; keeping it disabled." >&2
     remote_control_enabled="false"
     ;;
+esac
+
+case "$clipboard_image_paste" in
+  true|false) ;;
+  *) echo "[WARN] Invalid screenshot paste option; disabling." >&2; clipboard_image_paste=false ;;
 esac
 
 case "$file_transfer_enabled" in
@@ -83,6 +89,9 @@ export CODEX_MANAGED_ROOT="/data/codex-managed"
 export CODEX_WORK_DIR="$work_dir"
 export CODEX_SESSION_PERSIST="$session_persist"
 export CODEX_FILE_TRANSFER_ENABLED="$file_transfer_enabled"
+# The custom WS command is refused server-side unless this environment flag
+# is true, independent of the browser's client preference.
+export CODEX_IMAGE_PASTE_ENABLED="$clipboard_image_paste"
 export CODEX_APP_CONFIGS_VISIBILITY="$app_configs_visibility"
 export CODEX_ENABLE_MCP="$enable_mcp"
 export CODEX_DEFAULT_MODEL="$default_model"
@@ -98,6 +107,17 @@ mkdir -p \
   "$CODEX_STATE_ROOT/users" \
   "$CODEX_MANAGED_ROOT" \
   /tmp/codex
+
+# Clipboard screenshots are written by the authenticated ttyd WS handler,
+# with randomized 0600 names, and read as images by the unprivileged CLI.
+image_upload_dir="$CODEX_STATE_ROOT/users/anonymous/.codex/uploads"
+if [[ -L "$image_upload_dir" ]]; then
+  echo "[ERROR] Refusing a symlinked clipboard image directory." >&2
+  exit 1
+fi
+mkdir -p "$image_upload_dir"
+chown 22000:0 "$image_upload_dir"
+chmod 700 "$image_upload_dir"
 
 chmod 700 /tmp/codex
 printf '%s\n' "$addons_access" > "$CODEX_MANAGED_ROOT/addons-access"
@@ -250,6 +270,20 @@ Use HTTPS when testing browser file pickers on non-localhost origins.
 EOF_UPLOADS
 fi
 
+if [[ "$clipboard_image_paste" == "true" ]]; then
+  cat >> "$CODEX_MANAGED_ROOT/AGENTS.md" <<'EOF_CLIPBOARD'
+## Screenshot clipboard paste (experimental)
+
+In the currently running Codex TUI, copy a PNG screenshot on your computer
+and paste with Ctrl+V in the Home Assistant terminal. The authenticated
+ttyd WebSocket transfers the PNG into private state beneath
+/data/codex-home/users/anonymous/.codex/uploads, then sends its pathname
+as a bracketed paste to Codex's own existing image-attachment handler.
+Never store or print image contents in logs. The model needs image support.
+Normal text paste is unchanged; other files still use codex-upload in shell.
+EOF_CLIPBOARD
+fi
+
 validate_home="$CODEX_MANAGED_ROOT/validate-home"
 rm -rf "$validate_home"
 mkdir -p "$validate_home"
@@ -299,6 +333,7 @@ ttyd_args=(
   -t macOptionClickForcesSelection=true
   -t scrollback=5000
   -t "enableTrzsz=${file_transfer_enabled}"
+  -t "enableCodexImagePaste=${clipboard_image_paste}"
   -t "theme=${colors}"
   /usr/local/bin/codex-session
 )

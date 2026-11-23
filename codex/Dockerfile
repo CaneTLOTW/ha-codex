@@ -66,6 +66,8 @@ RUN apk add --no-cache \
     && update-ca-certificates
 
 COPY ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch /tmp/ttyd-mobile-keys.patch
+COPY ttyd-mobile-keys/codex-image-paste.h /tmp/codex-image-paste.h
+COPY ttyd-mobile-keys/apply-image-paste.py /tmp/apply-image-paste.py
 RUN apk add --no-cache --virtual .ttyd-build-deps \
         build-base \
         cmake \
@@ -81,6 +83,8 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && curl -fsSL "https://github.com/tsl0922/ttyd/archive/refs/tags/${TTYD_VERSION}.tar.gz" \
         | tar -xz -C /tmp/ttyd-build --strip-components=1 \
     && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-mobile-keys.patch \
+    && install -m 0644 /tmp/codex-image-paste.h /tmp/ttyd-build/src/codex-image-paste.h \
+    && python3 /tmp/apply-image-paste.py /tmp/ttyd-build \
     && cd /tmp/ttyd-build/html \
     && npm install --global corepack@0.31.0 \
     && corepack enable \
@@ -91,7 +95,7 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --parallel 2 \
     && install -m 0755 build/ttyd /usr/bin/ttyd \
-    && rm -rf /tmp/ttyd-build /tmp/ttyd-mobile-keys.patch \
+    && rm -rf /tmp/ttyd-build /tmp/ttyd-mobile-keys.patch /tmp/codex-image-paste.h /tmp/apply-image-paste.py \
     && apk del .ttyd-build-deps
 
 RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION} \
