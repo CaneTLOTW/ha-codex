@@ -17,6 +17,20 @@ configuration:
     description: >-
       Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
       direkten Zugriff auf die Home-Assistant-Konfiguration.
+  file_transfer_enabled:
+    name: Dateiübertragung aktivieren (experimentell)
+    description: >-
+      Aktiviert trzsz für Datei- und Verzeichnis-Uploads über das ttyd-Terminal.
+      Nach dem Verlassen von Codex mit Strg+C den Befehl codex-upload eingeben.
+      Bilder per Strg+V funktionieren damit noch nicht. Nach dem Speichern
+      die App neu starten; bei lokalem HTTP können Browserfunktionen eingeschränkt sein.
+  app_configs_visibility:
+    name: Andere App-Konfigurationen in Codex-Anleitung anzeigen
+    description: >-
+      Steuert NUR, ob Codex Hinweise zu /app_configs erhält. Die öffentlichen
+      App-Konfigurationen sind in dieser Developer-App unabhängig davon bereits
+      schreibgeschützt eingebunden. Dies ist KEIN Sicherheits- oder Zugriffs-
+      schalter; zum vollständigen Entzug ist eine App ohne diesen Mount nötig.
   remote_control_enabled:
     name: Remote Control aktivieren
     description: >-
