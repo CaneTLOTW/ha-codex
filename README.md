@@ -8,6 +8,16 @@ Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned
 
 This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
 
+## Stable 0.5.0 production rollout
+
+The Home Assistant OS **Developer** image `0.5.0-dev.4` was tested and reported PASS by the operator on 23 November 2026. The stable `0.5.0` release is promoted through a separately reviewed PR based on `main`; it is not a direct merge of the divergent `deployment` history.
+
+It preserves the **Codex** App identity, automatic boot, existing login/session state, Home Assistant MCP, and existing configuration options. Remote Control is an optional switch and remains OFF by default. The earlier SQLite migration-64, manual Ctrl+C restart, and ttyd WebSocket reconnect fixes are included.
+
+The Home Assistant 2026.11 integrated HACS **Marketplace** is not the Supervisor **App Store** used to install this container App. Continue installing and updating Codex under **Settings → Apps → App Store**.
+
+Production installation is not implied by creating the release PR. Follow the [Stable 0.5.0 installation and rollback assignment](docs/STABLE_0_5_0_PRODUCTION_INSTALL.md). Additional guidance: [Agent workflow](docs/AGENT_WORKFLOW.md), [Models](docs/MODELS.md), [Dependency lifecycle](docs/DEPENDENCY_POLICY.md), and [SQLite startup issue](docs/CODEX_SQLITE_TEMP_MIGRATION.md).
+
 ## Automatic Codex CLI updates
 
 **Codex CLI updates are automated at the repository/image level.** This is a core architectural difference from the original project.
