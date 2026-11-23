@@ -91,7 +91,7 @@ class ClipboardImagePasteTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         if shutil.which("cc"):
-            command = ["cc", "-D_GNU_SOURCE", "-std=c11", "-Wall", "-Werror",
+            command = ["cc", "-D_GNU_SOURCE", "-std=c11", "-Wall", "-Werror", "-Wno-unused-function",
                        "-fsyntax-only", "-x", "c", "-I", str(SOURCE), "-"]
             result = subprocess.run(
                 command, input='#include "codex-image-paste.h"\nint main(void) { return 0; }\n',
