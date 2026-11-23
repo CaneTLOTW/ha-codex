@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-11-23
+
+### Fixed
+- Restore the Home Assistant ingress terminal automatically after transient WebSocket closures (including normal close code 1000). Retain Enter as a fallback and protect against runaway reconnection loops (#34).
+- Initialize and validate a writable, private SQLite temporary directory for the interactive Codex process; preserve existing state_5.sqlite and session history after the migration-64 error 14 (#43).
+- Avoid the false permission error caused by the Python /usr/local/bin/test executable shadowing the shell builtin. Verify the SQLite temp directory using a dedicated unprivileged shell helper (#45).
+- Run the terminal UI through the supported --no-daemon mode without granting execute permission to arbitrary files under /data. Apply the same launch and addons_access sandbox constraints to manual codex, resume and fork invocations after Ctrl+C (#45, #47).
+- Avoid walking into different external filesystems during access preparation; retain the existing SSH key ACL exclusions and fail safely when ACL/chmod is unsupported (#32).
+- Enforce canonical /addons workspace access checks for explicit read_only and read_write policies.
+
+### Added
+- Optional Remote Control app-server with a Home Assistant option (default OFF), independent of the web terminal (#24).
+- Developer acceptance regression tests, updated model/agent/dependency guidance, and Home Assistant 2026.11 App Store information.
+
+### Compatibility and release
+- Stable App name remains Codex; boot remains auto and normal ingress remains unchanged.
+- Existing configured options, session_persistence, Codex login/state and user data must be preserved. No automatic enabling of Remote Control, filesystem mounts or auto-updates.
+- Developer image 0.5.0-dev.4 was operator-reported PASS on real Home Assistant OS on 2026-11-23. The Stable image requires separate CI, signed AMD64/AARCH64 publication and a controlled production installation with rollback.
+
 ## [0.4.36] - 2026-11-20
 
 ### Changed
