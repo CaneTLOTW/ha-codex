@@ -255,6 +255,11 @@ def apply(root: Path) -> None:
     # selection; layer upload actions around it instead of replacing it.
     replace_once(
         terminal,
+        "import { Component, h } from 'preact';\n",
+        "import { Component, h, Fragment } from 'preact';\n",
+    )
+    replace_once(
+        terminal,
         "    selectionMode: boolean;\n",
         "    selectionMode: boolean;\n"
         "    uploadEnabled: boolean;\n"
@@ -330,7 +335,7 @@ def apply(root: Path) -> None:
     new_nav = r'''                {this.touchControls && (
                     <nav class="mobile-keys" aria-label="Terminal special keys">
                         {uploadEnabled && !technicalKeys ? (
-                            <>
+                            <Fragment>
                                 {this.renderUploadKey('Datei', this.chooseFiles)}
                                 {this.renderUploadKey('Bild', this.chooseImages)}
                                 {this.renderUploadKey('Anhänge', this.toggleUpload)}
@@ -342,9 +347,9 @@ def apply(root: Path) -> None:
                                 {this.renderKeyboardShow()}
                                 {this.renderKeyboardDismiss()}
                                 {this.renderModifier('Shift', shift, 'shift')}
-                            </>
+                            </Fragment>
                         ) : (
-                            <>
+                            <Fragment>
                                 {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
                                 {this.renderSelectionMode(selectionMode)}
                                 {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
@@ -356,7 +361,7 @@ def apply(root: Path) -> None:
                                 {this.renderShiftLock(shiftLock)}
                                 {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
                                 {uploadEnabled ? this.renderMobileTechToggle() : this.renderKeyboardDismiss()}
-                            </>
+                            </Fragment>
                         )}
                     </nav>
                 )}
