@@ -52,7 +52,7 @@ class ClipboardImagePasteTests(unittest.TestCase):
         self.assertIn("memcmp(data, png_magic", header)
         self.assertIn('memcmp(data + 12, "IHDR"', header)
         self.assertIn('"/data/codex-home/users/anonymous/.codex/uploads/%s"', header)
-        self.assertIn("lws_remaining_packet_payload(wsi)", source)
+        self.assertIn("Never buffer an unbounded screenshot", source)
         self.assertIn("CODEX_IMAGE_PASTE_ENABLED", source)
         self.assertIn("pss->process == NULL", source)
         self.assertIn("image_reply_pending", source)
