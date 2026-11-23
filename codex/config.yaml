@@ -1,6 +1,6 @@
 name: Codex Deployment
 description: Experimental Codex App for Home Assistant - development acceptance channel
-version: "0.5.0-dev.4"
+version: "0.5.0-dev.5"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
@@ -31,6 +31,11 @@ map:
   - type: backup
   - type: addons
     read_only: false
+  # Developer-only: public configuration directories of other HA Apps.
+  # Supervisor mounts are static; App options cannot revoke this RO mount.
+  - type: all_app_configs
+    read_only: true
+    path: /app_configs
 options:
   enable_mcp: true
   terminal_font_size: 14
@@ -38,6 +43,8 @@ options:
   working_directory: /homeassistant
   session_persistence: false
   remote_control_enabled: false
+  file_transfer_enabled: false
+  app_configs_visibility: hidden_from_guidance
   default_model: "gpt-5.6-sol"
   codex_permissions: workspace
   codex_approval_policy: on-request
@@ -51,6 +58,8 @@ schema:
   working_directory: str
   session_persistence: bool
   remote_control_enabled: bool
+  file_transfer_enabled: bool
+  app_configs_visibility: list(hidden_from_guidance|show_read_only)
   default_model: list(gpt-6.2-sol|gpt-6.2-astra|gpt-6-astra|gpt-6.1-sol|gpt-6.1-terra|gpt-6-sol|gpt-6-luna|gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna|gpt-5.5)
   codex_permissions: list(workspace|full_access)
   codex_approval_policy: list(on-request|never|untrusted)
