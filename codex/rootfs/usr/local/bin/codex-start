@@ -243,7 +243,7 @@ if [[ "$file_transfer_enabled" == "true" ]]; then
 
 From the interactive shell (Ctrl+C to exit Codex), run codex-upload for files,
 or codex-upload --directory for folders. Use the browser file chooser.
-Uploads are stored under /data/codex-home/uploads/anonymous, not /homeassistant.
+Uploads are stored under the current CODEX_HOME/uploads directory, not /homeassistant.
 After returning to Codex, refer to the exact uploaded pathname so the
 agent can inspect it. Image clipboard Ctrl+V is NOT implemented yet.
 Use HTTPS when testing browser file pickers on non-localhost origins.
