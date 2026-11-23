@@ -217,11 +217,10 @@ def apply(root: Path) -> None:
     )
     replace_once(
         xterm,
-        "        this.imagePastePending = false;\n        this.doReconnect",
+        "        this.imagePastePending = false;\n",
         "        this.imagePastePending = false;\n"
         "        this.fileUploadPending?.reject(new Error('Terminal getrennt'));\n"
-        "        this.fileUploadPending = undefined;\n"
-        "        this.doReconnect",
+        "        this.fileUploadPending = undefined;\n",
     )
     replace_once(
         xterm,
