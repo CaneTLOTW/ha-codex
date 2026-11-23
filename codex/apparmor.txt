@@ -58,6 +58,11 @@ profile codex flags=(attach_disconnected,mediate_deleted) {
   /backup/** r,
   /addons/ r,
   /addons/** rwk,
+  # Supervisor mounts public App configs read-only in Developer.
+  # Never add write or execute rights here; the preference in App options
+  # only changes agent guidance, NOT this mount's security boundary.
+  /app_configs/ r,
+  /app_configs/** r,
   /addon_configs/ r,
   /addon_configs/** rwk,
   /config/ r,
