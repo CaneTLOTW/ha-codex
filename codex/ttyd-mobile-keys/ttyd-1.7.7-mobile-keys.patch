@@ -479,7 +479,7 @@ diff --git a/html/src/components/terminal/xterm/index.ts b/html/src/components/t
 index b643f92..47391b5 100644
 --- a/html/src/components/terminal/xterm/index.ts
 +++ b/html/src/components/terminal/xterm/index.ts
-@@ -74,6 +74,33 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
+@@ -74,6 +74,33 @@
      return toDisposable(() => target.removeEventListener(type, listener));
  }
  
@@ -513,7 +513,7 @@ index b643f92..47391b5 100644
  export class Xterm {
      private disposables: IDisposable[] = [];
      private textEncoder = new TextEncoder();
-@@ -82,6 +109,7 @@ export class Xterm {
+@@ -82,6 +109,7 @@
      private pending = 0;
  
      private terminal: Terminal;
@@ -521,11 +521,16 @@ index b643f92..47391b5 100644
      private fitAddon = new FitAddon();
      private overlayAddon = new OverlayAddon();
      private webglAddon?: WebglAddon;
-@@ -96,13 +124,21 @@ export class Xterm {
+@@ -96,13 +124,26 @@
      private resizeOverlay = true;
      private reconnect = true;
      private doReconnect = true;
 +    private manualReconnectPending = false;
++    private reconnectDelay = 1000;
++    private readonly reconnectMaxDelay = 30000;
++    private reconnectTimer?: ReturnType<typeof setTimeout>;
++    private reconnectKeyDispose?: IDisposable;
++    private reconnectVisibilityDispose?: IDisposable;
 +    private parent?: HTMLElement;
 +    private requestedRenderer: RendererType = 'canvas';
 +    private nativeSelectionCapable = false;
@@ -545,8 +550,18 @@ index b643f92..47391b5 100644
  
      dispose() {
          for (const d of this.disposables) {
-@@ -111,6 +147,14 @@ export class Xterm {
+@@ -109,8 +150,24 @@
+             d.dispose();
+         }
          this.disposables.length = 0;
++        this.reconnectKeyDispose?.dispose();
++        this.reconnectKeyDispose = undefined;
++        this.reconnectVisibilityDispose?.dispose();
++        this.reconnectVisibilityDispose = undefined;
++        if (this.reconnectTimer !== undefined) {
++            clearTimeout(this.reconnectTimer);
++            this.reconnectTimer = undefined;
++        }
      }
  
 +    public fit() {
@@ -560,11 +575,10 @@ index b643f92..47391b5 100644
      @bind
      private register<T extends IDisposable>(d: T): T {
          this.disposables.push(d);
-@@ -122,6 +166,35 @@ export class Xterm {
-         this.zmodemAddon?.sendFile(files);
+@@ -123,6 +180,35 @@
      }
  
-+    @bind
+     @bind
 +    public focus() {
 +        if (!shouldUseNativeTouchSelection(window)) {
 +            this.terminal?.focus();
@@ -593,10 +607,11 @@ index b643f92..47391b5 100644
 +        return this.nativeSelectionMode;
 +    }
 +
-     @bind
++    @bind
      public async refreshToken() {
          try {
-@@ -149,6 +222,8 @@ export class Xterm {
+             const resp = await fetch(this.options.tokenUrl);
+@@ -149,6 +235,8 @@
      @bind
      public open(parent: HTMLElement) {
          this.terminal = new Terminal(this.options.termOptions);
@@ -605,7 +620,7 @@ index b643f92..47391b5 100644
          const { terminal, fitAddon, overlayAddon } = this;
          window.term = terminal as TtydTerminal;
          window.term.fit = () => {
-@@ -160,9 +235,154 @@ export class Xterm {
+@@ -160,9 +248,154 @@
          terminal.loadAddon(new WebLinksAddon());
  
          terminal.open(parent);
@@ -760,7 +775,7 @@ index b643f92..47391b5 100644
      @bind
      private initListeners() {
          const { terminal, fitAddon, overlayAddon, register, sendData } = this;
-@@ -173,7 +393,7 @@ export class Xterm {
+@@ -173,7 +406,7 @@
                  }
              })
          );
@@ -769,7 +784,7 @@ index b643f92..47391b5 100644
          register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
          register(
              terminal.onResize(({ cols, rows }) => {
-@@ -223,7 +443,10 @@ export class Xterm {
+@@ -223,7 +456,10 @@
      @bind
      public sendData(data: string | Uint8Array) {
          const { socket, textEncoder } = this;
@@ -781,49 +796,113 @@ index b643f92..47391b5 100644
  
          if (typeof data === 'string') {
              const payload = new Uint8Array(data.length * 3 + 1);
-@@ -238,6 +461,15 @@ export class Xterm {
-         }
+@@ -239,6 +475,42 @@
      }
  
-+    @bind
+     @bind
 +    private requestManualReconnect() {
 +        if (this.manualReconnectPending) return;
 +        if (this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN) return;
++        if (this.reconnectTimer !== undefined) {
++            clearTimeout(this.reconnectTimer);
++            this.reconnectTimer = undefined;
++        }
 +        this.manualReconnectPending = true;
 +        this.overlayAddon.showOverlay('Reconnecting...');
-+        this.refreshToken().then(() => this.connect());
++        this.refreshToken()
++            .then(() => this.connect())
++            .catch(error => {
++                console.warn('[ttyd] reconnect attempt failed', error);
++                this.manualReconnectPending = false;
++                this.scheduleReconnect();
++            });
 +    }
 +
-     @bind
++    @bind
++    private scheduleReconnect() {
++        if (!this.doReconnect || this.manualReconnectPending || this.reconnectTimer !== undefined) return;
++        const delay = this.reconnectDelay;
++        this.reconnectDelay = Math.min(delay * 2, this.reconnectMaxDelay);
++        this.overlayAddon.showOverlay(`Reconnecting in ${Math.ceil(delay / 1000)}s...`, Math.min(delay, 2000));
++        this.reconnectTimer = setTimeout(() => {
++            this.reconnectTimer = undefined;
++            this.requestManualReconnect();
++        }, delay);
++    }
++
++    @bind
++    private onReconnectVisibility() {
++        if (document.visibilityState === 'visible') this.requestManualReconnect();
++    }
++
++    @bind
      public connect() {
          this.socket = new WebSocket(this.options.wsUrl, ['tty']);
-@@ -253,6 +485,7 @@ export class Xterm {
+         const { socket, register } = this;
+@@ -247,12 +519,19 @@
+         register(addEventListener(socket, 'open', this.onSocketOpen));
+         register(addEventListener(socket, 'message', this.onSocketData as EventListener));
+         register(addEventListener(socket, 'close', this.onSocketClose as EventListener));
+-        register(addEventListener(socket, 'error', () => (this.doReconnect = false)));
++        // Do not suppress reconnect after an ingress/network WebSocket error.
++        register(addEventListener(socket, 'error', () => console.warn('[ttyd] websocket error, will retry on close')));
+     }
+ 
      @bind
      private onSocketOpen() {
          console.log('[ttyd] websocket connection opened');
 +        this.manualReconnectPending = false;
++        this.reconnectDelay = 1000;
++        this.reconnectKeyDispose?.dispose();
++        this.reconnectKeyDispose = undefined;
++        this.reconnectVisibilityDispose?.dispose();
++        this.reconnectVisibilityDispose = undefined;
  
          const { textEncoder, terminal, overlayAddon } = this;
          const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
-@@ -274,6 +507,7 @@ export class Xterm {
+@@ -274,26 +553,24 @@
      @bind
      private onSocketClose(event: CloseEvent) {
          console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
+-
+-        const { refreshToken, connect, doReconnect, overlayAddon } = this;
+-        overlayAddon.showOverlay('Connection Closed');
 +        this.manualReconnectPending = false;
++        this.overlayAddon.showOverlay('Connection Closed');
+         this.dispose();
  
-         const { refreshToken, connect, doReconnect, overlayAddon } = this;
-         overlayAddon.showOverlay('Connection Closed');
-@@ -289,8 +523,7 @@ export class Xterm {
-                 const event = e.domEvent;
-                 if (event.key === 'Enter') {
-                     keyDispose.dispose();
+-        // 1000: CLOSE_NORMAL
+-        if (event.code !== 1000 && doReconnect) {
+-            overlayAddon.showOverlay('Reconnecting...');
+-            refreshToken().then(connect);
++        // Enter remains a working fallback while automatic retries are pending.
++        this.reconnectKeyDispose = this.terminal.onKey(e => {
++            if (e.domEvent.key === 'Enter') this.requestManualReconnect();
++        });
++        if (this.doReconnect) {
++            // Recover from close code 1000 and errors, not only abnormal closes.
++            this.reconnectVisibilityDispose = addEventListener(
++                document,
++                'visibilitychange',
++                this.onReconnectVisibility
++            );
++            this.scheduleReconnect();
+         } else {
+-            const { terminal } = this;
+-            const keyDispose = terminal.onKey(e => {
+-                const event = e.domEvent;
+-                if (event.key === 'Enter') {
+-                    keyDispose.dispose();
 -                    overlayAddon.showOverlay('Reconnecting...');
 -                    refreshToken().then(connect);
-+                    this.requestManualReconnect();
-                 }
-             });
-             overlayAddon.showOverlay('Press ⏎ to Reconnect');
-@@ -379,7 +612,8 @@ export class Xterm {
+-                }
+-            });
+-            overlayAddon.showOverlay('Press ⏎ to Reconnect');
++            this.overlayAddon.showOverlay('Press ⏎ to Reconnect');
+         }
+     }
+ 
+@@ -379,7 +656,8 @@
          for (const [key, value] of Object.entries(prefs)) {
              switch (key) {
                  case 'rendererType':
