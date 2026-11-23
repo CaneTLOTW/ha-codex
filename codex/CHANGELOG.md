@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.11] - 2026-11-24
+
+### Changed (Developer only — mobile paperclip direct picker)
+- The exact iPhone **2×8 mobile key grid** remains unchanged. Its former Caps position (row two, column six) now displays a compact **monochrome paperclip icon** rather than the full-word Upload button; a small corner status badge shows completed uploads, transfer activity or an error.
+- **One tap** directly invokes the **native iOS Photos/Camera/Files picker** through the already working file input. No second tap or extra mobile Upload / Anhänge tray; no toggle/More mode. The entire mobile drawer is absent, so it consumes **zero terminal height**.
+- On mobile, uploaded file paths still pass through the existing private authenticated ttyd WebSocket and are inserted into the active Codex prompt. Screenshot Ctrl+V, normal text paste, selection and keyboard show/hide keep their existing implementation.
+- Desktop compact collapsible Upload/Bild/Datei/Ordner/Drag-&-Drop interface and upload security protocol remain unchanged.
+- Automated builds verify pinned ttyd frontend and C code. **Real iOS picker gesture, keyboard and file-reading acceptance is still required**. Stable 0.5.0 unchanged.
+
 ## [0.5.0-dev.10] - 2026-11-24
 
 ### Changed (Developer only — iPhone upload menu refinement)
