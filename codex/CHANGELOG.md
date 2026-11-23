@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.8] - 2026-11-23
+
+### Fixed (Developer HAOS screenshot upload permission follow-up)
+- After the real Firefox/HAOS test of dev.7, screenshot clipboard events and the authenticated WebSocket flow work, and normal text Ctrl+V remains functional. PNG upload is rejected as `UPLOAD_PERMISSIONS` before reaching the running Codex TUI.
+- Explicitly permit **read-only traversal of the /data directory itself** in the Developer AppArmor profile (`/data/ r,`). The existing `/data/** rwk,` covers descendants but not necessarily the parent directory opened using `open("/data", O_DIRECTORY|O_NOFOLLOW)` in our upload security implementation. This is the suspected permission denial, to be confirmed on HAOS.
+- Preserve fixed private upload directory, UID 22000, mode-0700 directory/0600 file, O_NOFOLLOW and exclusive random basenames; no new mounts, network ports, elevated capabilities, or execute access on /data.
+- Extend regression checks to prevent removal of `/data/ r,`. Stable 0.5.0 unchanged. Successful build alone does not establish real screenshot attachment acceptance.
+
 ## [0.5.0-dev.7] - 2026-11-23
 
 ### Fixed (Developer follow-up; HAOS acceptance pending)
