@@ -261,7 +261,7 @@ def apply(root: Path) -> None:
         "                        'STORAGE_ERROR',\n"
         "                    ]);\n"
         "                    const safe = allowed.has(reason) ? reason : 'UNKNOWN';\n"
-        "                    this.overlayAddon.showOverlay(\`Screenshot rejected: \${safe}\`, 3800);\n"
+        "                    this.overlayAddon.showOverlay('Screenshot rejected: ' + safe, 3800);\n"
         "                }\n"
         "                break;\n",
     )
