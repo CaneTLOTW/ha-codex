@@ -17,6 +17,12 @@ configuration:
     description: >-
       Directorio predeterminado cuando inicia Codex. Usa /homeassistant para
       acceder directamente a la configuración de Home Assistant.
+  clipboard_image_paste:
+    name: Pegar capturas con Ctrl+V (Developer)
+    description: >-
+      Pega capturas PNG directamente en Codex con Ctrl+V. El WebSocket ya
+      autenticado de Home Assistant guarda imagenes privadas y pega su ruta.
+      Limite de 10 MiB por imagen. Activo por defecto en Developer.
   file_transfer_enabled:
     name: Habilitar transferencia de archivos (experimental)
     description: >-
