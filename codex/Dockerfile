@@ -146,7 +146,9 @@ RUN chmod +x \
     /usr/local/bin/codex-merge-config \
     /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \
+    /usr/local/bin/codex-tui \
     /usr/local/bin/codex-session \
+    /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 
@@ -173,6 +175,31 @@ COPY <<'EOF' /etc/codex.bashrc
 export TERM=xterm-256color
 export LANG=C.UTF-8
 export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+
+# Only interactive shells intercept the human-facing Codex TUI command.
+# This is deliberately not an alias for *every* Codex subcommand: automation,
+# authentication, MCP and the optional app-server keep their own CLI semantics.
+if [[ "$-" == *i* ]]; then
+  codex() {
+    case "${1:-}" in
+      ""|resume|fork|agents|review)
+        /usr/local/bin/codex-tui "$@"
+        ;;
+      -h|--help|-V|--version)
+        command codex "$@"
+        ;;
+      -*)
+        # Interactive flags, including an explicit --no-daemon, use the
+        # common launcher with the same /addons sandbox as initial startup.
+        /usr/local/bin/codex-tui "$@"
+        ;;
+      *)
+        command codex "$@"
+        ;;
+    esac
+  }
+fi
+
 PS1='\[\033[1;36m\]codex\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '
 
 alias ll='ls -la'
