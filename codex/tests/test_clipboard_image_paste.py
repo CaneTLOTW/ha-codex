@@ -15,6 +15,7 @@ CONFIG = ROOT / "config.yaml"
 START = ROOT / "rootfs/usr/local/bin/codex-start"
 DOCKERFILE = ROOT / "Dockerfile"
 SOURCE = ROOT / "ttyd-mobile-keys"
+APPARMOR = ROOT / "apparmor.txt"
 HEADER = SOURCE / "codex-image-paste.h"
 PATCH = SOURCE / "apply-image-paste.py"
 
@@ -23,7 +24,7 @@ class ClipboardImagePasteTests(unittest.TestCase):
     def test_developer_opt_in_and_security_boundary(self):
         options = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
         self.assertEqual(options["name"], "Codex Deployment")
-        self.assertEqual(options["version"], "0.5.0-dev.7")
+        self.assertEqual(options["version"], "0.5.0-dev.8")
         self.assertIs(options["options"]["clipboard_image_paste"], True)
         self.assertEqual(options["schema"]["clipboard_image_paste"], "bool")
         self.assertIs(options["options"]["file_transfer_enabled"], False)
@@ -35,6 +36,16 @@ class ClipboardImagePasteTests(unittest.TestCase):
         self.assertIn('chown 22000:0 "$image_upload_dir"', start)
         self.assertIn('[[ -L "$image_upload_dir" ]]', start)
         self.assertNotIn("CODEX_SQLITE_HOME=", start)
+
+        # open("/data", O_DIRECTORY|O_NOFOLLOW) opens the mount root itself,
+        # not a descendant matched by /data/**. Keep read access explicit
+        # while preserving the private per-user directory and non-exec /data.
+        aa = APPARMOR.read_text(encoding="utf-8")
+        self.assertIn("/data/ r,", aa)
+        self.assertIn("/data/** rwk,", aa)
+        self.assertNotIn("/data/** ix", aa)
+        self.assertNotIn("/data/** rwx", aa)
+        self.assertIn('open("/data", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW)', HEADER.read_text())
 
     def test_reuses_existing_terminal_socket_and_private_png_only_storage(self):
         source = PATCH.read_text(encoding="utf-8")
