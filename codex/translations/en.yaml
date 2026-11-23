@@ -17,6 +17,13 @@ configuration:
     description: >-
       Default working directory when Codex starts. Use /homeassistant for
       direct access to Home Assistant configuration files.
+  direct_file_upload:
+    name: Upload files and folders directly (Developer)
+    description: >-
+      Adds a compact desktop upload dock and mobile upload controls.
+      Files and images up to 10 MiB each (24 per selection) use the
+      existing authenticated Ingress WebSocket and private Codex storage.
+      Paths are pasted into the running terminal without exiting Codex.
   clipboard_image_paste:
     name: Paste screenshots with Ctrl+V (Developer)
     description: >-
