@@ -17,6 +17,12 @@ configuration:
     description: >-
       Diretório padrão quando o Codex inicia. Use /homeassistant para acesso
       direto à configuração do Home Assistant.
+  clipboard_image_paste:
+    name: Colar capturas com Ctrl+V (Developer)
+    description: >-
+      Cole capturas PNG diretamente no Codex usando Ctrl+V. O WebSocket de
+      ingress autenticado salva os arquivos de forma privada e cola o caminho.
+      Limite de 10 MiB por PNG. Ativado por padrao no Developer.
   file_transfer_enabled:
     name: Ativar transferencia de arquivos (experimental)
     description: >-
