@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.9] - 2026-11-23
+
+### Added (Developer prototype — HAOS desktop/iPhone acceptance pending)
+- Compact **collapsible desktop upload dock** under ttyd, with images, ordinary files, folder picker, drop zone, attachment/progress chips and no need to exit the running Codex session.
+- **iPhone-friendly upload controls** integrated into the existing mobile key rows: Datei, Bild, Anhänge, and `Mehr` to reach the previous technical keys. An expandable compact mobile sheet opens the native file/image picker.
+- Reuse the existing authenticated ttyd/HA Ingress WebSocket; separate bounded binary file frames and safe acknowledgement. Batch-specific random upload directory, private 0700 directories and 0600 files, strictly checked relative paths, no symlinks, no overwrite, no new HTTP route, no extra privileges.
+- Serial uploads (maximum 24 files per selection, 10 MiB per file) preserve relative folders when supported by the browser. The returned private file path is inserted into the running terminal with bracketed paste; image paths can use the existing Codex image attachment parser; nonimages are accessible for the Codex agent to read.
+- New Developer-only `direct_file_upload` option defaults on; original `trzsz` option remains available separately. Screenshot Ctrl+V and ordinary text paste remain unchanged.
+- Firefox desktop and Safari/iPhone manual verification required: compressed/mobile keyboard layout, file picker, file contents, drag/drop, directory structure, keyboard shortcuts and reconnection. Do not promote to Stable before acceptance.
+
 ## [0.5.0-dev.8] - 2026-11-23
 
 ### Fixed (Developer HAOS screenshot upload permission follow-up)
