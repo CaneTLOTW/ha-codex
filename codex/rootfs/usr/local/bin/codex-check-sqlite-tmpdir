@@ -1,0 +1,16 @@
+#!/bin/sh
+# Runs as the unprivileged Codex user (UID 22000).
+# Explicit /bin/sh builtins avoid /usr/local/bin/test from Python packages.
+set -eu
+
+scratch=${1:?SQLite temp directory argument required}
+
+# A private real directory is mandatory; never follow a final-component symlink.
+[ ! -L "$scratch" ] || exit 1
+[ -d "$scratch" ] && [ -w "$scratch" ] && [ -x "$scratch" ] || exit 1
+
+# Check real file creation, not just reported POSIX mode bits.
+# mktemp creates an unpredictable mode-0600 probe under the scratch directory.
+probe=$(mktemp "$scratch/.sqlite-write-probe.XXXXXXXX") || exit 1
+trap 'rm -f "$probe"' EXIT
+[ -f "$probe" ] && [ -w "$probe" ] || exit 1
