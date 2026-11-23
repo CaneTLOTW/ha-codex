@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.7] - 2026-11-23
+
+### Fixed (Developer follow-up; HAOS acceptance pending)
+- Fix two escaped frontend literals in the original screenshot-paste transport: PNG upload ACK path regex and bracketed-paste terminal ESC bytes. These could block attachment even after a server upload succeeded.
+- Stop Ctrl+V keydown from reaching the TUI while still allowing native browser paste events; avoid Codex attempting the unreachable X11 clipboard inside HAOS.
+- Distinguish restricted server-side upload failure categories (invalid PNG, missing/private upload directory, permissions, full/read-only storage, disabled socket) in browser feedback without exposing image bytes, absolute paths, authentication, or HA ingress URLs.
+- Based on actual Firefox/HAOS failure of dev.6: browser reports `Screenshot upload rejected` and Codex reports `X11 server connection timed out`. The precise server-side rejection cause is not yet established; this build supplies category feedback for the next test.
+- Stable 0.5.0 is unchanged. Do not claim screenshot attachment acceptance before a real HAOS image-content test.
+
 ## [0.5.0-dev.6] - 2026-11-23
 
 ### Added (Developer experiment)
