@@ -24,7 +24,7 @@ class ClipboardImagePasteTests(unittest.TestCase):
     def test_developer_opt_in_and_security_boundary(self):
         options = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
         self.assertEqual(options["name"], "Codex Deployment")
-        self.assertEqual(options["version"], "0.5.0-dev.10")
+        self.assertEqual(options["version"], "0.5.0-dev.11")
         self.assertIs(options["options"]["clipboard_image_paste"], True)
         self.assertEqual(options["schema"]["clipboard_image_paste"], "bool")
         self.assertIs(options["options"]["file_transfer_enabled"], False)
