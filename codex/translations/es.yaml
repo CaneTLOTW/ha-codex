@@ -17,6 +17,18 @@ configuration:
     description: >-
       Directorio predeterminado cuando inicia Codex. Usa /homeassistant para
       acceder directamente a la configuración de Home Assistant.
+  file_transfer_enabled:
+    name: Habilitar transferencia de archivos (experimental)
+    description: >-
+      Habilita trzsz para enviar archivos y carpetas. Sal de Codex con Ctrl+C
+      y ejecuta codex-upload en la consola. Pegar capturas con Ctrl+V aun no
+      esta implementado. Guarda y reinicia la App.
+  app_configs_visibility:
+    name: Mostrar configuraciones de otras Apps en las instrucciones
+    description: >-
+      Solo controla la informacion mostrada a Codex. El montaje /app_configs
+      existe siempre en esta App de desarrollo y es de solo lectura.
+      No es una restriccion de seguridad; el montaje de Supervisor es estatico.
   remote_control_enabled:
     name: Activar Remote Control
     description: >-
