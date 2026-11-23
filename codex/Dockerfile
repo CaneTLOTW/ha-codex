@@ -102,6 +102,9 @@ RUN pip3 install --no-cache-dir --break-system-packages \
         hass-mcp \
         PyYAML \
         yamllint \
+        trzsz==1.1.7 \
+    && trz -v \
+    && tsz -v \
     && python3 --version \
     && python3 -c 'import yaml; print("PyYAML", yaml.__version__)' \
     && yamllint --version \
@@ -147,6 +150,7 @@ RUN chmod +x \
     /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \
     /usr/local/bin/codex-tui \
+    /usr/local/bin/codex-upload \
     /usr/local/bin/codex-session \
     /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \
