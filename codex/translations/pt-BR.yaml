@@ -17,6 +17,12 @@ configuration:
     description: >-
       Diretório padrão quando o Codex inicia. Use /homeassistant para acesso
       direto à configuração do Home Assistant.
+  direct_file_upload:
+    name: Enviar arquivos e pastas diretamente (Developer)
+    description: >-
+      Adiciona uma barra compacta no desktop e controles de envio no celular.
+      Arquivos de até 10 MiB (24 por seleção) são salvos privadamente pelo
+      WebSocket Ingress, e os caminhos são colados na sessão do Codex.
   clipboard_image_paste:
     name: Colar capturas com Ctrl+V (Developer)
     description: >-
