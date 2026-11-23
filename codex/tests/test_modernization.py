@@ -10,6 +10,7 @@ from pathlib import Path
 CODEX_DIR = Path(__file__).resolve().parents[1]
 START = CODEX_DIR / "rootfs/usr/local/bin/codex-start"
 SHELL = CODEX_DIR / "rootfs/usr/local/bin/codex-shell"
+TUI = CODEX_DIR / "rootfs/usr/local/bin/codex-tui"
 SESSION = CODEX_DIR / "rootfs/usr/local/bin/codex-session"
 MERGE = CODEX_DIR / "rootfs/usr/local/bin/codex-merge-config"
 PREPARE = CODEX_DIR / "rootfs/usr/local/bin/codex-prepare-mcp"
@@ -20,6 +21,8 @@ OLD_PATCH = CODEX_DIR / "ttyd-selection-clipboard.patch"
 HA_READONLY = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly"
 HA_READONLY_ROOT = CODEX_DIR / "rootfs/usr/local/bin/ha-readonly-root-helper"
 SUDOERS = CODEX_DIR / "rootfs/etc/sudoers.d/codex-hass-mcp"
+CONFIG = CODEX_DIR / "config.yaml"
+APPARMOR = CODEX_DIR / "apparmor.txt"
 
 
 class ModernizationTests(unittest.TestCase):
@@ -58,7 +61,8 @@ class ModernizationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             parsed = tomllib.loads(config.read_text(encoding="utf-8"))
             self.assertIs(parsed["check_for_update_on_startup"], False)
-        self.assertIn("check_for_update_on_startup=false", shell_text)
+        self.assertIn("/usr/local/bin/codex-tui", shell_text)
+        self.assertIn("check_for_update_on_startup=false", TUI.read_text(encoding="utf-8"))
         self.assertRegex(dockerfile, r"(?m)^ARG CODEX_VERSION=\d+\.\d+\.\d+$")
         self.assertIn("npm install -g @openai/codex@${CODEX_VERSION}", dockerfile)
         self.assertNotIn("npm install -g @openai/codex@latest", dockerfile)
@@ -132,6 +136,26 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("if (!this.touchControls) this.container = c as HTMLElement;", patch)
         self.assertNotIn("if (!window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches)", patch)
 
+    def test_ingress_websocket_reconnect_is_bounded_and_manual_fallback_remains(self):
+        patch = MOBILE_PATCH.read_text(encoding="utf-8")
+        # This patch is applied to clean ttyd 1.7.7 during the normal build.
+        # Verify the reconnect-specific integration without introducing a second patch.
+        self.assertIn("private reconnectDelay = 1000;", patch)
+        self.assertIn("private readonly reconnectMaxDelay = 30000;", patch)
+        self.assertIn("private scheduleReconnect()", patch)
+        self.assertIn("this.reconnectDelay = Math.min(delay * 2, this.reconnectMaxDelay);", patch)
+        self.assertIn("private onReconnectVisibility()", patch)
+        self.assertIn("this.reconnectVisibilityDispose = addEventListener(", patch)
+        self.assertIn("+                'visibilitychange',", patch)
+        self.assertIn("this.reconnectKeyDispose = this.terminal.onKey", patch)
+        self.assertIn("if (e.domEvent.key === 'Enter') this.requestManualReconnect();", patch)
+        self.assertIn("this.reconnectKeyDispose?.dispose();", patch)
+        self.assertIn("clearTimeout(this.reconnectTimer);", patch)
+        self.assertIn("this.scheduleReconnect();", patch)
+        self.assertIn("+        register(addEventListener(socket, 'error', () => console.warn(", patch)
+        self.assertIn("if (this.doReconnect) {", patch)
+        self.assertIn("this.overlayAddon.showOverlay('Press ⏎ to Reconnect');", patch)
+
     def test_readonly_ha_helper_and_agent_guidance(self):
         root = HA_READONLY_ROOT.read_text(encoding="utf-8")
         wrapper = HA_READONLY.read_text(encoding="utf-8")
@@ -152,10 +176,20 @@ class ModernizationTests(unittest.TestCase):
         self.assertIn("Supervisor token is intentionally removed", start_text)
         self.assertIn("ha-readonly", dockerfile)
 
+    def test_local_app_sources_are_rw_mapped_and_apparmor_allowed(self):
+        config = CONFIG.read_text(encoding="utf-8")
+        apparmor = APPARMOR.read_text(encoding="utf-8")
+        self.assertRegex(config, r"(?ms)^  - type: addons\n    read_only: false$")
+        self.assertNotIn("all_addon_configs", config)
+        self.assertIn("/addons/ r,", apparmor)
+        self.assertIn("/addons/** rwk,", apparmor)
+
     def test_web_session_keeps_scrollback(self):
         shell_text = SHELL.read_text(encoding="utf-8")
-        self.assertIn("tui.alternate_screen", shell_text)
-        self.assertIn('"never"', shell_text)
+        self.assertIn("/usr/local/bin/codex-tui", shell_text)
+        tui_text = TUI.read_text(encoding="utf-8")
+        self.assertIn("tui.alternate_screen", tui_text)
+        self.assertIn('"never"', tui_text)
 
     def test_persistent_ttyd_session_keeps_wheel_and_prefers_desktop_selection(self):
         session_text = SESSION.read_text(encoding="utf-8")
