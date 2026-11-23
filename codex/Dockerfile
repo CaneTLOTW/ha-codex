@@ -103,8 +103,8 @@ RUN pip3 install --no-cache-dir --break-system-packages \
         PyYAML \
         yamllint \
         trzsz==1.1.7 \
-    && trz --version \
-    && tsz --version \
+    && trz -v \
+    && tsz -v \
     && python3 --version \
     && python3 -c 'import yaml; print("PyYAML", yaml.__version__)' \
     && yamllint --version \
