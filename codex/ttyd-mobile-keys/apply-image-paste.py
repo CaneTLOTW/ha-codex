@@ -133,7 +133,11 @@ def apply(root: Path) -> None:
         xterm,
         "        register(addEventListener(window, 'beforeunload', this.onWindowUnload));\n",
         "        register(addEventListener(window, 'beforeunload', this.onWindowUnload));\n"
-        "        register(addCapturedEventListener(document, 'paste', this.onCodexImagePaste as EventListener));\n",
+        "        register(\n"
+        "            addCapturedEventListener(document, 'paste', event => {\n"
+        "                this.onCodexImagePaste(event as ClipboardEvent);\n"
+        "            })\n"
+        "        );\n",
     )
 
     on_paste = r'''    @bind
@@ -216,8 +220,9 @@ def apply(root: Path) -> None:
         "                break;\n"
         "            case Command.IMAGE_PASTE_RESULT: {\n"
         "                const path = textDecoder.decode(data);\n"
-        "                if (this.imagePastePending &&\n"
-        "                    /^\\/data\\/codex-home\\/users\\/anonymous\\/\\.codex\\/uploads\\/clipboard-[0-9a-f]{32}\\.png$/.test(path)) {\n"
+        "                const prefix = '/data/codex-home/users/anonymous/.codex/uploads/clipboard-';\n"
+        "                const valid = path.startsWith(prefix) && /^[0-9a-f]{32}\\.png$/.test(path.slice(prefix.length));\n"
+        "                if (this.imagePastePending && valid) {\n"
         "                    this.imagePastePending = false;\n"
         "                    // Bracketed paste triggers Codex 0.171.0's existing\n"
         "                    // pasted-image-path recognition without pressing Enter.\n"
