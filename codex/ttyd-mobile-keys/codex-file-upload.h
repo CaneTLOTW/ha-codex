@@ -71,7 +71,7 @@ static int codex_file_valid_path(const unsigned char *path, size_t len) {
 static int codex_file_save(const unsigned char *payload, size_t len,
                            char *result, size_t result_cap) {
   /* Validate complete frame before touching disk. */
-  if (!payload || len < 36 || len > CODEX_FILE_FRAME_MAX) {
+  if (!payload || len < 35 || len > CODEX_FILE_FRAME_MAX) {
     errno = EINVAL;
     return -1;
   }
