@@ -23,6 +23,20 @@
 #define CODEX_IMAGE_WS_REPLY '4'
 #define CODEX_IMAGE_WS_ERROR '5'
 
+/* Wire responses reveal only a stable failure category, never paths or image bytes. */
+static const char *codex_image_error_code(int error) {
+  switch (error) {
+    case EINVAL: return "INVALID_PNG";
+    case ENOENT: return "UPLOAD_DIR_MISSING";
+    case EACCES:
+    case EPERM: return "UPLOAD_PERMISSIONS";
+    case ENOSPC:
+    case EDQUOT: return "STORAGE_FULL";
+    case EROFS: return "STORAGE_READ_ONLY";
+    default: return "STORAGE_ERROR";
+  }
+}
+
 static int codex_image_open_upload_dir(void) {
   static const char *const dirs[] = {
       "codex-home", "users", "anonymous", ".codex", "uploads"};
