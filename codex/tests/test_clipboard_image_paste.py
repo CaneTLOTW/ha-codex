@@ -77,7 +77,7 @@ class ClipboardImagePasteTests(unittest.TestCase):
         self.assertIn("if (this.imagePastePending)", script)
         self.assertIn("this.imagePastePending = false", script)
         self.assertIn("addCapturedEventListener(document, 'paste'", script)
-        self.assertIn("onCodexImagePaste as EventListener", script)
+        self.assertIn("this.onCodexImagePaste(event as ClipboardEvent)", script)
         self.assertIn("IMAGE_PASTE_RESULT", script)
         self.assertIn("IMAGE_PASTE_ERROR", script)
         for translation in ("de.yaml", "en.yaml", "es.yaml", "pt-BR.yaml"):
