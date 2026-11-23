@@ -93,6 +93,7 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && npm install --global corepack@0.31.0 \
     && corepack enable \
     && yarn install --immutable \
+    && yarn gts fix \
     && yarn inline \
     && install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html \
     && cd /tmp/ttyd-build \
