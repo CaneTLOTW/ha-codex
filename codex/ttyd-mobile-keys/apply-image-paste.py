@@ -84,13 +84,13 @@ def apply(root: Path) -> None:
         "              pss->image_reply_pending || enabled == NULL ||\n"
         "              strcmp(enabled, \"true\") != 0) {\n"
         "            snprintf(pss->image_reply, sizeof(pss->image_reply),\n"
-        "                     \"%cScreenshot transfer disabled\", CODEX_IMAGE_WS_ERROR);\n"
+        "                     \"%cDISABLED\", CODEX_IMAGE_WS_ERROR);\n"
         "          } else {\n"
         "            char path[256];\n"
         "            if (codex_image_save_png((unsigned char *)pss->buffer + 1,\n"
         "                                     pss->len - 1, path, sizeof(path)) != 0) {\n"
         "              snprintf(pss->image_reply, sizeof(pss->image_reply),\n"
-        "                       \"%cScreenshot rejected\", CODEX_IMAGE_WS_ERROR);\n"
+        "                       \"%c%s\", CODEX_IMAGE_WS_ERROR, codex_image_error_code(errno));\n"
         "            } else {\n"
         "              snprintf(pss->image_reply, sizeof(pss->image_reply),\n"
         "                       \"%c%s\", CODEX_IMAGE_WS_REPLY, path);\n"
@@ -134,6 +134,11 @@ def apply(root: Path) -> None:
         "        register(addEventListener(window, 'beforeunload', this.onWindowUnload));\n",
         "        register(addEventListener(window, 'beforeunload', this.onWindowUnload));\n"
         "        register(\n"
+        "            addCapturedEventListener(document, 'keydown', event => {\n"
+        "                this.onCodexClipboardKeyDown(event as KeyboardEvent);\n"
+        "            })\n"
+        "        );\n"
+        "        register(\n"
         "            addCapturedEventListener(document, 'paste', event => {\n"
         "                this.onCodexImagePaste(event as ClipboardEvent);\n"
         "            })\n"
@@ -141,6 +146,17 @@ def apply(root: Path) -> None:
     )
 
     on_paste = r'''    @bind
+    private onCodexClipboardKeyDown(event: KeyboardEvent) {
+        if (!this.imagePasteEnabled || !event.ctrlKey || event.altKey || event.metaKey ||
+            event.shiftKey || event.key.toLowerCase() !== 'v') return;
+        const source = event.target as HTMLElement | null;
+        if (!source?.closest?.('.xterm')) return;
+        // Keep browser default paste, but do not forward Ctrl+V to Codex.
+        // In a headless HA container that key triggers an X11 clipboard probe.
+        event.stopImmediatePropagation();
+    }
+
+    @bind
     private async onCodexImagePaste(event: ClipboardEvent) {
         if (!this.imagePasteEnabled || !event.clipboardData) return;
         const source = event.target as HTMLElement | null;
@@ -221,12 +237,12 @@ def apply(root: Path) -> None:
         "            case Command.IMAGE_PASTE_RESULT: {\n"
         "                const path = textDecoder.decode(data);\n"
         "                const prefix = '/data/codex-home/users/anonymous/.codex/uploads/clipboard-';\n"
-        "                const valid = path.startsWith(prefix) && /^[0-9a-f]{32}\\.png$/.test(path.slice(prefix.length));\n"
+        "                const valid = path.startsWith(prefix) && /^[0-9a-f]{32}[.]png$/.test(path.slice(prefix.length));\n"
         "                if (this.imagePastePending && valid) {\n"
         "                    this.imagePastePending = false;\n"
         "                    // Bracketed paste triggers Codex 0.171.0's existing\n"
         "                    // pasted-image-path recognition without pressing Enter.\n"
-        "                    this.sendData('\\x1b[200~' + path + '\\x1b[201~');\n"
+        "                    this.sendData(String.fromCharCode(27) + '[200~' + path + String.fromCharCode(27) + '[201~');\n"
         "                    this.overlayAddon.showOverlay('Screenshot pasted', 1200);\n"
         "                }\n"
         "                break;\n"
@@ -234,7 +250,11 @@ def apply(root: Path) -> None:
         "            case Command.IMAGE_PASTE_ERROR:\n"
         "                if (this.imagePastePending) {\n"
         "                    this.imagePastePending = false;\n"
-        "                    this.overlayAddon.showOverlay('Screenshot upload rejected', 1800);\n"
+        "                    const reason = textDecoder.decode(data);\n"
+        "                    const allowed = ['DISABLED', 'INVALID_PNG', 'UPLOAD_DIR_MISSING',\n"
+        "                        'UPLOAD_PERMISSIONS', 'STORAGE_FULL', 'STORAGE_READ_ONLY', 'STORAGE_ERROR'];\n"
+        "                    this.overlayAddon.showOverlay('Screenshot rejected: ' +\n"
+        "                        (allowed.includes(reason) ? reason : 'UNKNOWN'), 3800);\n"
         "                }\n"
         "                break;\n",
     )
