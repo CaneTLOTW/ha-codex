@@ -11,6 +11,16 @@ Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it throu
 
 The App keeps Codex authentication and user configuration under `/data/codex-home` so they survive App restarts and image updates.
 
+## Stable 0.5.0 behavior
+
+The terminal uses the same `--no-daemon` launcher at initial startup and after a manual `codex` or `codex resume` following Ctrl+C. Existing session history under `/data/codex-home` is preserved; SQLite scratch files use a private writable directory within the user state home.
+
+If the Home Assistant sidebar briefly disconnects, the terminal retries its WebSocket automatically. With `session_persistence: true`, the existing tmux session should remain available after reconnecting. This option preserves the session; it does not prevent transport interruptions.
+
+The optional `remote_control_enabled` setting starts the separate native Remote Control app-server and is **OFF by default**. Enabling it requires intentional configuration and independent device-pairing acceptance. It is not needed for the browser terminal.
+
+For Home Assistant 2026.11, install this container App from **Settings → Apps → App Store**, not the integrated HACS Marketplace.
+
 ## Mounted paths
 
 | Path | Access | Purpose |
