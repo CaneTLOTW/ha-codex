@@ -40,7 +40,10 @@ profile codex flags=(attach_disconnected,mediate_deleted) {
   /usr/local/** ixr,
   /usr/libexec/** ixr,
 
-  # App data
+  # App data. Directory opens (openat walk with O_NOFOLLOW) need the
+  # directory itself to be readable, not just entries matched by /data/**.
+  # This adds read-only access to /data/; nested data stays rwk, never executable.
+  /data/ r,
   /data/** rwk,
 
   # Home Assistant config - main working directory
