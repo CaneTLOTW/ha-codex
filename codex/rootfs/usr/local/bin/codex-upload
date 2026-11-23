@@ -33,7 +33,7 @@ if [[ "${CODEX_FILE_TRANSFER_ENABLED:-false}" != "true" ]]; then
   exit 1
 fi
 
-upload_root="${CODEX_STATE_ROOT:-/data/codex-home}/uploads/anonymous"
+upload_root="${CODEX_HOME:-${HOME}/.codex}/uploads"
 if [[ -L "$upload_root" ]]; then
   echo "[ERROR] Refusing a symlink as an upload directory." >&2
   exit 1
