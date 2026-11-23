@@ -151,7 +151,10 @@ def apply(root: Path) -> None:
                             part === '.' ||
                             part === '..' ||
                             part.length > 120 ||
-                            /[\u0000-\u001f\u007f\\]/.test(part)
+                            Array.from(part).some(char => {
+                                const code = char.charCodeAt(0);
+                                return code < 32 || code === 127 || code === 92;
+                            })
                     )
                 ) {
                     throw new Error('Ungültiger Dateiname');
