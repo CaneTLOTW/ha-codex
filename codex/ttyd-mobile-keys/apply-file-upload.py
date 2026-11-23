@@ -258,16 +258,10 @@ def apply(root: Path) -> None:
     # selection; layer upload actions around it instead of replacing it.
     replace_once(
         terminal,
-        "import { Component, h } from 'preact';\n",
-        "import { Component, h, Fragment } from 'preact';\n",
-    )
-    replace_once(
-        terminal,
         "    selectionMode: boolean;\n",
         "    selectionMode: boolean;\n"
         "    uploadEnabled: boolean;\n"
         "    uploadOpen: boolean;\n"
-        "    technicalKeys: boolean;\n"
         "    uploadEntries: { name: string; status: string }[];\n",
     )
     replace_once(
@@ -284,7 +278,6 @@ def apply(root: Path) -> None:
         "            selectionMode: false,\n"
         "            uploadEnabled: false,\n"
         "            uploadOpen: false,\n"
-        "            technicalKeys: false,\n"
         "            uploadEntries: [],\n",
     )
     replace_once(
@@ -301,7 +294,7 @@ def apply(root: Path) -> None:
     replace_once(
         terminal,
         "    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode }: State) {\n",
-        "    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode, uploadEnabled, uploadOpen, technicalKeys, uploadEntries }: State) {\n",
+        "    render({ id }: Props, { modal, ctrl, alt, shift, shiftLock, selectionMode, uploadEnabled, uploadOpen, uploadEntries }: State) {\n",
     )
     replace_once(
         terminal,
@@ -337,35 +330,17 @@ def apply(root: Path) -> None:
 '''
     new_nav = r'''                {this.touchControls && (
                     <nav class="mobile-keys" aria-label="Terminal special keys">
-                        {uploadEnabled && !technicalKeys ? (
-                            <Fragment>
-                                {this.renderUploadKey('Datei', this.chooseFiles)}
-                                {this.renderUploadKey('Bild', this.chooseImages)}
-                                {this.renderUploadKey('Anhänge', this.toggleUpload)}
-                                {this.renderSelectionMode(selectionMode)}
-                                {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-                                {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-                                {this.renderMobileTechToggle()}
-                                {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
-                                {this.renderKeyboardShow()}
-                                {this.renderKeyboardDismiss()}
-                                {this.renderModifier('Shift', shift, 'shift')}
-                            </Fragment>
-                        ) : (
-                            <Fragment>
-                                {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
-                                {this.renderSelectionMode(selectionMode)}
-                                {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
-                                {this.renderKeyboardShow()}
-                                {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
-                                {this.renderModifier('Ctrl', ctrl, 'ctrl')}
-                                {this.renderModifier('Alt', alt, 'alt')}
-                                {this.renderModifier('Shift', shift, 'shift')}
-                                {this.renderShiftLock(shiftLock)}
-                                {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
-                                {uploadEnabled ? this.renderMobileTechToggle() : this.renderKeyboardDismiss()}
-                            </Fragment>
-                        )}
+                        {mobileKeys.slice(2, 7).map(this.renderMobileKey)}
+                        {this.renderSelectionMode(selectionMode)}
+                        {mobileKeys.slice(7, 8).map(this.renderMobileKey)}
+                        {this.renderKeyboardShow()}
+                        {mobileKeys.slice(0, 2).map(this.renderMobileKey)}
+                        {this.renderModifier('Ctrl', ctrl, 'ctrl')}
+                        {this.renderModifier('Alt', alt, 'alt')}
+                        {this.renderModifier('Shift', shift, 'shift')}
+                        {uploadEnabled ? this.renderMobileUploadToggle(uploadOpen) : this.renderShiftLock(shiftLock)}
+                        {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
+                        {this.renderKeyboardDismiss()}
                     </nav>
                 )}
 '''
@@ -394,9 +369,7 @@ def apply(root: Path) -> None:
                                 )}
                                 {this.touchControls ? (
                                     <div class="codex-upload-mobile-actions">
-                                        <button type="button" onClick={this.chooseImages}>▧ Foto / Bild</button>
-                                        <button type="button" onClick={this.chooseFiles}>▤ Dateien-App</button>
-                                        <button type="button" onClick={this.chooseFolder}>▱ Ordner</button>
+                                        <button type="button" onClick={this.chooseFiles}>Datei auswählen</button>
                                     </div>
                                 ) : (
                                     <div
@@ -461,30 +434,31 @@ def apply(root: Path) -> None:
         this.setState(state => ({ uploadOpen: !state.uploadOpen }), () => this.xterm.fit());
     }
 
-    @bind
-    private toggleTechnicalKeys() {
-        this.setState(state => ({ technicalKeys: !state.technicalKeys }), () => this.xterm.fit());
-    }
-
-    private renderUploadKey(label: string, action: () => void) {
-        return (
-            <button type="button" class="mobile-key" aria-label={label} onClick={action}>
-                {label}
-            </button>
-        );
-    }
-
-    private renderMobileTechToggle() {
+    private renderMobileUploadToggle(active: boolean) {
         return (
             <button
                 type="button"
-                class="mobile-key"
-                aria-label="Weitere Terminaltasten"
-                onClick={this.toggleTechnicalKeys}
+                tabIndex={-1}
+                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
+                aria-label="Upload und Anhänge ein- oder ausklappen"
+                aria-expanded={active}
+                onPointerDown={this.pressMobileUpload}
+                onClick={this.clickMobileUpload}
             >
-                Mehr
+                Upload
             </button>
         );
+    }
+
+    @bind
+    private pressMobileUpload(event: PointerEvent) {
+        event.preventDefault();
+        this.toggleUpload();
+    }
+
+    @bind
+    private clickMobileUpload(event: MouseEvent) {
+        if (event.detail === 0) this.toggleUpload();
     }
 
     @bind
@@ -665,12 +639,27 @@ def apply(root: Path) -> None:
 
 @media (hover: none), (pointer: coarse), (max-width: 768px) {
   .codex-upload-sheet {
-    border-radius: 14px 14px 0 0;
+    border-radius: 0;
+    margin: 0;
+    background: #242432;
   }
 
   .codex-upload-sheet .codex-upload-expanded {
-    padding: 10px max(8px, env(safe-area-inset-right))
-      10px max(8px, env(safe-area-inset-left));
+    padding: 6px max(8px, env(safe-area-inset-right))
+      6px max(8px, env(safe-area-inset-left));
+    max-height: 26vh;
+  }
+
+  .codex-upload-sheet .codex-upload-title {
+    padding-bottom: 5px;
+  }
+
+  .codex-upload-sheet .codex-upload-mobile-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .codex-upload-sheet .codex-upload-mobile-actions button {
+    min-height: 40px;
   }
 
   .codex-upload-hint {
