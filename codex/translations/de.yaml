@@ -17,6 +17,13 @@ configuration:
     description: >-
       Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
       direkten Zugriff auf die Home-Assistant-Konfiguration.
+  direct_file_upload:
+    name: Dateien und Ordner direkt hochladen (Developer)
+    description: >-
+      Zeigt eine schmale Upload-Leiste auf dem Desktop und Upload-Aktionen
+      auf dem iPhone an. Dateien/Bilder bis 10 MiB je Datei sowie bis zu
+      24 Dateien pro Auswahl werden über die bestehende Ingress-Verbindung
+      privat gespeichert und ihre Pfade in Codex eingefügt. Keine Shell nötig.
   clipboard_image_paste:
     name: Screenshots direkt mit Strg+V einfügen (Developer)
     description: >-
