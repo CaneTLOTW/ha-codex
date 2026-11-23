@@ -338,7 +338,7 @@ def apply(root: Path) -> None:
                         {this.renderModifier('Ctrl', ctrl, 'ctrl')}
                         {this.renderModifier('Alt', alt, 'alt')}
                         {this.renderModifier('Shift', shift, 'shift')}
-                        {uploadEnabled ? this.renderMobileUploadToggle(uploadOpen) : this.renderShiftLock(shiftLock)}
+                        {uploadEnabled ? this.renderMobileUploadButton(uploadEntries) : this.renderShiftLock(shiftLock)}
                         {mobileKeys.slice(8, 9).map(this.renderMobileKey)}
                         {this.renderKeyboardDismiss()}
                     </nav>
@@ -346,41 +346,27 @@ def apply(root: Path) -> None:
 '''
     replace_once(terminal, mobile_nav, new_nav)
 
-    upload_elements = r'''                {uploadEnabled && (
-                    <section class={this.touchControls ? 'codex-upload-sheet' : 'codex-upload-dock'}>
-                        {!this.touchControls && (
-                            <div class="codex-upload-toolbar">
-                                <button type="button" onClick={this.toggleUpload} aria-expanded={uploadOpen}>
-                                    {uploadOpen ? '▾' : '▸'} Upload
-                                </button>
-                                <button type="button" onClick={this.chooseImages}>▧ Bild</button>
-                                <button type="button" onClick={this.chooseFiles}>＋ Datei</button>
-                                <button type="button" onClick={this.chooseFolder}>▱ Ordner</button>
-                                <span class="codex-upload-hint">Strg+V = Screenshot / Bild</span>
-                            </div>
-                        )}
+    upload_elements = r'''                {uploadEnabled && !this.touchControls && (
+                    <section class="codex-upload-dock">
+                        <div class="codex-upload-toolbar">
+                            <button type="button" onClick={this.toggleUpload} aria-expanded={uploadOpen}>
+                                {uploadOpen ? '▾' : '▸'} Upload
+                            </button>
+                            <button type="button" onClick={this.chooseImages}>▧ Bild</button>
+                            <button type="button" onClick={this.chooseFiles}>＋ Datei</button>
+                            <button type="button" onClick={this.chooseFolder}>▱ Ordner</button>
+                            <span class="codex-upload-hint">Strg+V = Screenshot / Bild</span>
+                        </div>
                         {uploadOpen && (
                             <div class="codex-upload-expanded">
-                                {this.touchControls && (
-                                    <div class="codex-upload-title">
-                                        <strong>Upload / Anhänge</strong>
-                                        <button type="button" onClick={this.toggleUpload} aria-label="Schließen">×</button>
-                                    </div>
-                                )}
-                                {this.touchControls ? (
-                                    <div class="codex-upload-mobile-actions">
-                                        <button type="button" onClick={this.chooseFiles}>Datei auswählen</button>
-                                    </div>
-                                ) : (
-                                    <div
-                                        class="codex-upload-dropzone"
-                                        onDragOver={this.onUploadDragOver}
-                                        onDrop={this.onUploadDrop}
-                                    >
-                                        Dateien hier ablegen oder über „Datei“ auswählen
-                                        <small>Bis 10 MiB je Datei, maximal 24 Dateien pro Auswahl</small>
-                                    </div>
-                                )}
+                                <div
+                                    class="codex-upload-dropzone"
+                                    onDragOver={this.onUploadDragOver}
+                                    onDrop={this.onUploadDrop}
+                                >
+                                    Dateien hier ablegen oder über „Datei“ auswählen
+                                    <small>Bis 10 MiB je Datei, maximal 24 Dateien pro Auswahl</small>
+                                </div>
                                 {uploadEntries.length > 0 && (
                                     <div class="codex-upload-attachments" aria-live="polite">
                                         <span>Anhänge ({uploadEntries.length})</span>
@@ -434,31 +420,43 @@ def apply(root: Path) -> None:
         this.setState(state => ({ uploadOpen: !state.uploadOpen }), () => this.xterm.fit());
     }
 
-    private renderMobileUploadToggle(active: boolean) {
+    /** One iOS gesture opens the native Files/Photos/Camera chooser directly.
+     * Do not intercept pointerdown: Safari requires trusted click activation
+     * for a hidden input type=file. No extra drawer or keyboard activation. */
+    private renderMobileUploadButton(entries: { name: string; status: string }[]) {
+        const completed = entries.filter(item => item.status === 'done').length;
+        const failed = entries.some(item => item.status === 'error');
+        const pending = entries.some(item => item.status === 'uploading' || item.status === 'queued');
         return (
             <button
                 type="button"
                 tabIndex={-1}
-                class={`mobile-key mobile-key--modifier${active ? ' is-active' : ''}`}
-                aria-label="Upload und Anhänge ein- oder ausklappen"
-                aria-expanded={active}
-                onPointerDown={this.pressMobileUpload}
-                onClick={this.clickMobileUpload}
+                class="mobile-key codex-upload-mobile-key"
+                aria-label="Datei oder Bild hinzufügen"
+                title="Datei oder Bild hinzufügen"
+                onClick={this.chooseFiles}
             >
-                Upload
+                <svg
+                    class="codex-upload-paperclip"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+                {(failed || pending || completed > 0) && (
+                    <span class="codex-upload-key-badge" aria-hidden="true">
+                        {failed ? '!' : pending ? '…' : completed > 9 ? '9+' : completed}
+                    </span>
+                )}
             </button>
         );
-    }
-
-    @bind
-    private pressMobileUpload(event: PointerEvent) {
-        event.preventDefault();
-        this.toggleUpload();
-    }
-
-    @bind
-    private clickMobileUpload(event: MouseEvent) {
-        if (event.detail === 0) this.toggleUpload();
     }
 
     @bind
@@ -502,7 +500,7 @@ def apply(root: Path) -> None:
     private async beginUpload(files: File[]) {
         if (!this.state.uploadEnabled) return;
         this.setState({
-            uploadOpen: true,
+            uploadOpen: !this.touchControls,
             uploadEntries: files.map(file => ({ name: file.webkitRelativePath || file.name, status: 'queued' })),
         }, () => this.xterm.fit());
         try {
@@ -529,8 +527,8 @@ def apply(root: Path) -> None:
     )
 
     css = r'''
-/* Developer direct-upload dock. The xterm viewport remains the flex child;
- * the collapsed desktop dock costs only one narrow toolbar row. */
+/* Developer direct-upload dock: desktop remains as in dev.10.
+ * Mobile does not allocate any additional tray height. */
 .ttyd-upload-desktop .terminal-viewport {
   overflow: hidden;
 }
@@ -539,8 +537,7 @@ def apply(root: Path) -> None:
   display: none;
 }
 
-.codex-upload-dock,
-.codex-upload-sheet {
+.codex-upload-dock {
   box-sizing: border-box;
   flex: 0 0 auto;
   color: #cdd6f4;
@@ -557,9 +554,7 @@ def apply(root: Path) -> None:
   padding: 3px 8px;
 }
 
-.codex-upload-toolbar button,
-.codex-upload-title button,
-.codex-upload-mobile-actions button {
+.codex-upload-toolbar button {
   padding: 4px 9px;
   color: #cdd6f4;
   background: #313244;
@@ -570,8 +565,7 @@ def apply(root: Path) -> None:
   touch-action: manipulation;
 }
 
-.codex-upload-toolbar button:hover,
-.codex-upload-mobile-actions button:active {
+.codex-upload-toolbar button:hover {
   background: #45475a;
 }
 
@@ -620,51 +614,33 @@ def apply(root: Path) -> None:
   padding: 4px 7px;
 }
 
-.codex-upload-title {
+/* Small monochrome paperclip in the exact old Caps position.
+ * Status stays inside the existing 38px key instead of opening a sheet. */
+.mobile-key.codex-upload-mobile-key {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding-bottom: 8px;
+  justify-content: center;
+  padding: 0;
 }
 
-.codex-upload-mobile-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+.codex-upload-paperclip {
+  display: block;
+  pointer-events: none;
 }
 
-.codex-upload-mobile-actions button {
-  min-height: 44px;
-}
-
-@media (hover: none), (pointer: coarse), (max-width: 768px) {
-  .codex-upload-sheet {
-    border-radius: 0;
-    margin: 0;
-    background: #242432;
-  }
-
-  .codex-upload-sheet .codex-upload-expanded {
-    padding: 6px max(8px, env(safe-area-inset-right))
-      6px max(8px, env(safe-area-inset-left));
-    max-height: 26vh;
-  }
-
-  .codex-upload-sheet .codex-upload-title {
-    padding-bottom: 5px;
-  }
-
-  .codex-upload-sheet .codex-upload-mobile-actions {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .codex-upload-sheet .codex-upload-mobile-actions button {
-    min-height: 40px;
-  }
-
-  .codex-upload-hint {
-    display: none;
-  }
+.codex-upload-key-badge {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  min-width: 13px;
+  height: 13px;
+  line-height: 13px;
+  border-radius: 7px;
+  color: #11111b;
+  background: #89dceb;
+  font: 600 10px/13px system-ui, sans-serif;
+  pointer-events: none;
 }
 '''
     style.write_text(style.read_text(encoding="utf-8") + css, encoding="utf-8")
