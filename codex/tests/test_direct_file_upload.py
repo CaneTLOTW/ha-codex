@@ -1,4 +1,4 @@
-"""Developer 0.5.0-dev.10 responsive upload and private transport regressions."""
+"""Developer 0.5.0-dev.11 direct mobile picker and private transport regressions."""
 import shutil
 import subprocess
 import unittest
@@ -17,7 +17,7 @@ DOCKER = ROOT / "Dockerfile"
 class DirectFileUploadTests(unittest.TestCase):
     def test_developer_only_gate_and_multi_language_controls(self):
         config = yaml.safe_load(CONFIG.read_text())
-        self.assertEqual(config["version"], "0.5.0-dev.10")
+        self.assertEqual(config["version"], "0.5.0-dev.11")
         self.assertEqual(config["name"], "Codex Deployment")
         self.assertIs(config["options"]["direct_file_upload"], True)
         self.assertEqual(config["schema"]["direct_file_upload"], "bool")
@@ -55,24 +55,43 @@ class DirectFileUploadTests(unittest.TestCase):
 
     def test_ui_and_mobile_technical_keys_non_regression(self):
         source = PATCH.read_text()
+        # Desktop remains the accepted narrow collapsible upload dock.
         self.assertIn("codex-upload-dock", source)
-        self.assertIn("codex-upload-sheet", source)
+        self.assertIn("codex-upload-toolbar", source)
+        self.assertIn("codex-upload-dropzone", source)
         self.assertIn("onUploadDrop", source)
         self.assertIn("chooseFiles", source)
         self.assertIn("chooseImages", source)
         self.assertIn("chooseFolder", source)
         self.assertIn("webkitdirectory", source)
-        # The new iOS control row must retain all 16 original positions;
-        # only the second-row old shift-lock key becomes the Upload toggle.
+        self.assertIn("aria-expanded={uploadOpen}", source)
+
+        # Mobile keeps the original 2x8 key map: only Caps becomes a
+        # paperclip icon in row 2, column 6. No secondary menu/drawer.
+        self.assertIn(
+            "uploadEnabled ? this.renderMobileUploadButton(uploadEntries) : this.renderShiftLock(shiftLock)",
+            source,
+        )
+        self.assertIn(
+            "private renderMobileUploadButton(entries: { name: string; status: string }[])",
+            source,
+        )
+        self.assertIn("class=\"mobile-key codex-upload-mobile-key\"", source)
+        self.assertIn("class=\"codex-upload-paperclip\"", source)
+        self.assertIn('aria-label="Datei oder Bild hinzufügen"', source)
+        self.assertIn("onClick={this.chooseFiles}", source)
+        self.assertIn("codex-upload-key-badge", source)
+        self.assertNotIn("pressMobileUpload", source)
+        self.assertNotIn("clickMobileUpload", source)
         self.assertNotIn("renderMobileTechToggle", source)
         self.assertNotIn("technicalKeys", source)
+        self.assertNotIn("codex-upload-sheet", source)
+        self.assertNotIn("codex-upload-title", source)
+        self.assertNotIn("codex-upload-mobile-actions", source)
         self.assertNotIn("<Fragment>", source)
-        self.assertIn("uploadEnabled ? this.renderMobileUploadToggle(uploadOpen) : this.renderShiftLock(shiftLock)", source)
-        self.assertIn("private renderMobileUploadToggle(active: boolean)", source)
-        self.assertIn("onPointerDown={this.pressMobileUpload}", source)
-        self.assertIn("onClick={this.clickMobileUpload}", source)
-        self.assertIn("event.detail === 0", source)
-        self.assertIn("aria-expanded={active}", source)
+        self.assertIn("uploadOpen: !this.touchControls", source)
+        self.assertIn("uploadEnabled && !this.touchControls", source)
+
         self.assertIn("mobileKeys.slice(2, 7).map(this.renderMobileKey)", source)
         self.assertIn("mobileKeys.slice(0, 2).map(this.renderMobileKey)", source)
         self.assertIn("mobileKeys.slice(8, 9).map(this.renderMobileKey)", source)
@@ -80,16 +99,8 @@ class DirectFileUploadTests(unittest.TestCase):
         self.assertIn("this.renderModifier('Shift', shift, 'shift')", source)
         self.assertIn("this.renderKeyboardShow()", source)
         self.assertIn("this.renderKeyboardDismiss()", source)
-        self.assertIn('<button type="button" onClick={this.chooseFiles}>Datei auswählen</button>', source)
-        self.assertIn("border-radius: 0;", source)
-        self.assertNotIn("border-radius: 14px 14px 0 0;", source)
-        self.assertIn("max-height: 26vh", source)
-        self.assertNotIn('onClick={this.chooseImages}>▧ Foto / Bild', source)
-        self.assertNotIn('onClick={this.chooseFolder}>▱ Ordner</button>\\n                                    </div>', source)
         self.assertIn("mobileKeys.slice(7, 8)", source)
         self.assertIn("renderSelectionMode(selectionMode)", source)
-        self.assertIn("renderKeyboardDismiss()", source)
-        self.assertIn("uploadOpen", source)
         self.assertIn("uploadEntries", source)
         self.assertIn("this.xterm.fit()", source)
         self.assertIn("uploadFiles(files", source)
