@@ -147,8 +147,8 @@ def apply(root: Path) -> None:
 
     on_paste = r'''    @bind
     private onCodexClipboardKeyDown(event: KeyboardEvent) {
-        if (!this.imagePasteEnabled || !event.ctrlKey || event.altKey || event.metaKey ||
-            event.shiftKey || event.key.toLowerCase() !== 'v') return;
+        const pasteModifier = event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
+        if (!this.imagePasteEnabled || !pasteModifier || event.key.toLowerCase() !== 'v') return;
         const source = event.target as HTMLElement | null;
         if (!source?.closest?.('.xterm')) return;
         // Keep browser default paste, but do not forward Ctrl+V to Codex.
@@ -251,10 +251,17 @@ def apply(root: Path) -> None:
         "                if (this.imagePastePending) {\n"
         "                    this.imagePastePending = false;\n"
         "                    const reason = textDecoder.decode(data);\n"
-        "                    const allowed = ['DISABLED', 'INVALID_PNG', 'UPLOAD_DIR_MISSING',\n"
-        "                        'UPLOAD_PERMISSIONS', 'STORAGE_FULL', 'STORAGE_READ_ONLY', 'STORAGE_ERROR'];\n"
-        "                    this.overlayAddon.showOverlay('Screenshot rejected: ' +\n"
-        "                        (allowed.includes(reason) ? reason : 'UNKNOWN'), 3800);\n"
+        "                    const allowed = new Set([\n"
+        "                        'DISABLED',\n"
+        "                        'INVALID_PNG',\n"
+        "                        'UPLOAD_DIR_MISSING',\n"
+        "                        'UPLOAD_PERMISSIONS',\n"
+        "                        'STORAGE_FULL',\n"
+        "                        'STORAGE_READ_ONLY',\n"
+        "                        'STORAGE_ERROR',\n"
+        "                    ]);\n"
+        "                    const safe = allowed.has(reason) ? reason : 'UNKNOWN';\n"
+        "                    this.overlayAddon.showOverlay(\`Screenshot rejected: \${safe}\`, 3800);\n"
         "                }\n"
         "                break;\n",
     )
