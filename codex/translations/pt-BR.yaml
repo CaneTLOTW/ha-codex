@@ -17,6 +17,30 @@ configuration:
     description: >-
       Diretório padrão quando o Codex inicia. Use /homeassistant para acesso
       direto à configuração do Home Assistant.
+  direct_file_upload:
+    name: Enviar arquivos e pastas diretamente
+    description: >-
+      Adiciona uma barra compacta no desktop e um botão de clipe no iPhone.
+      Arquivos de até 10 MiB (24 por seleção) são salvos privadamente pelo
+      WebSocket Ingress, e os caminhos são colados na sessão do Codex.
+  clipboard_image_paste:
+    name: Colar capturas com Ctrl+V
+    description: >-
+      Cole capturas PNG diretamente no Codex usando Ctrl+V. O WebSocket de
+      ingress autenticado salva os arquivos de forma privada e cola o caminho.
+      Limite de 10 MiB por PNG. Ativado por padrao no App.
+  file_transfer_enabled:
+    name: Ativar transferencia de arquivos (experimental)
+    description: >-
+      Ativa o trzsz para enviar arquivos e pastas. Saia do Codex com Ctrl+C
+      e execute codex-upload. Capturas com Ctrl+V funcionam pela opcao separada de area de transferencia.
+      Salve e reinicie o App.
+  app_configs_visibility:
+    name: Mostrar configuracoes de outros Apps nas instrucoes
+    description: >-
+      Controla apenas as instrucoes visiveis para o Codex. O caminho
+      /app_configs permanece montado somente para leitura no App,
+      independentemente dessa opcao. Isto nao e um controle de seguranca.
   remote_control_enabled:
     name: Ativar Remote Control
     description: >-

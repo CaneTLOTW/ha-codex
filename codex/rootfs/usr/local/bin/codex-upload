@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Developer-only file upload via ttyd's built-in trzsz terminal protocol.
+# Run in an interactive shell in the HA ingress terminal, not inside the Codex TUI.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-upload [--directory]
+  Upload one or more files from your browser into private Codex App data.
+  --directory   Also allow an entire directory tree (trz -d).
+
+In the Codex TUI press Ctrl+C to return to its shell, run codex-upload,
+choose files in the browser dialog, then run codex to return to Codex.
+Ctrl+V with an image clipboard is not supported by this prototype.
+EOF
+}
+
+directory=false
+case "${1:-}" in
+  "") ;;
+  --directory) directory=true ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage >&2; exit 2 ;;
+esac
+if [[ "$#" -gt 1 ]]; then usage >&2; exit 2; fi
+
+if [[ "$(id -u)" != "22000" ]]; then
+  echo "[ERROR] Uploads must run as the unprivileged Codex user." >&2
+  exit 1
+fi
+if [[ "${CODEX_FILE_TRANSFER_ENABLED:-false}" != "true" ]]; then
+  echo "[ERROR] File transfer is disabled. Enable it in Codex Deployment App options, save and restart." >&2
+  exit 1
+fi
+
+upload_root="${CODEX_HOME:-${HOME}/.codex}/uploads"
+if [[ -L "$upload_root" ]]; then
+  echo "[ERROR] Refusing a symlink as an upload directory." >&2
+  exit 1
+fi
+umask 077
+mkdir -p -- "$upload_root"
+chmod 700 -- "$upload_root"
+if [[ ! -d "$upload_root" || ! -w "$upload_root" || ! -x "$upload_root" ]]; then
+  echo "[ERROR] Private upload directory is not writable." >&2
+  exit 1
+fi
+if ! command -v trz >/dev/null 2>&1; then
+  echo "[ERROR] trzsz is not available in this App image." >&2
+  exit 1
+fi
+
+echo "[INFO] Open the file chooser in the browser (may require HTTPS for non-localhost access)."
+echo "[INFO] Upload target: $upload_root"
+if [[ "$directory" == true ]]; then
+  exec trz -d "$upload_root"
+fi
+exec trz "$upload_root"
