@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-11-24
+
+### Highlight: Screenshot Copy & Paste directly in Codex (Screenshots per Strg+V)
+- **Major usability improvement:** Capture a screenshot using Windows **Win+Shift+S** and paste it with **Ctrl+V** into the running Codex terminal in Home Assistant. The screenshot appears as a real image attachment such as `[Image #1]` and Codex can interpret its content. **No Ctrl+C to exit, no shell command, no manual screenshot saving and no extra upload server.**
+- Uses the existing authenticated Home Assistant Ingress WebSocket with a private bounded PNG upload (10 MiB limit), secure file permissions, and correct bracketed-paste/ACK handling. Avoids the failed X11 clipboard lookup in the headless Home Assistant container.
+- Normal text Ctrl+V and context-menu paste remain supported. Screenshot insertion does not auto-submit the message.
+
+### New: Direct image, file and folder uploads
+- **Desktop:** Slim collapsible toolbar beneath Codex for Bild/Datei/Ordner, drag-and-drop and attachment/progress indicators while Codex remains running.
+- **iPhone:** Single **📎 paperclip** in the old CapsLock slot of the original two-row (2×8) mobile key bar. Tap once to open Apple's native Photos/Camera/Files chooser, **without** an additional custom drawer. Original selection, paging, modifier and keyboard show/hide keys remain.
+- File transfer through the existing authenticated ttyd WebSocket into private persistent Codex storage; random batch folders, 0700 directories, 0600 files, exclusive creation, no symlink traversal. **10 MiB/file, 24 files/selection.** The path of non-image files is inserted in the running prompt; ask Codex to read the contents.
+- New configuration options `clipboard_image_paste: true` and `direct_file_upload: true` are ON by default. The older `trzsz` shell-based transfer remains available but opt-in (`file_transfer_enabled: false`). **Uploaded files are not automatically deleted**; monitor App storage.
+
+### Stability, compatibility and security
+- Preserves the existing Stable **Codex** identity, slug, automatic start, user settings, login and persistent state. Keeps the previously released 0.5.0 SQLite, Codex launcher and reconnect fixes. Bundled Codex CLI remains pinned to **0.171.0**.
+- Public configuration directories of other Home Assistant Apps are mounted read-only at `/app_configs`. **Important:** the `app_configs_visibility` switch only changes Codex instructions, not access to that statically mounted path. Review this additional read-only visibility before updating.
+- Remote Control remains optional and OFF by default. No additional exposed upload port. Windows Firefox/HAOS screenshot paste and iPhone image/file selection were verified during Developer testing. Android and optional Remote Control pairing are not claimed as accepted.
+- The separate Developer App `Codex Deployment` remains unchanged; no production App is installed automatically by this GitHub publication.
+
+### Upgrade
+- Install the Stable **Codex** update through **Home Assistant Settings → Apps → App Store**, not the HACS Marketplace. Preserve and back up existing auth, Codex history, App options and user state; see [the 0.5.1 upgrade checklist](../docs/STABLE_0_5_1_PRODUCTION_INSTALL.md).
+- Stable images are published as signed amd64/aarch64 multiarch manifests.
+
 ## [0.5.0] - 2026-11-23
 
 ### Fixed
