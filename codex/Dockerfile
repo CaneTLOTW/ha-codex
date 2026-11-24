@@ -11,7 +11,7 @@ LABEL io.hass.version="${BUILD_VERSION}"
 LABEL io.hass.type="app"
 LABEL io.hass.arch="${BUILD_ARCH}"
 LABEL org.opencontainers.image.title="Codex App for Home Assistant"
-LABEL org.opencontainers.image.description="OpenAI Codex App for the Home Assistant sidebar with terminal access, model controls, and optional MCP integration"
+LABEL org.opencontainers.image.description="Home Assistant Codex with Ctrl+V screenshot paste, direct file uploads, iPhone paperclip picker and optional MCP"
 LABEL org.opencontainers.image.source="https://github.com/CaneTLOTW/ha-codex"
 LABEL org.opencontainers.image.licenses="MIT"
 
@@ -66,6 +66,10 @@ RUN apk add --no-cache \
     && update-ca-certificates
 
 COPY ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.patch /tmp/ttyd-mobile-keys.patch
+COPY ttyd-mobile-keys/codex-image-paste.h /tmp/codex-image-paste.h
+COPY ttyd-mobile-keys/apply-image-paste.py /tmp/apply-image-paste.py
+COPY ttyd-mobile-keys/codex-file-upload.h /tmp/codex-file-upload.h
+COPY ttyd-mobile-keys/apply-file-upload.py /tmp/apply-file-upload.py
 RUN apk add --no-cache --virtual .ttyd-build-deps \
         build-base \
         cmake \
@@ -81,17 +85,22 @@ RUN apk add --no-cache --virtual .ttyd-build-deps \
     && curl -fsSL "https://github.com/tsl0922/ttyd/archive/refs/tags/${TTYD_VERSION}.tar.gz" \
         | tar -xz -C /tmp/ttyd-build --strip-components=1 \
     && patch -d /tmp/ttyd-build -p1 < /tmp/ttyd-mobile-keys.patch \
+    && install -m 0644 /tmp/codex-image-paste.h /tmp/ttyd-build/src/codex-image-paste.h \
+    && python3 /tmp/apply-image-paste.py /tmp/ttyd-build \
+    && install -m 0644 /tmp/codex-file-upload.h /tmp/ttyd-build/src/codex-file-upload.h \
+    && python3 /tmp/apply-file-upload.py /tmp/ttyd-build \
     && cd /tmp/ttyd-build/html \
     && npm install --global corepack@0.31.0 \
     && corepack enable \
     && yarn install --immutable \
+    && yarn gts fix \
     && yarn inline \
     && install -D -m 0644 /tmp/ttyd-build/html/dist/inline.html /usr/share/ttyd/mobile-index.html \
     && cd /tmp/ttyd-build \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --parallel 2 \
     && install -m 0755 build/ttyd /usr/bin/ttyd \
-    && rm -rf /tmp/ttyd-build /tmp/ttyd-mobile-keys.patch \
+    && rm -rf /tmp/ttyd-build /tmp/ttyd-mobile-keys.patch /tmp/codex-image-paste.h /tmp/apply-image-paste.py /tmp/codex-file-upload.h /tmp/apply-file-upload.py \
     && apk del .ttyd-build-deps
 
 RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION} \
@@ -102,6 +111,9 @@ RUN pip3 install --no-cache-dir --break-system-packages \
         hass-mcp \
         PyYAML \
         yamllint \
+        trzsz==1.1.7 \
+    && trz -v \
+    && tsz -v \
     && python3 --version \
     && python3 -c 'import yaml; print("PyYAML", yaml.__version__)' \
     && yamllint --version \
@@ -147,6 +159,7 @@ RUN chmod +x \
     /usr/local/bin/codex-prepare-mcp \
     /usr/local/bin/codex-shell \
     /usr/local/bin/codex-tui \
+    /usr/local/bin/codex-upload \
     /usr/local/bin/codex-session \
     /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \

@@ -17,6 +17,35 @@ configuration:
     description: >-
       Standard-Arbeitsverzeichnis beim Start von Codex. /homeassistant erlaubt
       direkten Zugriff auf die Home-Assistant-Konfiguration.
+  direct_file_upload:
+    name: Dateien und Ordner direkt hochladen
+    description: >-
+      Zeigt eine schmale Upload-Leiste auf dem Desktop und eine Büroklammer
+      auf dem iPhone an. Dateien/Bilder bis 10 MiB je Datei sowie bis zu
+      24 Dateien pro Auswahl werden über die bestehende Ingress-Verbindung
+      privat gespeichert und ihre Pfade in Codex eingefügt. Keine Shell nötig.
+  clipboard_image_paste:
+    name: Screenshots direkt mit Strg+V einfügen
+    description: >-
+      Ermöglicht PNG-Screenshots direkt in der laufenden Codex-TUI per Strg+V.
+      Die Bilder werden über die bestehende HA-Ingress-WebSocket-Verbindung
+      privat gespeichert und als Bilddateipfad an Codex übergeben. Kein
+      zusätzlicher Port. Maximal 10 MiB pro PNG. Standardmäßig in dieser App
+      aktiv; zum Abschalten speichern und App neu starten.
+  file_transfer_enabled:
+    name: Dateiübertragung aktivieren (experimentell)
+    description: >-
+      Aktiviert trzsz für Datei- und Verzeichnis-Uploads über das ttyd-Terminal.
+      Nach dem Verlassen von Codex mit Strg+C den Befehl codex-upload eingeben.
+      Screenshots mit Strg+V funktionieren unabhängig davon bereits über die Screenshot-Einstellung. Nach dem Speichern
+      die App neu starten; bei lokalem HTTP können Browserfunktionen eingeschränkt sein.
+  app_configs_visibility:
+    name: Andere App-Konfigurationen in Codex-Anleitung anzeigen
+    description: >-
+      Steuert NUR, ob Codex Hinweise zu /app_configs erhält. Die öffentlichen
+      App-Konfigurationen sind in dieser App unabhängig davon bereits
+      schreibgeschützt eingebunden. Dies ist KEIN Sicherheits- oder Zugriffs-
+      schalter; zum vollständigen Entzug ist eine App ohne diesen Mount nötig.
   remote_control_enabled:
     name: Remote Control aktivieren
     description: >-

@@ -78,7 +78,7 @@ jobs:
             latest
           labels: |
             io.hass.name=Codex
-            io.hass.description=OpenAI Codex App for Home Assistant with terminal access, model controls, and optional Home Assistant MCP integration
+            io.hass.description=Codex for Home Assistant with Ctrl+V screenshot paste, direct file uploads, iPhone paperclip picker and optional MCP
             io.hass.type=app
           push: "true"
           version: ${{ needs.init.outputs.version }}

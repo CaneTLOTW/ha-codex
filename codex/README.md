@@ -4,6 +4,15 @@ Codex App puts the OpenAI Codex CLI inside Home Assistant so you can inspect, ed
 
 For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS.md).
 
+## What's new in Stable 0.5.1
+
+**Paste screenshots directly into running Codex with Ctrl+V.** After taking a Windows screenshot (for example with Win+Shift+S), press Ctrl+V in the Home Assistant terminal and see an image attachment like `[Image #1]`. Codex can read the actual screenshot without exiting to the shell, running an upload command, or manually saving an intermediate file. Ordinary text paste remains supported.
+
+On desktop, a collapsible upload dock handles images, files, folders and drag-and-drop. On iPhone, tap the **📎 paperclip** at the original Caps Lock key position to launch Apple's native Photos/Camera/Files chooser directly. No extra custom upload panel. Files are stored privately (10 MiB per file; up to 24 per selection) and persist until manually removed. For non-image files, ask Codex to open the inserted path.
+
+Clipboard screenshots and direct file uploads are ON by default; legacy `trzsz` and Remote Control are optional and OFF by default. Review the additional read-only `/app_configs` mount of other Apps' public configuration folders. See the detailed [0.5.1 changelog](CHANGELOG.md) and [production upgrade checklist](../docs/STABLE_0_5_1_PRODUCTION_INSTALL.md).
+
+
 ## How It Works
 
 1. Home Assistant opens Codex through ingress.
@@ -94,7 +103,7 @@ The toolbar is a fixed two-row grid:
 
 ```text
 Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
-Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
+Esc    Tab  Ctrl  Alt   Shift  📎    PgDn  Kbd↓
 ```
 
 | Control | Detailed behavior |
@@ -108,7 +117,7 @@ Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 | `Ctrl` | One-shot Ctrl modifier for the next eligible key. |
 | `Alt` | One-shot Alt modifier for the next eligible key. |
 | `Shift` | One-shot Shift modifier for the next eligible key. |
-| `⇪` | Persistent Shift Lock; tap again to release it. |
+| `📎` | Opens the native iOS Photos/Camera/Files picker directly in one tap; no extra upload panel. |
 | `Kbd↑` | Focuses xterm's helper input and explicitly opens the iOS software keyboard. It does not change `Sel` mode. |
 | `Kbd↓` | Blurs terminal input, hides the iOS software keyboard, removes the temporary keyboard-avoidance height and refits the terminal to full size. |
 | Vertical swipe | Available with `Sel` off. History movement is gesture/step based: the terminal updates after the finger movement rather than tracking the finger continuously like native live scrolling. |
