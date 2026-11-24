@@ -8,15 +8,17 @@ Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned
 
 This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
 
-## Stable 0.5.0 production rollout
+## Stable 0.5.1 — direct screenshot Copy & Paste and file uploads
 
-The Home Assistant OS **Developer** image `0.5.0-dev.4` was tested and reported PASS by the operator on 23 November 2026. The stable `0.5.0` release is promoted through a separately reviewed PR based on `main`; it is not a direct merge of the divergent `deployment` history.
+**The biggest improvement in this release is screenshot paste via Ctrl+V directly into a running Codex session.** Take a Windows screenshot with **Win+Shift+S**, click the active Home Assistant Codex terminal and press **Ctrl+V**. The screenshot is sent over the already authenticated Home Assistant Ingress WebSocket, appears as a real image attachment such as `[Image #1]`, and Codex can analyze its contents. **No Ctrl+C, no shell upload command, no manual file saving and no extra server.** Normal text Ctrl+V is unchanged.
 
-It preserves the **Codex** App identity, automatic boot, existing login/session state, Home Assistant MCP, and existing configuration options. Remote Control is an optional switch and remains OFF by default. The earlier SQLite migration-64, manual Ctrl+C restart, and ttyd WebSocket reconnect fixes are included.
+**Files and folders are equally easy:** on desktop, the slim collapsible Upload bar offers images, files, folders and drag-and-drop. On iPhone, a **📎 paperclip** in the original 2×8 keyboard toolbar replaces Caps Lock and opens Apple's native Photos/Camera/Files chooser in one tap—without an extra mobile drawer. Terminal selection, paging and keyboard show/hide remain.
 
-The Home Assistant 2026.11 integrated HACS **Marketplace** is not the Supervisor **App Store** used to install this container App. Continue installing and updating Codex under **Settings → Apps → App Store**.
+Uploads are stored privately in the App's persistent `.codex/uploads` directory (10 MiB per file, 24 files per selection); they **are not automatically removed**. Ordinary files are added as paths for Codex to read on request. New screenshot paste and direct upload switches default ON; legacy `trzsz` remains optional and OFF by default.
 
-Production installation is not implied by creating the release PR. Follow the [Stable 0.5.0 installation and rollback assignment](docs/STABLE_0_5_0_PRODUCTION_INSTALL.md). Additional guidance: [Agent workflow](docs/AGENT_WORKFLOW.md), [Models](docs/MODELS.md), [Dependency lifecycle](docs/DEPENDENCY_POLICY.md), and [SQLite startup issue](docs/CODEX_SQLITE_TEMP_MIGRATION.md).
+The Stable App stays named **Codex**, preserves its slug, boot, auth and persistent state, and retains the earlier SQLite, reconnect and launcher fixes. **New security visibility:** public configuration folders of other Home Assistant Apps are mounted read-only as `/app_configs`; `app_configs_visibility` affects Codex guidance only, not mount access. Review before updating. Remote Control remains optional and OFF by default.
+
+Update through **Settings → Apps → App Store** (not the HACS Marketplace). The separate **Codex Deployment** App is unaffected. Detailed [0.5.1 release notes](codex/CHANGELOG.md) and the [production upgrade checklist](docs/STABLE_0_5_1_PRODUCTION_INSTALL.md) are available here.
 
 ## Automatic Codex CLI updates
 
@@ -60,7 +62,7 @@ The iOS toolbar is:
 
 ```text
 Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
-Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
+Esc    Tab  Ctrl  Alt   Shift  📎    PgDn  Kbd↓
 ```
 
 | Control | Function |
@@ -72,7 +74,7 @@ Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 | `Esc` | Sends Escape. |
 | `Tab` | Sends Tab, including normal shell/Codex completion behavior. |
 | `Ctrl` / `Alt` / `Shift` | One-shot modifiers: the modifier applies to the next eligible key and then releases. |
-| `⇪` | Persistent Shift Lock. Tap again to release it. |
+| `📎` | Opens the native iOS Photos/Camera/Files picker directly in one tap; no extra upload panel. |
 | `Kbd↑` | Focuses terminal input and explicitly opens the iOS software keyboard. |
 | `Kbd↓` | Hides the software keyboard and restores the terminal to its normal full-height layout. |
 | Vertical swipe | Available with `Sel` off. History navigation is gesture/step based rather than continuous native-style live scrolling. |
