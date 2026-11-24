@@ -11,7 +11,7 @@ Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it throu
 
 The App keeps Codex authentication and user configuration under `/data/codex-home` so they survive App restarts and image updates.
 
-## Stable 0.5.0 behavior
+## Stable 0.5.1 behavior
 
 The terminal uses the same `--no-daemon` launcher at initial startup and after a manual `codex` or `codex resume` following Ctrl+C. Existing session history under `/data/codex-home` is preserved; SQLite scratch files use a private writable directory within the user state home.
 
@@ -20,6 +20,14 @@ If the Home Assistant sidebar briefly disconnects, the terminal retries its WebS
 The optional `remote_control_enabled` setting starts the separate native Remote Control app-server and is **OFF by default**. Enabling it requires intentional configuration and independent device-pairing acceptance. It is not needed for the browser terminal.
 
 For Home Assistant 2026.11, install this container App from **Settings → Apps → App Store**, not the integrated HACS Marketplace.
+
+## What's new in 0.5.1: screenshots and uploads without leaving Codex
+
+**Screenshot Copy & Paste is the most important change:** Capture a screenshot on Windows with Win+Shift+S, click the running Codex prompt, press Ctrl+V and see an image attachment such as `[Image #1]`. Codex can inspect its real contents. The existing authenticated HA Ingress WebSocket handles the PNG upload; no terminal exit, no shell command, no manually saved screenshot, no new port. **Normal text paste is unchanged.** PNG maximum: 10 MiB.
+
+**Desktop:** A slim, collapsible dock under Codex provides image, file and folder selection and drag-and-drop. **iPhone:** the **📎 paperclip** in the existing 2×8 mobile keyboard opens the native Photos/Camera/Files chooser immediately with one tap—no additional drawer. Each file is limited to 10 MiB, with 24 files maximum per selection. Uploads are stored in private persistent App state and are **not automatically deleted**. Non-image files are inserted as paths, so ask Codex to open/read them.
+
+The `clipboard_image_paste` and `direct_file_upload` options are enabled by default. The older `trzsz` shell file transfer remains available but disabled by default. Save new settings and restart Codex after changing a switch.
 
 ## Mounted paths
 
@@ -30,8 +38,11 @@ For Home Assistant 2026.11, install this container App from **Settings → Apps 
 | `/media` | read-write | Home Assistant media |
 | `/ssl` | read-only | Home Assistant SSL files |
 | `/backup` | read-only | Home Assistant backups |
+| `/app_configs` | read-only static mount | Public configurations from other Home Assistant Apps |
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
+
+Security note: `/app_configs` is a read-only Supervisor mount of other Apps' **public** configuration directories. `app_configs_visibility` controls whether guidance is shown to Codex, but it does **not** revoke this filesystem access. Review the extra visibility before upgrading.
 
 ## Included command-line tools
 
@@ -134,7 +145,7 @@ Desktop and mobile deliberately use different interaction paths. A narrow deskto
 
 ```text
 Enter  ←    ↓     ↑     →      Sel   PgUp  Kbd↑
-Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
+Esc    Tab  Ctrl  Alt   Shift  📎    PgDn  Kbd↓
 ```
 
 | Control | What it does |
@@ -146,7 +157,7 @@ Esc    Tab  Ctrl  Alt   Shift  ⇪     PgDn  Kbd↓
 | `Esc` | Sends Escape. |
 | `Tab` | Sends Tab. |
 | `Ctrl` / `Alt` / `Shift` | One-shot modifiers for the next eligible key. |
-| `⇪` | Persistent Shift Lock; tap again to release. |
+| `📎` | Opens native iOS Photos/Camera/Files selection directly, replacing Shift Lock. |
 | `Kbd↑` | Focuses terminal input and opens the iOS software keyboard. |
 | `Kbd↓` | Hides the software keyboard and returns the terminal to its normal full-height layout. |
 | Vertical swipe | Available with `Sel` off. History navigation is gesture/step based: the terminal updates after the finger movement instead of tracking it continuously like native live scrolling. |
