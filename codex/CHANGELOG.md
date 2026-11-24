@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.2] - 2026-11-24
+
+### Changed
+- Update bundled OpenAI Codex CLI to 0.172.0.
+
 ## [0.5.1] - 2026-11-24
 
 ### Highlight: Screenshot Copy & Paste directly in Codex (Screenshots per Strg+V)
