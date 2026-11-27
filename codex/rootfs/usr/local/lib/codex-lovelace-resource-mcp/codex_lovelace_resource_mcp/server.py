@@ -148,11 +148,18 @@ def _consume_mutation(plan: MutationPlan, confirmation: str | None) -> PendingMu
     return pending
 
 
-def _verify_asset_and_expiry(plan: MutationPlan, pending: PendingMutation, backup: Path) -> None:
+async def _verify_mutation(api: ResourceAPI, plan: MutationPlan, pending: PendingMutation, backup: Path) -> None:
+    # Hash first, then make the registry read the last network operation before
+    # mutation. Neither an editable file nor external HA clients are locked.
+    try:
+        digest = asset_digest(WWW_ROOT, plan.target)
+    except ResourceError:
+        raise ResourceError(f"Resource asset unavailable. No write attempted. backup_id: {backup.stem}") from None
+    if digest != plan.asset_sha256:
+        raise ResourceError(f"Resource asset changed before write. No write attempted. backup_id: {backup.stem}")
+    await _verify_preimage(api, plan.target, plan.before, backup)
     if monotonic() >= pending.expires_at:
         raise ResourceError(f"Mutation confirmation expired. No write attempted. backup_id: {backup.stem}")
-    if asset_digest(WWW_ROOT, plan.target) != plan.asset_sha256:
-        raise ResourceError(f"Resource asset changed before write. No write attempted. backup_id: {backup.stem}")
 
 
 def _get_api() -> ResourceAPI:
@@ -224,12 +231,12 @@ async def _rollback_plan(api: ResourceAPI, record: dict) -> RollbackPlan:
 async def _apply_rollback(api: ResourceAPI, plan: RollbackPlan, pending: PendingRollback) -> dict:
     # HA has no conditional mutation. This final read is the last check the
     # client can make. The operator must arrange exclusive access to this target.
+    if asset_digest(WWW_ROOT, plan.target) != plan.asset_sha256:
+        raise ResourceError("Rollback asset changed during verification. No write attempted.")
     if await _current_resource(api, plan.target, plan.expected_id) != plan.current:
         raise ResourceError("Rollback refused: resource changed during verification")
     if monotonic() >= pending.expires_at:
         raise ResourceError("Rollback confirmation expired. Request a fresh preview.")
-    if asset_digest(WWW_ROOT, plan.target) != plan.asset_sha256:
-        raise ResourceError("Rollback asset changed during verification. No write attempted.")
     try:
         if plan.operation == "delete":
             await api.delete(plan.expected_id)
@@ -307,8 +314,7 @@ async def ha_config_set_dashboard_resource(
             return _preview_mutation(plan)
         pending = _consume_mutation(plan, non_atomic_confirmation)
         backup = create_backup(BACKUP_DIR, operation, target_path, existing, preview)
-        await _verify_preimage(api, target_path, expected, backup)
-        _verify_asset_and_expiry(plan, pending, backup)
+        await _verify_mutation(api, plan, pending, backup)
         try:
             if existing:
                 changed = await api.update(preview["id"], versioned, resource_type)
@@ -348,8 +354,7 @@ async def ha_config_delete_dashboard_resource(
             return {**_preview_mutation(plan), "resource": public_resource(target)}
         pending = _consume_mutation(plan, non_atomic_confirmation)
         backup = create_backup(BACKUP_DIR, "delete", target_path, target, None)
-        await _verify_preimage(api, target_path, resource_snapshot(target), backup)
-        _verify_asset_and_expiry(plan, pending, backup)
+        await _verify_mutation(api, plan, pending, backup)
         try:
             await api.delete(resource_id)
             acknowledge_backup(backup)
