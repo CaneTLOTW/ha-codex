@@ -86,8 +86,8 @@ def prepare(options):
         name = read_string(item, "name", context, required=True)
         url = read_string(item, "url", context, required=True)
         bearer_token = read_string(item, "bearer_token", context)
-        if name == "homeassistant":
-            raise ValueError("mcp_servers name 'homeassistant' is reserved for the built-in server")
+        if name in {"homeassistant", "ha_lovelace_resources"}:
+            raise ValueError(f"mcp_servers name {name!r} is reserved for a bundled server")
         if name in server_names:
             raise ValueError(f"duplicate MCP server name: {name}")
         if not url.startswith(("http://", "https://")):

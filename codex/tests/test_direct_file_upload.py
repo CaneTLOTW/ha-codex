@@ -1,4 +1,4 @@
-"""Developer 0.5.0-dev.11 direct mobile picker and private transport regressions."""
+"""Developer 0.5.0-dev.12 direct mobile picker and private transport regressions."""
 import shutil
 import subprocess
 import unittest
@@ -17,7 +17,7 @@ DOCKER = ROOT / "Dockerfile"
 class DirectFileUploadTests(unittest.TestCase):
     def test_developer_only_gate_and_multi_language_controls(self):
         config = yaml.safe_load(CONFIG.read_text())
-        self.assertEqual(config["version"], "0.5.0-dev.11")
+        self.assertEqual(config["version"], "0.5.0-dev.12")
         self.assertEqual(config["name"], "Codex Deployment")
         self.assertIs(config["options"]["direct_file_upload"], True)
         self.assertEqual(config["schema"]["direct_file_upload"], "bool")
