@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import fcntl
+import os
+import stat
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from secrets import compare_digest, token_urlsafe
@@ -31,12 +35,50 @@ from .core import (
 )
 
 mcp = FastMCP("HA Lovelace Resource Manager")
-_operation_lock = asyncio.Lock()
+_session_lock = asyncio.Lock()
 _api: ResourceAPI | None = None
 WWW_ROOT = Path("/homeassistant/www")
 BACKUP_DIR = Path("/data/codex-managed/lovelace-resource-backups")
 TOKEN_FILE = Path("/tmp/codex/ha-token")
 CONFIRMATION_TTL_SECONDS = 120
+LOCK_WAIT_SECONDS = 30
+NON_ATOMIC_WARNING = (
+    "HA resource writes are non-atomic. Pause other writers of this target and "
+    "obtain operator approval before confirming. The token binds the preview; "
+    "it is not independent proof of operator consent."
+)
+
+
+@asynccontextmanager
+async def _operation_lock():
+    """Serialize cooperating sessions in this App, not external HA writers."""
+    async with _session_lock:
+        lock_dir = BACKUP_DIR.parent / "lovelace-resource-lock"
+        try:
+            with private_directory(lock_dir, create=True) as directory_fd:
+                fd = os.open(
+                    "operation.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
+                    0o600, dir_fd=directory_fd,
+                )
+                try:
+                    info = os.fstat(fd)
+                    if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                            or info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) != 0o600):
+                        raise ResourceError("Unsafe resource operation lock")
+                    deadline = monotonic() + LOCK_WAIT_SECONDS
+                    while True:
+                        try:
+                            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            break
+                        except BlockingIOError:
+                            if monotonic() >= deadline:
+                                raise ResourceError("Resource operation lock busy; no write attempted") from None
+                            await asyncio.sleep(0.05)
+                    yield
+                finally:
+                    os.close(fd)
+        except OSError:
+            raise ResourceError("Private resource operation lock unavailable") from None
 
 
 @dataclass(frozen=True)
@@ -58,6 +100,59 @@ class PendingRollback:
 
 
 _pending_rollback: PendingRollback | None = None
+
+
+@dataclass(frozen=True)
+class MutationPlan:
+    operation: str
+    target: str
+    before: dict | None
+    after: dict | None
+    asset_sha256: str
+
+
+@dataclass(frozen=True)
+class PendingMutation:
+    confirmation: str
+    expires_at: float
+    plan: MutationPlan
+
+
+_pending_mutation: PendingMutation | None = None
+
+
+def _preview_mutation(plan: MutationPlan) -> dict:
+    global _pending_mutation
+    token = token_urlsafe(24)
+    _pending_mutation = PendingMutation(token, monotonic() + CONFIRMATION_TTL_SECONDS, plan)
+    return {
+        "status": "dry_run", "operation": plan.operation,
+        "before": public_resource(plan.before) if plan.before else None,
+        "after": plan.after, "sha256": plan.asset_sha256,
+        "non_atomic_confirmation": token, "expires_in_seconds": CONFIRMATION_TTL_SECONDS,
+        "warning": NON_ATOMIC_WARNING,
+    }
+
+
+def _consume_mutation(plan: MutationPlan, confirmation: str | None) -> PendingMutation:
+    global _pending_mutation
+    pending = _pending_mutation
+    if (pending is None or not isinstance(confirmation, str) or not confirmation.isascii()
+            or not compare_digest(pending.confirmation, confirmation)):
+        raise ResourceError("A fresh mutation preview and its non_atomic_confirmation are required")
+    _pending_mutation = None
+    if monotonic() >= pending.expires_at:
+        raise ResourceError("Mutation confirmation expired. Request a fresh preview.")
+    if pending.plan != plan:
+        raise ResourceError("Mutation target or asset changed since the preview. No write attempted.")
+    return pending
+
+
+def _verify_asset_and_expiry(plan: MutationPlan, pending: PendingMutation, backup: Path) -> None:
+    if monotonic() >= pending.expires_at:
+        raise ResourceError(f"Mutation confirmation expired. No write attempted. backup_id: {backup.stem}")
+    if asset_digest(WWW_ROOT, plan.target) != plan.asset_sha256:
+        raise ResourceError(f"Resource asset changed before write. No write attempted. backup_id: {backup.stem}")
 
 
 def _get_api() -> ResourceAPI:
@@ -133,6 +228,8 @@ async def _apply_rollback(api: ResourceAPI, plan: RollbackPlan, pending: Pending
         raise ResourceError("Rollback refused: resource changed during verification")
     if monotonic() >= pending.expires_at:
         raise ResourceError("Rollback confirmation expired. Request a fresh preview.")
+    if asset_digest(WWW_ROOT, plan.target) != plan.asset_sha256:
+        raise ResourceError("Rollback asset changed during verification. No write attempted.")
     try:
         if plan.operation == "delete":
             await api.delete(plan.expected_id)
@@ -176,7 +273,7 @@ def _unverified_write(backup: Path) -> ResourceError:
 @mcp.tool(name="ha_config_list_dashboard_resources")
 async def ha_config_list_dashboard_resources() -> dict:
     """List registered resources. Sensitive query values are redacted from output."""
-    async with _operation_lock:
+    async with _operation_lock():
         resources = await _get_api().list()
     return {"count": len(resources), "resources": [public_resource(item) for item in resources]}
 
@@ -188,12 +285,13 @@ async def ha_config_set_dashboard_resource(
     release: str | None = None,
     resource_id: str | None = None,
     dry_run: bool = True,
+    non_atomic_confirmation: str | None = None,
 ) -> dict:
-    """Hash-version and idempotently create/update a validated local resource."""
+    """Preview or confirm a hash-versioned local resource; native HA writes are non-atomic."""
     if resource_type not in RESOURCE_TYPES:
         raise ResourceError("Unsupported resource type")
-    versioned, target_path, digest = _version_url(url, release, resource_type)
-    async with _operation_lock:
+    async with _operation_lock():
+        versioned, target_path, digest = _version_url(url, release, resource_type)
         api = _get_api()
         resources = await api.list()
         existing = require_unique_match(resources, target_path)
@@ -203,11 +301,14 @@ async def ha_config_set_dashboard_resource(
             return {"status": "unchanged", "resource": public_resource(existing), "sha256": digest}
         operation = "update" if existing else "create"
         preview = {"url": versioned, "type": resource_type, "id": existing.get("id") if existing else None}
-        if dry_run:
-            return {"status": "dry_run", "operation": operation, "before": public_resource(existing) if existing else None, "after": preview, "sha256": digest}
-        backup = create_backup(BACKUP_DIR, operation, target_path, existing, preview)
         expected = resource_snapshot(existing) if existing is not None else None
+        plan = MutationPlan(operation, target_path, expected, dict(preview), digest)
+        if dry_run:
+            return _preview_mutation(plan)
+        pending = _consume_mutation(plan, non_atomic_confirmation)
+        backup = create_backup(BACKUP_DIR, operation, target_path, existing, preview)
         await _verify_preimage(api, target_path, expected, backup)
+        _verify_asset_and_expiry(plan, pending, backup)
         try:
             if existing:
                 changed = await api.update(preview["id"], versioned, resource_type)
@@ -227,23 +328,28 @@ async def ha_config_set_dashboard_resource(
 
 
 @mcp.tool(name="ha_config_delete_dashboard_resource")
-async def ha_config_delete_dashboard_resource(resource_id: str, dry_run: bool = True) -> dict:
-    """Delete one unique non-HACS /local resource after a private backup."""
-    async with _operation_lock:
+async def ha_config_delete_dashboard_resource(
+    resource_id: str, dry_run: bool = True, non_atomic_confirmation: str | None = None,
+) -> dict:
+    """Preview or confirm deletion of one unique non-HACS local resource."""
+    async with _operation_lock():
         api = _get_api()
         resources = await api.list()
         target = next((item for item in resources if item.get("id") == resource_id), None)
         if not target:
             raise ResourceError("Resource ID was not found")
         target_path = strict_local_path(str(target.get("url", "")))
-        asset_digest(WWW_ROOT, target_path)
+        digest = asset_digest(WWW_ROOT, target_path)
         unique = require_unique_match(resources, target_path)
         if unique is None or unique.get("id") != resource_id:
             raise ResourceError("Resource is not the unique matching resource at its path")
+        plan = MutationPlan("delete", target_path, resource_snapshot(target), None, digest)
         if dry_run:
-            return {"status": "dry_run", "resource": public_resource(target)}
+            return {**_preview_mutation(plan), "resource": public_resource(target)}
+        pending = _consume_mutation(plan, non_atomic_confirmation)
         backup = create_backup(BACKUP_DIR, "delete", target_path, target, None)
         await _verify_preimage(api, target_path, resource_snapshot(target), backup)
+        _verify_asset_and_expiry(plan, pending, backup)
         try:
             await api.delete(resource_id)
             acknowledge_backup(backup)
@@ -264,7 +370,7 @@ async def ha_config_rollback_dashboard_resource(
     global _pending_rollback
     if not BACKUP_ID_RE.fullmatch(backup_id):
         raise ResourceError("Invalid backup_id")
-    async with _operation_lock:
+    async with _operation_lock():
         record = read_backup(BACKUP_DIR / f"{backup_id}.json")
         if dry_run:
             _pending_rollback = None
@@ -290,7 +396,7 @@ async def ha_config_rollback_dashboard_resource(
                 "asset_sha256": plan.asset_sha256,
                 "non_atomic_confirmation": confirmation,
                 "expires_in_seconds": CONFIRMATION_TTL_SECONDS,
-                "warning": "HA writes are not atomic. Stop other writers and obtain operator approval before confirming.",
+                "warning": NON_ATOMIC_WARNING,
             }
 
         pending = _pending_rollback
