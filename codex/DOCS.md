@@ -67,6 +67,8 @@ The image contains an SSH client, **not an SSH server**. It does not expose a se
 
 Disabling `enable_mcp` removes only the App-managed `homeassistant` MCP entry. Unrelated user MCP configuration is preserved.
 
+When enabled, the App also registers the isolated `ha_lovelace_resources` MCP server. It uses the same protected Supervisor-token helper but exposes only Lovelace resource CRUD and rollback operations. The token is not written to Codex config or MCP output. See [LOVELACE_RESOURCE_DEPLOYMENTS.md](docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) for the mandatory workflow for locally hosted custom cards.
+
 ### Additional MCP servers
 
 `mcp_servers` adds remote Streamable HTTP MCP servers:

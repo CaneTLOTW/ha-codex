@@ -1,6 +1,6 @@
 name: Codex
 description: "OpenAI Codex in Home Assistant: Ctrl+V screenshot paste, direct file uploads, iPhone paperclip picker, optional MCP"
-version: "0.5.2"
+version: "0.5.3"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex

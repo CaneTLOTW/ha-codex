@@ -16,7 +16,7 @@ APPARMOR = ROOT / "apparmor.txt"
 class TransferAndAppConfigTests(unittest.TestCase):
     def test_options_and_mount_security(self):
         c = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-        self.assertEqual(c["version"], "0.5.1")
+        self.assertEqual(c["version"], "0.5.3")
         self.assertEqual(c["name"], "Codex")
         self.assertIs(c["options"]["file_transfer_enabled"], False)
         self.assertEqual(c["options"]["app_configs_visibility"], "hidden_from_guidance")

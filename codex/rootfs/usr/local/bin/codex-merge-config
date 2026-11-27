@@ -291,11 +291,36 @@ def main():
         merged_homeassistant["command"] = "/usr/local/bin/hass-mcp-wrapper"
         mcp_servers["homeassistant"] = merged_homeassistant
         metadata["managed_homeassistant_mcp"] = True
+        reserved_resource_name = "ha_lovelace_resources"
+        existing_resources = mcp_servers.get(reserved_resource_name, {})
+        if not isinstance(existing_resources, dict):
+            existing_resources = {}
+        was_managed_resources = metadata.get("managed_lovelace_resources_mcp") is True
+        preserved_resources = metadata.get("managed_lovelace_resources_mcp_backup", {})
+        if not isinstance(preserved_resources, dict):
+            preserved_resources = {}
+        if existing_resources and not was_managed_resources and not preserved_resources:
+            preserved_resources = dict(existing_resources)
+            metadata["managed_lovelace_resources_mcp_backup"] = preserved_resources
+        merged_resources = dict(preserved_resources)
+        merged_resources.update(existing_resources)
+        merged_resources["command"] = "/usr/local/bin/lovelace-resource-mcp-wrapper"
+        merged_resources["args"] = []
+        for key in ("url", "bearer_token_env_var", "http_headers", "env_http_headers"):
+            merged_resources.pop(key, None)
+        mcp_servers[reserved_resource_name] = merged_resources
+        metadata["managed_lovelace_resources_mcp"] = True
     else:
         if existing_homeassistant:
             metadata["managed_homeassistant_mcp_backup"] = dict(existing_homeassistant)
         mcp_servers.pop("homeassistant", None)
         metadata.pop("managed_homeassistant_mcp", None)
+        existing_resources = mcp_servers.get("ha_lovelace_resources", {})
+        mcp_servers.pop("ha_lovelace_resources", None)
+        preserved_resources = metadata.pop("managed_lovelace_resources_mcp_backup", {})
+        if isinstance(preserved_resources, dict) and preserved_resources:
+            mcp_servers["ha_lovelace_resources"] = preserved_resources
+        metadata.pop("managed_lovelace_resources_mcp", None)
 
     previous_custom_names = metadata.get("managed_custom_mcp_servers", [])
     if not isinstance(previous_custom_names, list):
