@@ -210,6 +210,8 @@ A manual diagnostic shell opened after Codex exits is not a Codex sandbox bounda
 
 Use the `homeassistant` MCP server to query entities and call services when MCP is enabled. The Supervisor token stays outside the interactive shell and is only available through the privileged `hass-mcp` helper path.
 
+For Lovelace custom-card resources, use the separate `ha_lovelace_resources` MCP server. It exposes only resource list, hash-validated `/local/` upsert, delete and targeted rollback operations. Never edit `.storage/lovelace_resources` directly; keep `/local/community/` and `/hacsfiles/` resources untouched. See `codex/docs/LOVELACE_RESOURCE_DEPLOYMENTS.md` in the repository for the required backup/readback workflow.
+
 Additional remote MCP servers configured in the App options are also managed in `~/.codex/config.toml`. Bearer-token values and explicitly configured environment variables are supplied to the Codex process environment instead of being written as plaintext values into `config.toml`.
 
 ## Bundled Runtime Tools
@@ -310,6 +312,8 @@ fi
 if [[ "$enable_mcp" == "true" ]]; then
   CODEX_HOME="$validate_home" codex mcp get homeassistant >/dev/null
   echo '[INFO] Bundled MCP server registered: "homeassistant" (voska/hass-mcp)'
+  CODEX_HOME="$validate_home" codex mcp get ha_lovelace_resources >/dev/null
+  echo '[INFO] Bundled least-privilege MCP server registered: "ha_lovelace_resources"'
 else
   CODEX_HOME="$validate_home" codex mcp list >/dev/null
   echo '[INFO] Bundled MCP server disabled: "homeassistant"'

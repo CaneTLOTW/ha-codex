@@ -42,7 +42,9 @@ jobs:
           python-version: "3.13"
 
       - name: Install validation dependencies
-        run: python -m pip install --disable-pip-version-check pyyaml
+        run: >-
+          python -m pip install --disable-pip-version-check
+          pyyaml hass-mcp==0.6.2 mcp==1.30.0 websockets==17.4
 
       - name: Python regression tests
         run: python -m unittest discover -s codex/tests -v

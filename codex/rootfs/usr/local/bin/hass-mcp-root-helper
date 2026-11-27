@@ -13,4 +13,14 @@ export HA_TOKEN
 HA_TOKEN="$(<"$TOKEN_FILE")"
 export HA_URL="$HA_URL_VALUE"
 
+if [[ "${1:-}" == "--lovelace-resource-mcp" ]]; then
+  shift
+  if [[ $# -ne 0 ]]; then
+    echo "[ERROR] The Lovelace resource MCP helper accepts no arguments." >&2
+    exit 2
+  fi
+  export PYTHONPATH="/usr/local/lib/codex-lovelace-resource-mcp${PYTHONPATH:+:$PYTHONPATH}"
+  exec python3 -m codex_lovelace_resource_mcp.server
+fi
+
 exec hass-mcp "$@"
