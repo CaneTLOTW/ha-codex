@@ -220,8 +220,9 @@ def _validate_snapshot(item: dict, target: str, *, allow_pending_id: bool = Fals
 
 def validate_backup(record: dict, backup_id: str) -> None:
     if (not BACKUP_ID_RE.fullmatch(backup_id) or not isinstance(record, dict)
-            or set(record) != {"schema", "backup_id", "created_at", "action", "target_path", "before", "after"}
-            or type(record["schema"]) is not int or record["schema"] != 1
+            or set(record) != {"schema", "backup_id", "created_at", "action", "target_path", "before", "after", "acknowledged"}
+            or type(record["schema"]) is not int or record["schema"] != 2
+            or type(record["acknowledged"]) is not bool
             or record["backup_id"] != backup_id or not isinstance(record["created_at"], str)):
         raise ResourceError("Resource backup metadata is invalid")
     action, target, before, after = (record[key] for key in ("action", "target_path", "before", "after"))
@@ -237,7 +238,10 @@ def validate_backup(record: dict, backup_id: str) -> None:
         if after is not None:
             raise ResourceError("Delete backup must not have a postimage")
     else:
-        _validate_snapshot(after, target, allow_pending_id=action == "create")
+        pending_create = action == "create" and not record["acknowledged"]
+        _validate_snapshot(after, target, allow_pending_id=pending_create)
+        if pending_create and after["id"] is not None:
+            raise ResourceError("Unacknowledged create must not have a resource ID")
         if action == "update" and before["id"] != after["id"]:
             raise ResourceError("Update backup must keep the resource ID")
 
@@ -290,21 +294,27 @@ def create_backup(backup_dir: Path, action: str, target_path: str, before: dict 
     _write_json_private(
         path,
         {
-            "schema": 1,
+            "schema": 2,
             "backup_id": backup_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "action": action,
             "target_path": target_path,
             "before": resource_snapshot(before) if before is not None else None,
             "after": resource_snapshot(after) if after is not None else None,
+            "acknowledged": False,
         },
     )
     return path
 
 
-def update_backup_after(path: Path, resource: dict) -> None:
+def acknowledge_backup(path: Path, *, created_id: str | None = None) -> None:
+    """Persist a successful response from HA before offering writable rollback."""
     data = read_backup(path)
-    data["after"] = resource_snapshot(resource)
+    if (data["action"] == "create") != (created_id is not None):
+        raise ResourceError("An acknowledged create requires the ID returned by Home Assistant")
+    if created_id is not None:
+        data["after"]["id"] = created_id
+    data["acknowledged"] = True
     _write_json_private(path, data)
 
 
