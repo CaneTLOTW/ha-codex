@@ -175,6 +175,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
         self.original_backups = server.BACKUP_DIR
         self.original_api = server._api
         server._pending_rollback = None
+        server._pending_mutation = None
         server.WWW_ROOT = self.www
         server.BACKUP_DIR = self.backups
         self.hacs = {"id": "hacs-1", "url": "/local/community/card-mod/card-mod.js?v=3", "type": "module"}
@@ -186,10 +187,135 @@ class LovelaceResourceToolTests(unittest.TestCase):
         server.BACKUP_DIR = self.original_backups
         server._api = self.original_api
         server._pending_rollback = None
+        server._pending_mutation = None
         self.temp.cleanup()
 
     def run_async(self, coro):
         return asyncio.run(coro)
+
+    async def set_resource(self, *args, **kwargs):
+        preview = await server.ha_config_set_dashboard_resource(*args, **kwargs)
+        if preview["status"] == "unchanged":
+            return preview
+        return await server.ha_config_set_dashboard_resource(
+            *args, **kwargs, dry_run=False,
+            non_atomic_confirmation=preview["non_atomic_confirmation"],
+        )
+
+    async def delete_resource(self, resource_id):
+        preview = await server.ha_config_delete_dashboard_resource(resource_id)
+        return await server.ha_config_delete_dashboard_resource(
+            resource_id, dry_run=False, non_atomic_confirmation=preview["non_atomic_confirmation"],
+        )
+
+    def test_mutations_require_bound_single_use_preview(self):
+        async def scenario():
+            args = {"url": "/local/janus/card.js", "release": "0.4.2"}
+            with self.assertRaisesRegex(core.ResourceError, "fresh mutation preview"):
+                await server.ha_config_set_dashboard_resource(**args, dry_run=False)
+            preview = await server.ha_config_set_dashboard_resource(**args)
+            with self.assertRaisesRegex(core.ResourceError, "fresh mutation preview"):
+                await server.ha_config_set_dashboard_resource(
+                    **args, dry_run=False, non_atomic_confirmation="wrong",
+                )
+            self.assertEqual(self.fake.writes, [])
+            self.assertFalse(self.backups.exists())
+            token = preview["non_atomic_confirmation"]
+            result = await server.ha_config_set_dashboard_resource(
+                **args, dry_run=False, non_atomic_confirmation=token,
+            )
+            resource_id = result["resource"]["id"]
+            with self.assertRaisesRegex(core.ResourceError, "fresh mutation preview"):
+                await server.ha_config_delete_dashboard_resource(
+                    resource_id, dry_run=False, non_atomic_confirmation=token,
+                )
+            delete = await server.ha_config_delete_dashboard_resource(resource_id)
+            self.fake.resources[1]["type"] = "css"
+            with self.assertRaisesRegex(core.ResourceError, "changed since the preview"):
+                await server.ha_config_delete_dashboard_resource(
+                    resource_id, dry_run=False,
+                    non_atomic_confirmation=delete["non_atomic_confirmation"],
+                )
+            self.assertEqual(len(self.fake.writes), 1)
+            self.assertEqual(self.fake.resources[1]["type"], "css")
+
+        self.run_async(scenario())
+
+    def test_mutation_preview_rejects_changed_asset_and_expiry(self):
+        args = {"url": "/local/janus/card.js", "release": "0.4.2"}
+        async def scenario():
+            preview = await server.ha_config_set_dashboard_resource(**args)
+            self.asset.write_bytes(b"new card bytes")
+            with self.assertRaisesRegex(core.ResourceError, "changed since the preview"):
+                await server.ha_config_set_dashboard_resource(
+                    **args, dry_run=False, non_atomic_confirmation=preview["non_atomic_confirmation"],
+                )
+            with patch.object(server, "monotonic", return_value=100):
+                preview = await server.ha_config_set_dashboard_resource(**args)
+            with patch.object(server, "monotonic", return_value=220):
+                with self.assertRaisesRegex(core.ResourceError, "expired"):
+                    await server.ha_config_set_dashboard_resource(
+                        **args, dry_run=False, non_atomic_confirmation=preview["non_atomic_confirmation"],
+                    )
+            self.assertEqual(self.fake.writes, [])
+            self.assertFalse(self.backups.exists())
+        self.run_async(scenario())
+
+    def test_mutation_refuses_external_change_during_final_prewrite_check(self):
+        old = {"id": "flow", "url": "/local/janus/card.js", "type": "module"}
+        self.fake.resources.append(dict(old))
+        args = {"url": "/local/janus/card.js", "release": "0.4.2"}
+        preview = self.run_async(server.ha_config_set_dashboard_resource(**args))
+        original_list = self.fake.list
+        reads = 0
+
+        async def concurrent_edit():
+            nonlocal reads
+            reads += 1
+            if reads == 2:
+                self.fake.resources[1]["type"] = "css"
+            return await original_list()
+
+        self.fake.list = concurrent_edit
+        with self.assertRaisesRegex(core.ResourceError, "No write attempted"):
+            self.run_async(server.ha_config_set_dashboard_resource(
+                **args, dry_run=False, non_atomic_confirmation=preview["non_atomic_confirmation"],
+            ))
+        self.assertEqual(self.fake.writes, [])
+        self.assertEqual(self.fake.resources[1]["type"], "css")
+
+    def test_resource_lock_serializes_independent_processes(self):
+        # Hold the exact private lock from a separate process. A second
+        # helper must fail closed rather than issue an API request.
+        directory = self.backups.parent / "lovelace-resource-lock"
+        directory.mkdir(mode=0o700)
+        lock_path = directory / "operation.lock"
+        script = (
+            "import fcntl, os, sys; "
+            "fd = os.open(sys.argv[1], os.O_CREAT | os.O_RDWR, 0o600); "
+            "fcntl.flock(fd, fcntl.LOCK_EX); print('locked', flush=True); "
+            "sys.stdin.read()"
+        )
+        process = subprocess.Popen(
+            [sys.executable, "-c", script, str(lock_path)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+        )
+        try:
+            self.assertEqual(process.stdout.readline().strip(), "locked")
+            with patch.object(server, "LOCK_WAIT_SECONDS", 0):
+                with self.assertRaisesRegex(core.ResourceError, "lock busy"):
+                    self.run_async(server.ha_config_set_dashboard_resource(
+                        "/local/janus/card.js", release="0.4.2",
+                    ))
+            self.assertEqual(self.fake.writes, [])
+        finally:
+            process.stdin.close()
+            process.wait(timeout=5)
+            process.stdout.close()
+        result = self.run_async(server.ha_config_set_dashboard_resource(
+            "/local/janus/card.js", release="0.4.2",
+        ))
+        self.assertEqual(result["status"], "dry_run")
 
     def preview_rollback(self, backup_id):
         return self.run_async(server.ha_config_rollback_dashboard_resource(backup_id))
@@ -211,12 +337,12 @@ class LovelaceResourceToolTests(unittest.TestCase):
         self.assertFalse(self.backups.exists())
 
     def test_upsert_create_is_idempotent_and_preserves_hacs(self):
-        result = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        result = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         self.assertEqual(result["status"], "created")
         self.assertEqual(result["resource"]["url"], self.expected_url)
         self.assertEqual(len(list(self.backups.glob("*.json"))), 1)
         count_after_create = len(self.fake.writes)
-        repeated = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        repeated = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         self.assertEqual(repeated["status"], "unchanged")
         self.assertEqual(len(self.fake.writes), count_after_create)
         self.assertEqual(self.fake.resources[0], self.hacs)
@@ -225,7 +351,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
     def test_upsert_updates_same_path_resource_and_uses_preimage_for_rollback(self):
         old = {"id": "flow", "url": "/local/janus/card.js?v=0.2.2-aaaaaaaaaaaa", "type": "module"}
         self.fake.resources.append(dict(old))
-        result = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        result = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         self.assertEqual(result["status"], "updated")
         self.assertEqual(next(r for r in self.fake.resources if r["id"] == "flow")["url"], self.expected_url)
         backup_id = result["backup_id"]
@@ -245,11 +371,11 @@ class LovelaceResourceToolTests(unittest.TestCase):
             {"id": "two", "url": "/local/janus/card.js?v=2-bbbbbbbbbbbb", "type": "module"},
         ])
         with self.assertRaisesRegex(core.ResourceError, "Duplicate"):
-            self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+            self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         self.assertEqual(self.fake.writes, [])
 
     def test_rollback_validates_record_before_any_api_write(self):
-        created = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        created = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = created["backup_id"]
         path = self.backups / f"{backup_id}.json"
         valid = json.loads(path.read_text())
@@ -279,7 +405,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
 
         self.fake.update = competing_update
         with self.assertRaisesRegex(core.ResourceError, "No automatic rollback attempted") as failure:
-            self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+            self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = next(self.backups.glob("*.json")).stem
         self.assertIn(backup_id, str(failure.exception))
         self.assertEqual(self.fake.resources[1], concurrent)
@@ -297,13 +423,13 @@ class LovelaceResourceToolTests(unittest.TestCase):
         async def transient_error():
             nonlocal reads
             reads += 1
-            if reads == 3:
+            if reads == 4:
                 raise TimeoutError
             return await original_list()
 
         self.fake.list = transient_error
         with self.assertRaisesRegex(core.ResourceError, "No automatic rollback attempted") as failure:
-            self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+            self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = next(self.backups.glob("*.json")).stem
         self.assertIn(backup_id, str(failure.exception))
         self.assertEqual(self.fake.resources[1]["url"], self.expected_url)
@@ -324,7 +450,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
 
         self.fake.create = create_without_ack
         with self.assertRaisesRegex(core.ResourceError, "No automatic rollback attempted"):
-            self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+            self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         self.assertEqual(len(self.fake.writes), 1)
         self.assertEqual(self.fake.resources[1]["url"], self.expected_url)
         preview = self.preview_rollback(next(self.backups.glob("*.json")).stem)
@@ -341,7 +467,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
 
         self.fake.update = update_without_ack
         with self.assertRaisesRegex(core.ResourceError, "No automatic rollback attempted"):
-            self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+            self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = next(self.backups.glob("*.json")).stem
         preview = self.preview_rollback(backup_id)
         self.assertEqual(preview["status"], "manual_review_required")
@@ -357,13 +483,13 @@ class LovelaceResourceToolTests(unittest.TestCase):
         async def transient_error():
             nonlocal reads
             reads += 1
-            if reads == 3:
+            if reads == 4:
                 raise TimeoutError
             return await original_list()
 
         self.fake.list = transient_error
         with self.assertRaisesRegex(core.ResourceError, "No automatic rollback attempted") as failure:
-            self.run_async(server.ha_config_delete_dashboard_resource("flow", dry_run=False))
+            self.run_async(self.delete_resource("flow"))
         backup_id = next(self.backups.glob("*.json")).stem
         self.assertIn(backup_id, str(failure.exception))
         self.assertEqual(self.fake.writes, [("delete", "flow")])
@@ -371,7 +497,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
         self.assertEqual(self.preview_rollback(backup_id)["operation"], "create")
 
     def test_confirmation_rejects_missing_wrong_expired_and_reused_tokens(self):
-        created = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        created = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = created["backup_id"]
         with self.assertRaisesRegex(core.ResourceError, "fresh rollback preview"):
             self.run_async(server.ha_config_rollback_dashboard_resource(backup_id, dry_run=False))
@@ -391,7 +517,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
 
     def test_confirmation_refuses_resource_change_on_final_read(self):
         self.fake.resources.append({"id": "flow", "url": "/local/janus/card.js", "type": "module"})
-        updated = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        updated = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = updated["backup_id"]
         preview = self.preview_rollback(backup_id)
         original_list = self.fake.list
@@ -411,7 +537,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
         self.assertEqual(len(self.fake.writes), 1)
 
     def test_confirmation_is_bound_to_previewed_asset(self):
-        created = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        created = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = created["backup_id"]
         preview = self.preview_rollback(backup_id)
         self.asset.write_bytes(b"Changed since preview")
@@ -420,7 +546,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
         self.assertEqual(len(self.fake.writes), 1)
 
     def test_create_rollback_checks_identity_and_verifies_delete(self):
-        result = self.run_async(server.ha_config_set_dashboard_resource("/local/janus/card.js", release="0.4.2", dry_run=False))
+        result = self.run_async(self.set_resource("/local/janus/card.js", release="0.4.2"))
         backup_id = result["backup_id"]
         path = self.backups / f"{backup_id}.json"
         self.assertEqual(core.read_backup(path)["after"]["id"], result["resource"]["id"])
@@ -432,7 +558,7 @@ class LovelaceResourceToolTests(unittest.TestCase):
 
     def test_delete_and_rollback_restore_url_and_type(self):
         self.fake.resources.append({"id": "flow", "url": self.expected_url, "type": "module"})
-        deleted = self.run_async(server.ha_config_delete_dashboard_resource("flow", dry_run=False))
+        deleted = self.run_async(self.delete_resource("flow"))
         backup_id = deleted["backup_id"]
         restored = self.confirm_rollback(backup_id, self.preview_rollback(backup_id))
         self.assertEqual(restored["resource"]["url"], self.expected_url)
