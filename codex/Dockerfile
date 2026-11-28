@@ -156,6 +156,7 @@ RUN chmod +x \
     /usr/local/bin/hass-mcp-wrapper \
     /usr/local/bin/hass-mcp-root-helper \
     /usr/local/bin/lovelace-resource-mcp-wrapper \
+    /usr/local/bin/lovelace-resource-mcp-root-helper \
     /usr/local/bin/ha-readonly \
     /usr/local/bin/ha-readonly-root-helper \
     /usr/local/bin/codex-merge-config \
@@ -166,7 +167,7 @@ RUN chmod +x \
     /usr/local/bin/codex-session \
     /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \
-    && python3 -c 'from mcp.server.fastmcp import FastMCP; import websockets; print("Lovelace resource MCP runtime dependencies available")' \
+    && /usr/local/bin/python3 -IB -c 'from mcp.server.fastmcp import FastMCP; import websockets' \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 
 COPY <<'EOF' /etc/tmux.conf
