@@ -210,9 +210,10 @@ class AddonsAccessTests(unittest.TestCase):
         self.assertIn('grant_group_root_access /addons', start)
         self.assertIn("/addons|/addons/*", start)
         guard = start.index("--resolve-working-directory")
-        grant_workdir = start.index('grant_group_root_access "$work_dir"')
-        self.assertLess(guard, grant_workdir)
-        self.assertIn('exit 1', start[guard:grant_workdir])
+        grant_mounts = start.index("grant_group_root_access /homeassistant")
+        self.assertLess(guard, grant_mounts)
+        self.assertIn('exit 1', start[guard:grant_mounts])
+        self.assertNotIn('grant_group_root_access "$work_dir"', start)
 
     def test_shell_applies_effective_writable_roots_override(self):
         shell = SHELL.read_text(encoding="utf-8")
