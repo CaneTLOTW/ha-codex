@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-The stable app maps `/homeassistant`, `/share`, `/media`, `/ssl`, `/backup`, and local app sources at `/addons`. The local-source `addons_access` setting **does not** make other apps' configuration accessible. AppArmor declarations alone cannot make files appear unless the Supervisor map mounts them.
+Stable since 0.5.1 and Deployment both map `/homeassistant`, `/share`, `/media`, `/ssl`, `/backup`, local App sources at `/addons`, and public App configuration folders at `/app_configs` (static read-only). The local-source `addons_access` setting is independent of `/app_configs`; `app_configs_visibility` controls guidance only, not actual access. AppArmor declarations alone cannot make files appear unless the Supervisor map mounts them.
 
 As of 2026-11-22, official Home Assistant App configuration documentation uses the newer mount type `all_app_configs` with default target `/app_configs`. The older `all_addon_configs` name is still accepted as a legacy alias, historically mounted under `/addon_configs`, but generates a warning; **do not add deprecated names**. Use an explicit `path` only if compatibility with an older container path is actually required.
 
@@ -12,7 +12,7 @@ References:
 
 ## Least-privilege decision
 
-Other App configurations can contain long-lived tokens, passwords, and service credentials. Exposing the entire tree is a broad privilege change, even when read-only. **Do not add `all_app_configs` to stable automatically.**
+Other App configurations can contain long-lived tokens, passwords, and service credentials. Exposing the entire tree is a broad privilege change, even when read-only. The mount was shipped in Stable 0.5.1; do not widen it or imply that a guidance option revokes it. The remaining design question is whether a separate explicit install-time opt-in variant is needed.
 
 Suggested future architecture:
 1. First document concrete cross-app diagnostic use cases and whether data is obtainable through an authenticated Home Assistant API or app-specific MCP.
@@ -29,4 +29,4 @@ Suggested future architecture:
 - Both app names and container paths are checked against the user's specific Supervisor version.
 - Separate installation approval before any image rollout.
 
-**Status:** design/security gate only. No new mount implemented in this review.
+**Status:** existing static read-only mount documented; true opt-in architecture and real fixture acceptance remain open (#12/#51). No permission or mount change in this documentation update.

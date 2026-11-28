@@ -11,7 +11,17 @@ Codex runs the OpenAI Codex CLI inside a Home Assistant App and exposes it throu
 
 The App keeps Codex authentication and user configuration under `/data/codex-home` so they survive App restarts and image updates.
 
-## Stable 0.5.1 behavior
+## What's new in Stable 0.5.3
+
+Stable 0.5.3 adds a dedicated **Lovelace resource-management MCP** alongside the existing Home Assistant MCP. With `enable_mcp: true` (the default), Codex can list local dashboard resources, preview and confirm registration/update or deletion, verify the result and explicitly roll back targeted resource metadata. This is particularly useful for deploying custom dashboard JavaScript cards without editing Home Assistant's internal storage or restarting Core.
+
+The four tools are `ha_config_list_dashboard_resources`, `ha_config_set_dashboard_resource`, `ha_config_delete_dashboard_resource` and `ha_config_rollback_dashboard_resource`. Assets must already be installed under `/homeassistant/www`; registrations use release and SHA-256 versioning, preserve existing resource IDs on update, reject duplicate paths and protect HACS/community resources from mutation. Changes require a same-session, single-use preview confirmation within 120 seconds and explicit operator approval. Targeted backups are private; restoring deleted metadata can allocate a new ID, and restoring old asset bytes is a separate step.
+
+**Safety boundary:** the Supervisor token stays outside the interactive shell, and the helper cannot guarantee atomic changes across independent HA clients. Pause other resource writers (including the other Codex App), keep the asset unchanged during the operation, and stop on uncertain results or conflicts; never automatically retry or compensate.
+
+Read [the resource deployment guide](docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) before making changes. Codex CLI 0.172.0 is retained.
+
+## Terminal stability and persistence
 
 The terminal uses the same `--no-daemon` launcher at initial startup and after a manual `codex` or `codex resume` following Ctrl+C. Existing session history under `/data/codex-home` is preserved; SQLite scratch files use a private writable directory within the user state home.
 
@@ -21,7 +31,7 @@ The optional `remote_control_enabled` setting starts the separate native Remote 
 
 For Home Assistant 2026.11, install this container App from **Settings → Apps → App Store**, not the integrated HACS Marketplace.
 
-## What's new in 0.5.1: screenshots and uploads without leaving Codex
+## Screenshots and uploads without leaving Codex (since 0.5.1)
 
 **Screenshot Copy & Paste is the most important change:** Capture a screenshot on Windows with Win+Shift+S, click the running Codex prompt, press Ctrl+V and see an image attachment such as `[Image #1]`. Codex can inspect its real contents. The existing authenticated HA Ingress WebSocket handles the PNG upload; no terminal exit, no shell command, no manually saved screenshot, no new port. **Normal text paste is unchanged.** PNG maximum: 10 MiB.
 
@@ -38,6 +48,7 @@ The `clipboard_image_paste` and `direct_file_upload` options are enabled by defa
 | `/media` | read-write | Home Assistant media |
 | `/ssl` | read-only | Home Assistant SSL files |
 | `/backup` | read-only | Home Assistant backups |
+| `/addons` | Supervisor RW; Codex launch/sandbox default read-only | Local App sources |
 | `/app_configs` | read-only static mount | Public configurations from other Home Assistant Apps |
 
 Inside this App, `/homeassistant` corresponds to the Home Assistant Core `/config` directory.
@@ -63,9 +74,9 @@ The image contains an SSH client, **not an SSH server**. It does not expose a se
 
 ### Home Assistant MCP
 
-`enable_mcp` controls the bundled `homeassistant` MCP server. When enabled, Codex can use the managed MCP helper to query Home Assistant and call services.
+`enable_mcp` controls the bundled `homeassistant` and `ha_lovelace_resources` MCP servers. When enabled, Codex can use the managed MCP helper to query Home Assistant and call services.
 
-Disabling `enable_mcp` removes only the App-managed `homeassistant` MCP entry. Unrelated user MCP configuration is preserved.
+Disabling `enable_mcp` removes the App-managed entries. Unrelated user MCP configuration is preserved; previous same-name resource-server configuration is restored where recorded.
 
 When enabled, the App also registers the isolated `ha_lovelace_resources` MCP server. It uses the same protected Supervisor-token helper but exposes only Lovelace resource CRUD and rollback operations. The token is not written to Codex config or MCP output. See [LOVELACE_RESOURCE_DEPLOYMENTS.md](docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) for the mandatory workflow for locally hosted custom cards.
 
@@ -83,7 +94,7 @@ mcp_servers:
 Rules:
 
 - `name` must be unique.
-- `homeassistant` is reserved for the bundled server.
+- `homeassistant` is reserved; avoid `ha_lovelace_resources`, the other App-managed server.
 - `url` must start with `http://` or `https://`.
 - `bearer_token` is optional.
 
@@ -159,7 +170,7 @@ Esc    Tab  Ctrl  Alt   Shift  📎    PgDn  Kbd↓
 | `Esc` | Sends Escape. |
 | `Tab` | Sends Tab. |
 | `Ctrl` / `Alt` / `Shift` | One-shot modifiers for the next eligible key. |
-| `📎` | Opens native iOS Photos/Camera/Files selection directly, replacing Shift Lock. |
+| `📎` | Opens native iOS Photos/Camera/Files selection directly, replacing the old Caps Lock key. |
 | `Kbd↑` | Focuses terminal input and opens the iOS software keyboard. |
 | `Kbd↓` | Hides the software keyboard and returns the terminal to its normal full-height layout. |
 | Vertical swipe | Available with `Sel` off. History navigation is gesture/step based: the terminal updates after the finger movement instead of tracking it continuously like native live scrolling. |
@@ -206,7 +217,7 @@ A matching App slug does not guarantee that two Home Assistant repositories shar
 
 ### MCP is still present after disabling it
 
-Restart the App after saving `enable_mcp: false`. The App removes its managed `homeassistant` MCP entry during configuration merge.
+Restart the App after saving `enable_mcp: false`. The App removes both managed bundled MCP entries during configuration merge while preserving unrelated settings.
 
 ### Additional MCP server is missing
 

@@ -5,12 +5,19 @@ All notable changes to this project will be documented in this file.
 ## [0.5.3] - 2026-11-28
 
 ### Added
-- Optional dedicated Lovelace resource MCP for hash-versioned local custom cards, preview/confirmation, verified readback and targeted private backup metadata.
+- Dedicated Lovelace resource MCP (`ha_lovelace_resources`), enabled by the existing `enable_mcp` option: list, set/upsert, delete and explicit rollback of local dashboard resource metadata.
+- Hash-versioned URLs, normalized-path duplicate detection, idempotent no-op and ID-preserving updates; native HA WebSocket API, no direct `.storage` writes or Core restart.
+- Preview/confirmation, verified readback, targeted root-owned private backup metadata and explicit rollback. Restore after deletion may assign a new ID; asset bytes are restored separately.
 
 ### Security
 - Isolated privileged launcher and root-owned backup trust boundary; preserve unmanaged user MCP settings.
 - Serialize cooperating helper sessions, bind every mutation to a short-lived preview and refuse observed conflicts. No automatic compensating write.
-- Native HA resource API is non-atomic across independent clients. Only perform confirmed mutations in a controlled maintenance window.
+- Native HA resource API is non-atomic across independent clients. Only perform confirmed mutations in a controlled maintenance window; pause all other resource writers and keep asset bytes unchanged. HACS/community paths, unsafe paths and symlinks are protected against mutation.
+- Confirmation is single-use, bound to operation/preimage/postimage/hash and expires after 120 seconds. Stop on uncertain results and retain the backup ID.
+
+### Validation and upgrade
+- Deployment dev.13 isolated MCP canary: all four tools discovered; create/no-op/update/readback/rollback/delete/restore/cleanup passed, 36 resources before and after. See [acceptance report](https://github.com/CaneTLOTW/ha-codex/issues/65#issuecomment-7238103644). This is Developer acceptance, not a claim of Stable installation.
+- Retains Codex CLI 0.172.0, the 0.5.1 screenshot/direct upload features, existing identity, persistent state and access settings. See [resource workflow](docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) and [0.5.3 upgrade checklist](../docs/STABLE_0_5_3_PRODUCTION_INSTALL.md).
 
 ## [0.5.2] - 2026-11-24
 
