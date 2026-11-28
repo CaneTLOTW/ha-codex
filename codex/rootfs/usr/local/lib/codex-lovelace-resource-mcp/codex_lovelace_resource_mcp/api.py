@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from urllib.parse import urlsplit, urlunsplit
 
 import websockets
@@ -26,16 +25,15 @@ def websocket_url(base_url: str) -> str:
 class HomeAssistantWebSocket:
     """One-request authenticated WebSocket client; token never enters logs or errors."""
 
-    def __init__(self, base_url: str | None = None, token: str | None = None):
-        self.base_url = base_url or os.environ.get("HA_URL", "http://supervisor/core")
-        self.token = token if token is not None else os.environ.get("HA_TOKEN", "")
+    def __init__(self, base_url: str, token: str):
+        self.token = token
         if not self.token:
-            raise HomeAssistantAPIError("HA_TOKEN is unavailable to the privileged resource helper")
-        self.url = websocket_url(self.base_url)
+            raise HomeAssistantAPIError("The private Supervisor credential is unavailable")
+        self.url = websocket_url(base_url)
 
     async def request(self, command: dict) -> object:
         try:
-            async with websockets.connect(self.url, open_timeout=10, close_timeout=2, max_size=2**20) as ws:
+            async with websockets.connect(self.url, proxy=None, open_timeout=10, close_timeout=2, max_size=2**20) as ws:
                 greeting = json.loads(await asyncio.wait_for(ws.recv(), timeout=10))
                 if greeting.get("type") != "auth_required":
                     raise HomeAssistantAPIError("Unexpected HA WebSocket authentication handshake")
@@ -50,16 +48,12 @@ class HomeAssistantWebSocket:
                     if response.get("id") != message_id:
                         continue
                     if not response.get("success"):
-                        error = response.get("error", {})
-                        message = str(error.get("message", "Home Assistant API request failed"))
-                        message = message.replace(self.token, "[redacted]")
-                        raise HomeAssistantAPIError(message[:300])
+                        raise HomeAssistantAPIError("Home Assistant rejected the resource operation")
                     return response.get("result")
         except HomeAssistantAPIError:
             raise
-        except Exception as err:
-            message = str(err).replace(self.token, "[redacted]")
-            raise HomeAssistantAPIError(f"Home Assistant WebSocket request failed: {message[:200]}") from None
+        except Exception:
+            raise HomeAssistantAPIError("Home Assistant resource WebSocket request failed") from None
 
 
 class ResourceAPI:
