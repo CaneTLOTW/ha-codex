@@ -224,6 +224,12 @@ ghcr.io/canetlotw/ha-codex:<version>
 
 Enable **Auto update** on the Codex App page if Home Assistant should install newly published App versions automatically.
 
+## Adoption statistics
+
+[Download and repository activity report](stats/adoption/README.md) — daily aggregate GitHub registry counters and trends, not unique installations. No Home Assistant telemetry. See [methodology](docs/ADOPTION_STATISTICS.md).
+
+![GHCR downloads (shared package)](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FCaneTLOTW%2Fha-codex%2Fmain%2Fstats%2Fadoption%2Fbadge.json)
+
 ## Documentation
 
 - [Home Assistant App documentation](codex/DOCS.md)
