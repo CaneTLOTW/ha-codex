@@ -156,7 +156,8 @@ grant_group_root_access /media
 if [[ "$addons_access" == "read_write" ]]; then
   grant_group_root_access /addons
 fi
-grant_group_root_access "$work_dir"
+# The working directory may be on the image or in private app data.
+# Only the explicitly mounted workspaces above receive permission grants.
 
 printf '%s' "${SUPERVISOR_TOKEN:-}" > "$CODEX_SUPERVISOR_TOKEN_FILE"
 chmod 600 "$CODEX_SUPERVISOR_TOKEN_FILE"
