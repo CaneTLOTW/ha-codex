@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-dev.13] - 2026-11-28
+
+### Security candidate — deployment validation
+- Package the hardened Lovelace resource MCP helper from PR #64 for isolated Deployment-channel runtime acceptance.
+- Preserve explicit preview confirmation, validated private backups, no automatic compensating writes, and the documented bounded non-atomic Home Assistant API contract.
+- This is a development candidate; stable promotion remains gated on the Deployment runtime acceptance.
+
 ## [0.5.0-dev.11] - 2026-11-24
 
 ### Changed (Developer only — mobile paperclip direct picker)

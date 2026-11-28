@@ -1,6 +1,6 @@
 name: Codex Deployment
 description: Experimental Codex App for Home Assistant development channel
-version: "0.5.0-dev.12"
+version: "0.5.0-dev.13"
 slug: codex
 url: https://github.com/CaneTLOTW/ha-codex
 image: ghcr.io/canetlotw/ha-codex
