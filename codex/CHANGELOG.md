@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.3] - 2026-11-28
+
+### Added
+- Optional dedicated Lovelace resource MCP for hash-versioned local custom cards, preview/confirmation, verified readback and targeted private backup metadata.
+
+### Security
+- Isolated privileged launcher and root-owned backup trust boundary; preserve unmanaged user MCP settings.
+- Serialize cooperating helper sessions, bind every mutation to a short-lived preview and refuse observed conflicts. No automatic compensating write.
+- Native HA resource API is non-atomic across independent clients. Only perform confirmed mutations in a controlled maintenance window.
+
 ## [0.5.2] - 2026-11-24
 
 ### Changed
