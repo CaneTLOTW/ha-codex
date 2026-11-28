@@ -1,0 +1,1011 @@
+{
+  "clones": {
+    "error": "HTTPError"
+  },
+  "collected_at": "2026-11-28T12:06:11.712617+00:00",
+  "packages": {
+    "aarch64-ha-codex": {
+      "daily": {
+        "2026-10-30": 45,
+        "2026-10-31": 0,
+        "2026-11-01": 0,
+        "2026-11-02": 0,
+        "2026-11-03": 30,
+        "2026-11-04": 0,
+        "2026-11-05": 0,
+        "2026-11-06": 15,
+        "2026-11-07": 0,
+        "2026-11-08": 0,
+        "2026-11-09": 0,
+        "2026-11-10": 0,
+        "2026-11-11": 15,
+        "2026-11-12": 15,
+        "2026-11-13": 15,
+        "2026-11-14": 0,
+        "2026-11-15": 0,
+        "2026-11-16": 0,
+        "2026-11-17": 0,
+        "2026-11-18": 15,
+        "2026-11-19": 0,
+        "2026-11-20": 15,
+        "2026-11-21": 12,
+        "2026-11-22": 60,
+        "2026-11-23": 120,
+        "2026-11-24": 30,
+        "2026-11-25": 0,
+        "2026-11-26": 0,
+        "2026-11-27": 15,
+        "2026-11-28": 30
+      },
+      "errors": [],
+      "total": 1509,
+      "versions": {
+        "sha256:01e40362067c46c4abe1f06790183aeb112b778a284d0c992f7ad48858746b41": {
+          "downloads": 6,
+          "tags": [
+            "0.4.24"
+          ]
+        },
+        "sha256:125bcabfa7ab9bd46f85823a9dd3630282c97879f4a54f3108e20843bf50cdb8": {
+          "downloads": 26,
+          "tags": [
+            "0.5.0"
+          ]
+        },
+        "sha256:180e29f66867ee978336018ce21d3521a77f64b83db07218edb8eda7235b808c": {
+          "downloads": 6,
+          "tags": [
+            "0.4.22"
+          ]
+        },
+        "sha256:198b9812c626a7ea7d37140117448d25c1d75d841d6ade2f0f1ed850ddab57e2": {
+          "downloads": 2,
+          "tags": [
+            "0.5.3"
+          ]
+        },
+        "sha256:1bb22b9fdbc68c290e300b4ba670579398d85ddbe81bf8065ce90747eab0564c": {
+          "downloads": 5,
+          "tags": [
+            "0.4.17"
+          ]
+        },
+        "sha256:1c83c1697e09f5504ff223c60bb8a2622d3fa3cab1f3b89fe57b9f727ef2e101": {
+          "downloads": 6,
+          "tags": [
+            "0.4.16"
+          ]
+        },
+        "sha256:2194f864aa315e9792aa25ce63b06118073b35b1ab0eeb5ef7104782eacf2de4": {
+          "downloads": 2,
+          "tags": [
+            "0.4.10-dev.1"
+          ]
+        },
+        "sha256:225b8c2cac4b839a5f5699cc23a8a650a106a943a7e64198f0da77fb612439cf": {
+          "downloads": 5,
+          "tags": [
+            "0.4.14"
+          ]
+        },
+        "sha256:23cb04989e104a762f8de9e29c3da170fcef105dd97346b4f96f4586ff97a692": {
+          "downloads": 5,
+          "tags": [
+            "0.4.10"
+          ]
+        },
+        "sha256:24ca52d0881d803f0bbc56cd69c989e7eb1109266c60d046eafd731a53f8236e": {
+          "downloads": 5,
+          "tags": [
+            "0.4.19"
+          ]
+        },
+        "sha256:2c4db6a95a4c26709c6d55a8039f3d2a72f2a82b8baf72fb7d9f9cfe32bfbb41": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.1"
+          ]
+        },
+        "sha256:2d6cc99b457447a15211c9b2ec54c788b4968b67941ddfa22ec9fdd5fdd683b4": {
+          "downloads": 2,
+          "tags": [
+            "0.4.30-dev.2"
+          ]
+        },
+        "sha256:2dc342208def7e929657841d04f4f35d0269b335b557d815a654f11c787493a1": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.13"
+          ]
+        },
+        "sha256:2f242c5bada621dc513e6d7e7f3f270b78c7526b47b7948df84908884ba84f67": {
+          "downloads": 2,
+          "tags": [
+            "0.4.10-dev.2"
+          ]
+        },
+        "sha256:2fd52cae95fe88a8f993859eca4e3c3e2bcc2f0b6a814103dc8f780462c80dc0": {
+          "downloads": 7,
+          "tags": [
+            "0.4.21"
+          ]
+        },
+        "sha256:308361d67068c5724e4f428e605e2b267027555299cfa251abf8ce0a2506981e": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.2"
+          ]
+        },
+        "sha256:337c907055703fbc75aefdc94811652abe2c8d604b7cd713984675695497ba02": {
+          "downloads": 5,
+          "tags": [
+            "0.4.34"
+          ]
+        },
+        "sha256:353505524824a888ddf35ecbef812d22d56cd746af15f76731c2ba91e1f4be29": {
+          "downloads": 5,
+          "tags": [
+            "0.4.32"
+          ]
+        },
+        "sha256:381facc7218a97f3d463428606ad494ed306bbf126b212856a97dde065cba28a": {
+          "downloads": 5,
+          "tags": [
+            "0.5.1"
+          ]
+        },
+        "sha256:3c15d5b3a93da095f03e7db1ac19f4521f6fd3152c0b2fa5a575c1d24f16094f": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.6"
+          ]
+        },
+        "sha256:3ec8bc9372cf7fd78b0ef4f582f296501b06340de449488081b115ba87795814": {
+          "downloads": 8,
+          "tags": [
+            "0.4.9"
+          ]
+        },
+        "sha256:43adc320d1d1acfb73101c35c4524a6ecf79e878e078d84467e4126c46e25742": {
+          "downloads": 2,
+          "tags": [
+            "0.4.30-dev.1"
+          ]
+        },
+        "sha256:4a857ddcd042b26051036378bbacdd93d927fcbc93634e55ab2afe1a68dfd23e": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.3"
+          ]
+        },
+        "sha256:4c5423ef37b40e831892caf99d6a710a3b5a198a9631ef17a702208f0d89de05": {
+          "downloads": 6,
+          "tags": [
+            "0.4.28"
+          ]
+        },
+        "sha256:6ceb65a5f83c8cc2b847f3f055f34d72847aec6ab026b251d21fef59daf996de": {
+          "downloads": 11,
+          "tags": [
+            "0.4.30"
+          ]
+        },
+        "sha256:70f67bf75806debea47efcfeec5bc5a9e962cdc4285e5a21c1037023fffea94a": {
+          "downloads": 5,
+          "tags": [
+            "0.4.31"
+          ]
+        },
+        "sha256:710daab46f49688f97ba626ef71a9a3fd4ccdfb8f8944def579a1f09153c53a6": {
+          "downloads": 16,
+          "tags": [
+            "0.4.15"
+          ]
+        },
+        "sha256:76e463af7b829c5f36b0655de3a1e76bb55da947476788c3bce842797680f575": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.7"
+          ]
+        },
+        "sha256:76f746325012c13a8094a83ab926129e3cc9e8642e031565210e86b42f0d2ec7": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.8"
+          ]
+        },
+        "sha256:7766594f65d23bcd5f6b9ae7e8dc63e4507bd36f33572df7485736daff25412d": {
+          "downloads": 5,
+          "tags": [
+            "0.4.29"
+          ]
+        },
+        "sha256:7ce5ec8c6a1ff74a9c9b444e27851a2071cc10f0232ac6e45cfb2179efb31dbd": {
+          "downloads": 2,
+          "tags": [
+            "0.4.27"
+          ]
+        },
+        "sha256:849ba80589434135a5b6aa1b09fab7e775c1367d80d7dec9a17f4c74380e6d95": {
+          "downloads": 5,
+          "tags": [
+            "0.4.26"
+          ]
+        },
+        "sha256:8f0cab47ff86c5436b1fd8df3fa5f305c275e8ba7441fe13ccf688036cc64ec8": {
+          "downloads": 5,
+          "tags": [
+            "0.4.33"
+          ]
+        },
+        "sha256:9d3a1019287a03eff602bbd54f8226a0ef06a5f7eda95c3a1a04201d5884b995": {
+          "downloads": 6,
+          "tags": [
+            "0.4.12"
+          ]
+        },
+        "sha256:9f60c58f944905750452f8813ca6adc42594b9396a62ffd4ed8cc53446e516fd": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.5"
+          ]
+        },
+        "sha256:bf8f2331ed9b5748c19795c802687986d30fcc625957b880a579d07376c2500f": {
+          "downloads": 11,
+          "tags": [
+            "0.5.2"
+          ]
+        },
+        "sha256:ca9ad1c7a48e85685f3fb13b3b18434dc06adcf4865ea902c496fd335e218fe5": {
+          "downloads": 6,
+          "tags": [
+            "0.4.25"
+          ]
+        },
+        "sha256:cb1e61ab43f4bd5165125d15192717940e0f6e4d31aabce699ca793865477927": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.4"
+          ]
+        },
+        "sha256:d28dfb2d3af555f1262f081867e621696ee540fe4bec58c9bce921eed35ca451": {
+          "downloads": 5,
+          "tags": [
+            "0.4.11"
+          ]
+        },
+        "sha256:da97a26917fe3f4c64a0347fc019d4f1ad518c8dcf7e7330616e6098332386ce": {
+          "downloads": 5,
+          "tags": [
+            "0.4.23"
+          ]
+        },
+        "sha256:dab42a7b69f2911bca1e05a04741c23d372f9236986a7281c019d3544eb68f3b": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.12"
+          ]
+        },
+        "sha256:e4e42d9efb7cf147f72b65c36c37d91e5e1505b311e109a1b6455a1b986c3592": {
+          "downloads": 5,
+          "tags": [
+            "0.4.35"
+          ]
+        },
+        "sha256:e73bc004371a5865b778f9d4b1d466e0c113c68cb0236b7c914d303487a7a564": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.10"
+          ]
+        },
+        "sha256:eb769c92d0bd5417192b1c00a636ced58c4b325f4c1f01973ef3ecddaf58c8c1": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.9"
+          ]
+        },
+        "sha256:ec35e96ba2b212d092c196fb45f01e357fdfb148214ecfb4b811a75c9dc902fa": {
+          "downloads": 5,
+          "tags": [
+            "0.4.13"
+          ]
+        },
+        "sha256:ec6c8cb61f10c613ce560fc415e897e892edd466efb6eb900fd688bf6037b49e": {
+          "downloads": 18,
+          "tags": [
+            "0.4.36"
+          ]
+        },
+        "sha256:ee20257c2df948ee10661caad00c0e68ced12e735aed2da31323861acc6a129f": {
+          "downloads": 5,
+          "tags": [
+            "0.4.20"
+          ]
+        },
+        "sha256:f516ebbc801848ec5bb8f1a7100f2b07580e96a924e01c32edc067f182afefbf": {
+          "downloads": 5,
+          "tags": [
+            "0.4.18"
+          ]
+        },
+        "sha256:fcb0f2c117e6ce2a43eb415f61573058bc4b2595638827f6c63eb6284648e4f6": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.11"
+          ]
+        }
+      }
+    },
+    "amd64-ha-codex": {
+      "daily": {
+        "2026-10-30": 45,
+        "2026-10-31": 0,
+        "2026-11-01": 0,
+        "2026-11-02": 0,
+        "2026-11-03": 30,
+        "2026-11-04": 0,
+        "2026-11-05": 0,
+        "2026-11-06": 15,
+        "2026-11-07": 0,
+        "2026-11-08": 0,
+        "2026-11-09": 0,
+        "2026-11-10": 0,
+        "2026-11-11": 15,
+        "2026-11-12": 15,
+        "2026-11-13": 15,
+        "2026-11-14": 0,
+        "2026-11-15": 0,
+        "2026-11-16": 0,
+        "2026-11-17": 0,
+        "2026-11-18": 15,
+        "2026-11-19": 0,
+        "2026-11-20": 15,
+        "2026-11-21": 266,
+        "2026-11-22": 60,
+        "2026-11-23": 120,
+        "2026-11-24": 30,
+        "2026-11-25": 310,
+        "2026-11-26": 0,
+        "2026-11-27": 15,
+        "2026-11-28": 30
+      },
+      "errors": [],
+      "total": 2454,
+      "versions": {
+        "sha256:08ba5c8e19d967156da4a9a06c28a0b14025380f022857b3227dce0d58e555b5": {
+          "downloads": 9,
+          "tags": [
+            "0.4.10"
+          ]
+        },
+        "sha256:0adcbaa1b665fc2b4631952456b1928d3676ff216764b95954b11168ddeef57e": {
+          "downloads": 4,
+          "tags": [
+            "0.5.0-dev.11"
+          ]
+        },
+        "sha256:0de90c5f3dd7f1b5aad0229f2acdd33ac99afffadb7c72c524dc6015e424d79d": {
+          "downloads": 10,
+          "tags": [
+            "0.4.16"
+          ]
+        },
+        "sha256:0e41dee7dcc50f5334b005a8530f6eb1c550a88791ed6040a1e3f385dfc4b15c": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.12"
+          ]
+        },
+        "sha256:1aab5b11e1b585d08e89165ace5878dbb8cb8d62834c29caa16300a3a21f701d": {
+          "downloads": 7,
+          "tags": [
+            "0.4.31"
+          ]
+        },
+        "sha256:205f5e0876dc0838a8b37154cefbf10e442eef1c468cf533dfe2fc013a083549": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.1"
+          ]
+        },
+        "sha256:22b360fdaadc93b21433cc15013552fea85e119025d5a9eea652679ff5bd3043": {
+          "downloads": 5,
+          "tags": [
+            "0.4.30-dev.2"
+          ]
+        },
+        "sha256:36501caf45ab60400d362d5d1cdcb56bb34a4185b70f00ae337a519979ee2454": {
+          "downloads": 9,
+          "tags": [
+            "0.4.13"
+          ]
+        },
+        "sha256:44e8841c3eae686842af1655fde1bae9bbb9cc63ca989b868514ca8cf0baf2ca": {
+          "downloads": 9,
+          "tags": [
+            "0.4.22"
+          ]
+        },
+        "sha256:4531518e17f73790733d9925dc366e83c95eca3c54f448d3d4f0aca748f8c10d": {
+          "downloads": 9,
+          "tags": [
+            "0.4.18"
+          ]
+        },
+        "sha256:5017601eb51b91799f19d8936a98f5c06f0fba55bf7772ee8c3282325260a584": {
+          "downloads": 7,
+          "tags": [
+            "0.4.29"
+          ]
+        },
+        "sha256:5133b10f858473044903e197b5e23688a19c121fc8c2bc0b3c90dcd2acaeeca8": {
+          "downloads": 8,
+          "tags": [
+            "0.4.10-dev.1"
+          ]
+        },
+        "sha256:5ad9100d8433028b9102d81dbbe379c46ba268cc8c3d42c928bca4d9a8985540": {
+          "downloads": 21,
+          "tags": [
+            "0.4.36"
+          ]
+        },
+        "sha256:5c708b5e017f026dd02ea00a2c875cbd7ee79042cd5cd9fb3129cbaec26bb097": {
+          "downloads": 7,
+          "tags": [
+            "0.4.34"
+          ]
+        },
+        "sha256:5cf1e4d732ef4c8af83b5c874709217cb14fd1df762366ba18af3b56258dbdfe": {
+          "downloads": 8,
+          "tags": [
+            "0.4.23"
+          ]
+        },
+        "sha256:646d33914652db19bbf7d9d691522d2f490a0503c6aed1f378096d622b2af706": {
+          "downloads": 9,
+          "tags": [
+            "0.4.25"
+          ]
+        },
+        "sha256:6710ce59a13dc5229c2cfa0d6e856687e78e64e9e498ac286accf06450851dd0": {
+          "downloads": 9,
+          "tags": [
+            "0.4.17"
+          ]
+        },
+        "sha256:68c0aff71c8c36afb3f958ca4873c6f2bc1740e1678246fd57a7cc081bcc284e": {
+          "downloads": 12,
+          "tags": [
+            "0.4.9"
+          ]
+        },
+        "sha256:700e3e9848b71beb66884cf5402a1ccf8c266d9f14ceb22380ce7df64c175446": {
+          "downloads": 9,
+          "tags": [
+            "0.4.11"
+          ]
+        },
+        "sha256:702e461324c8568b5d3724ea15d6afb7e72a4d3ce783d41e11878be96b4f0f04": {
+          "downloads": 10,
+          "tags": [
+            "0.4.12"
+          ]
+        },
+        "sha256:7311f73826317d8d1c31a7b653910fbb8d3b44c03ac18be1f5543abbeb528fea": {
+          "downloads": 9,
+          "tags": [
+            "0.4.20"
+          ]
+        },
+        "sha256:741781626361699dfbb07ebace244336f580de389fa6149c861f373b811a83b7": {
+          "downloads": 20,
+          "tags": [
+            "0.4.15"
+          ]
+        },
+        "sha256:7667335efe72e7fa63eec576dcf93401346b2a13bba490fde3116af5518dd7f9": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.4"
+          ]
+        },
+        "sha256:7a30e3acb4e5d27629868a51a86944d35d9a66f8cdadd10ab395d841d77c8281": {
+          "downloads": 9,
+          "tags": [
+            "0.4.19"
+          ]
+        },
+        "sha256:7c6176bfd9090a296febd56c7124d95b8f26b0f6e9f78988ab5427b8458cd228": {
+          "downloads": 9,
+          "tags": [
+            "0.4.14"
+          ]
+        },
+        "sha256:7c9d7be03c4651e94f42c3a169f6ac7158e31aa27bf05237071cccef6ad43aec": {
+          "downloads": 7,
+          "tags": [
+            "0.4.33"
+          ]
+        },
+        "sha256:861c9ed3712672a2170cff392d7181014aea5393b3b609435344202be2007aba": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.6"
+          ]
+        },
+        "sha256:89bd1cff3869eb46bbe90a24bb21b993609b8735d6e573a2963c18d2c9fec2c4": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.5"
+          ]
+        },
+        "sha256:8f17107c285a2ea86f524c432ae9ae6b346594ea16bf10b09e588c00a3fae9b3": {
+          "downloads": 2,
+          "tags": [
+            "0.5.3"
+          ]
+        },
+        "sha256:a22cd2a3f8d60e33a56c21c963279d909df71a5fcf45a5bf740cc3b5ad63fa4e": {
+          "downloads": 2,
+          "tags": [
+            "0.5.0-dev.13"
+          ]
+        },
+        "sha256:b5b6b152c4abffe79e376ca39e0cab7a6f841fa6389e8f10ef9dbd442a4651fb": {
+          "downloads": 13,
+          "tags": [
+            "0.4.30"
+          ]
+        },
+        "sha256:b6b8857924a44ad6ece45ecbf130d30fdd996cf8040b89d7d7e29af105506465": {
+          "downloads": 8,
+          "tags": [
+            "0.4.28"
+          ]
+        },
+        "sha256:badf87a2f53f71d3b4ae9f094660222694e8f993ee35b34a22095731ed5b2882": {
+          "downloads": 6,
+          "tags": [
+            "0.5.1"
+          ]
+        },
+        "sha256:bd58e06e9710c27664e6b30a964d5f9ad01fed4f140b959d97b22c4205fb2905": {
+          "downloads": 4,
+          "tags": [
+            "0.4.30-dev.1"
+          ]
+        },
+        "sha256:c70ca847d4f5fd09aaa94666b2ad4b74d877065444c0f8293a36f0933ab58129": {
+          "downloads": 7,
+          "tags": [
+            "0.4.32"
+          ]
+        },
+        "sha256:c9b25ae4412ee9efbe860737e44ed1a0e2117e47c05e5a691ad6b046eb43ca28": {
+          "downloads": 9,
+          "tags": [
+            "0.4.26"
+          ]
+        },
+        "sha256:cd91bce10d8dbf1d047882946231250fc4c7e09ab21c93bb7a50163a6b174cb1": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.2"
+          ]
+        },
+        "sha256:d0612ad0972936adf2d91309a3450f8861666819fad4f920dfb8b097eddd48a1": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.7"
+          ]
+        },
+        "sha256:d794bd86e73ede3fb80dee2b81b9cd0cc420723f524a4dd016ea88c64abdc908": {
+          "downloads": 4,
+          "tags": [
+            "0.4.10-dev.2"
+          ]
+        },
+        "sha256:d95ac12826df73b9c1148b044d63143529acaf621309650ba1d1883f30cbe0ae": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.3"
+          ]
+        },
+        "sha256:dc6ef1ca26a77d59af8cdf130d324e3efbfcc7b3a785b5b85e5fb861a4437dcf": {
+          "downloads": 7,
+          "tags": [
+            "0.4.35"
+          ]
+        },
+        "sha256:e22e4105fd88e16a8d84743d5ad8d7e60dc4e7ba23ebc83cfcfda048bc02c856": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.10"
+          ]
+        },
+        "sha256:e5041f7690dda8f7a0d2129f7d11d90ea3d3fdeae2c064babbd52398545c7044": {
+          "downloads": 12,
+          "tags": [
+            "0.4.21"
+          ]
+        },
+        "sha256:eb787e7900a25fc0f0973dee6fd4104dfce4d9e6f5f2c5111670897b5755736c": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.9"
+          ]
+        },
+        "sha256:ec642e030aa334f1481e3bb20d666614939c071ae05826aceb87c243f52af40b": {
+          "downloads": 4,
+          "tags": [
+            "0.4.27"
+          ]
+        },
+        "sha256:ede470049a807cda59cd56d832479e8695e5227ed81eea46710a9458d68285ae": {
+          "downloads": 9,
+          "tags": [
+            "0.4.24"
+          ]
+        },
+        "sha256:f0fdd7991f824d4884c9d25ce3e1ffe3d5b228edbac3f6e5819f793def07c9e1": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.8"
+          ]
+        },
+        "sha256:f3b063686f1870dcedd634b35ca0c7b0ab2bc616df1fd220f60796a321afdd22": {
+          "downloads": 27,
+          "tags": [
+            "0.5.0"
+          ]
+        },
+        "sha256:f407b50d33656b29eed8a9b867f557a4ca03c43668112f10b69b2f6fa2984ee1": {
+          "downloads": 13,
+          "tags": [
+            "0.5.2"
+          ]
+        }
+      }
+    },
+    "ha-codex": {
+      "daily": {
+        "2026-10-30": 80,
+        "2026-10-31": 76,
+        "2026-11-01": 4,
+        "2026-11-02": 14,
+        "2026-11-03": 11,
+        "2026-11-04": 27,
+        "2026-11-05": 14,
+        "2026-11-06": 74,
+        "2026-11-07": 40,
+        "2026-11-08": 17,
+        "2026-11-09": 0,
+        "2026-11-10": 0,
+        "2026-11-11": 60,
+        "2026-11-12": 93,
+        "2026-11-13": 77,
+        "2026-11-14": 53,
+        "2026-11-15": 23,
+        "2026-11-16": 0,
+        "2026-11-17": 5,
+        "2026-11-18": 35,
+        "2026-11-19": 69,
+        "2026-11-20": 31,
+        "2026-11-21": 144,
+        "2026-11-22": 46,
+        "2026-11-23": 84,
+        "2026-11-24": 81,
+        "2026-11-25": 56,
+        "2026-11-26": 12,
+        "2026-11-27": 6,
+        "2026-11-28": 11
+      },
+      "errors": [],
+      "total": 2974,
+      "versions": {
+        "sha256:0113deecf482bd1750d82193590ca3ca4dc746ff9271ad7cf20bde21eca11693": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.6"
+          ]
+        },
+        "sha256:02f3fd60a80ee2cb69c94eeb2d0a82fe3c83a671080cd82aeb83ff3f3a80e877": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.8"
+          ]
+        },
+        "sha256:08b1aed57971dabe412a41ead32a87bda29dc2e2d309b5b0e669be550affdc02": {
+          "downloads": 26,
+          "tags": [
+            "0.4.24"
+          ]
+        },
+        "sha256:0dd47be557e780d2cc750b915857b6965733ac4c92ca1ff904ab82fcb83cc613": {
+          "downloads": 82,
+          "tags": [
+            "0.4.30"
+          ]
+        },
+        "sha256:1384e5dadf310205bc0422469893eb668b8234510fd36e884d950299fe0ae7f2": {
+          "downloads": 14,
+          "tags": [
+            "0.4.28"
+          ]
+        },
+        "sha256:143b7aa635af5b2041c1919a33e41165455df0af0e4641395a43495c5c75d780": {
+          "downloads": 47,
+          "tags": [
+            "0.5.2"
+          ]
+        },
+        "sha256:1d5671a4738550d8ad87692a28187e9162c00abeae41b30a6b5863d963a999a1": {
+          "downloads": 14,
+          "tags": [
+            "0.4.9"
+          ]
+        },
+        "sha256:1d838ee9892fa2e155e3c08d8b7ecedd9405aa2d87dad7568035231517d37e93": {
+          "downloads": 50,
+          "tags": [
+            "0.4.33"
+          ]
+        },
+        "sha256:225af2ccb6badb0ebdd5fe2529f0877ded8585931fd4a454320d99652f4ac3a8": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.2"
+          ]
+        },
+        "sha256:269f096809f73cddaa6dcfc8eaefb126fc4da7e71ff6c335391a09f825b6c21a": {
+          "downloads": 22,
+          "tags": [
+            "0.4.15"
+          ]
+        },
+        "sha256:2a30cf41ca50cab637fa585bffb22012506f480059732344759b1edeebfcbc07": {
+          "downloads": 5,
+          "tags": [
+            "0.4.30-dev.2"
+          ]
+        },
+        "sha256:2a55242608645567a90b4c22fac3a829074b7beadb77fd56848a1e614a9be9da": {
+          "downloads": 35,
+          "tags": [
+            "0.4.13"
+          ]
+        },
+        "sha256:2ce05cd11718debaad3eb7b318a3831bb4498e79926d2d5ed77b7cf8b79bc589": {
+          "downloads": 63,
+          "tags": [
+            "0.4.26"
+          ]
+        },
+        "sha256:36f2932577e51367be9011d32f35e8ce3e2a57ebc80320025a1c9f67b11f2234": {
+          "downloads": 1,
+          "tags": [
+            "0.4.30-dev.1"
+          ]
+        },
+        "sha256:3e0734bc33373bb31813ed6fb7576cb0946086033c93950131fa2b8cddf80104": {
+          "downloads": 64,
+          "tags": [
+            "0.4.27"
+          ]
+        },
+        "sha256:3e5f1233dc7b21798e910b9344359ec3ca3d536b508f0018f5c603307d65d1b9": {
+          "downloads": 4,
+          "tags": [
+            "0.5.0-dev.12"
+          ]
+        },
+        "sha256:41c5d4dec47c8051917f6fbb7684b9d4ad25b0d974e312275678f162ecf14d43": {
+          "downloads": 32,
+          "tags": [
+            "0.4.11"
+          ]
+        },
+        "sha256:42c369a6f0e8c19450adc656e59cdfbe07e9e0cea9059d45a1f1a6da51c6a19d": {
+          "downloads": 26,
+          "tags": [
+            "0.4.16"
+          ]
+        },
+        "sha256:56254a7fb2e1645c6606d1f26ed285a67c4fe9339a67240c7148f04580ddf720": {
+          "downloads": 3,
+          "tags": [
+            "0.5.3"
+          ]
+        },
+        "sha256:5b4fe28692b650f882e09fce9040551003a7c12fdcf59685ef67dd9cffd102e4": {
+          "downloads": 58,
+          "tags": [
+            "0.4.34"
+          ]
+        },
+        "sha256:5d618900ca1580d28abb205d7ef55556d8407281942bb6dd17fcc18504afee1a": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.13"
+          ]
+        },
+        "sha256:5f3f2bd1012be0d18f7e182a1b16224ecfd231b3c3de228f196c80fe6819e914": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.7"
+          ]
+        },
+        "sha256:641f8983ad9496c2a3b92ff3b8fbd2c773157c577139953302d62856a4eb1148": {
+          "downloads": 71,
+          "tags": [
+            "0.4.36"
+          ]
+        },
+        "sha256:6ce042e057b8a10caa4f389201652b32247de78e4cf56da5ec9e7e0e93f642e0": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.11"
+          ]
+        },
+        "sha256:71bb07749812148976c8182d0a0c3ed417b454e361404d81fe1e9e3a4ab9da9f": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.4"
+          ]
+        },
+        "sha256:75b62fb9db3f283ffdb1afc8148e14017753d1095c74dab80ce2e067ee7c2999": {
+          "downloads": 43,
+          "tags": [
+            "0.4.21"
+          ]
+        },
+        "sha256:807b047d8e7d3d0b6e4db52bb385940d35f465623d1b9ad481f4dd350d684451": {
+          "downloads": 52,
+          "tags": [
+            "0.4.35"
+          ]
+        },
+        "sha256:828b3ae0368b53c7e1e7069f8ccfe8607f7cf7cd87e03423921d658e8090b09f": {
+          "downloads": 19,
+          "tags": [
+            "0.4.20"
+          ]
+        },
+        "sha256:87586f2999178c9f5271c0069139c1dbb3be02ef67f4fe51ce8de9a95a21ef94": {
+          "downloads": 26,
+          "tags": [
+            "0.5.0"
+          ]
+        },
+        "sha256:87d591946e60d191bfa5dcc3b5fcb135c2bc415a6ec0cc05ba089eacabd16891": {
+          "downloads": 14,
+          "tags": [
+            "0.4.10"
+          ]
+        },
+        "sha256:88e8860ba83857e88436499beda61959a9dfb93974eded871a5e066f4a6081c7": {
+          "downloads": 6,
+          "tags": [
+            "0.4.10-dev.2"
+          ]
+        },
+        "sha256:8e739a9f07530da5703c2a5b5bd99e79460167d2ca7977474a66989d4642dfb1": {
+          "downloads": 17,
+          "tags": [
+            "0.4.12"
+          ]
+        },
+        "sha256:92c447d0750c98a6f880bf092f072b4f768ce0504644cc8e1a6066574e420d3b": {
+          "downloads": 17,
+          "tags": [
+            "0.4.17"
+          ]
+        },
+        "sha256:94f9d2156a90a8778d35d5e9492b42d363ddfd4f6d4552a0fcaadf89bc1967f8": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.5"
+          ]
+        },
+        "sha256:95ea5682a35894efc3885919b99b9ff04a3d4c8309241e9f4093c471b75ff50e": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.1"
+          ]
+        },
+        "sha256:a0beb12b89bd734b4af952bdf61fd849b3f6a88821362b74d08b82de8b39ef5a": {
+          "downloads": 62,
+          "tags": [
+            "0.4.25"
+          ]
+        },
+        "sha256:aac060acecd8ac31eff0f597078aa22377dd47c708717c9b0b4958c6d9df1562": {
+          "downloads": 15,
+          "tags": [
+            "0.4.18"
+          ]
+        },
+        "sha256:b02f630c1c01af2bbdfe7277c9b10751d1ed0cb8a05cb36500208c665f5e101a": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.3"
+          ]
+        },
+        "sha256:b35caf1e88d3984eaf09f84338617f90d073c75c74c2d79878515c70e9e24c71": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.10"
+          ]
+        },
+        "sha256:b7f7d8ec8eaf9bccef0b154fd4a42d0807c02c3a2d1d97e65351e33dc586889f": {
+          "downloads": 17,
+          "tags": [
+            "0.5.1"
+          ]
+        },
+        "sha256:ba32eb174ad0c8e77a4ab312a1bbaabbfbd29f2867489db396106323659baff1": {
+          "downloads": 31,
+          "tags": [
+            "0.4.14"
+          ]
+        },
+        "sha256:c3b162f0856a155e7d5c46992c6980b7852af1a881c2427658e7457a7f46b28f": {
+          "downloads": 25,
+          "tags": [
+            "0.4.23"
+          ]
+        },
+        "sha256:c781737846ee465eb5f516998de62ff935b9e72f9888798d83de1da6e1261c54": {
+          "downloads": 59,
+          "tags": [
+            "0.4.31"
+          ]
+        },
+        "sha256:d6087a11852e9fa0748ee1cb1af689859f65c45d3a2dfa5f840ea6faa099015a": {
+          "downloads": 23,
+          "tags": [
+            "0.4.19"
+          ]
+        },
+        "sha256:e3cea9f4b69216d85340dba62c6f644580c0e36e9722b0c58b1fe633cfbfdd42": {
+          "downloads": 39,
+          "tags": [
+            "0.4.32"
+          ]
+        },
+        "sha256:e8256303478a72f3ceeccd95301e5bf606676bb78310cdeb7501245f5abafa95": {
+          "downloads": 6,
+          "tags": [
+            "0.4.29"
+          ]
+        },
+        "sha256:eed6db455617d9f906b757250985ad69baa856b4fa0057cbeff95287ba654916": {
+          "downloads": 3,
+          "tags": [
+            "0.5.0-dev.9"
+          ]
+        },
+        "sha256:f0cdae1b9f6b3c8a499be1ac043a88c2b496ece66c735db11927822299e8ad0d": {
+          "downloads": 5,
+          "tags": [
+            "0.4.10-dev.1"
+          ]
+        },
+        "sha256:f5248d1a5ecc3b35cb1c952368c232291982dcf8e20959a0b3296ddba5abaf08": {
+          "downloads": 38,
+          "tags": [
+            "0.4.22"
+          ]
+        }
+      }
+    }
+  },
+  "repo": {
+    "forks": 1,
+    "stars": 3
+  },
+  "views": {
+    "error": "HTTPError"
+  }
+}
