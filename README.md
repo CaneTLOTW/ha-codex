@@ -8,17 +8,27 @@ Run OpenAI Codex from the Home Assistant sidebar with a maintained, image-pinned
 
 This repository publishes one Home Assistant App: **Codex**. It provides a browser terminal inside Home Assistant, starts in the Home Assistant configuration directory, and can connect Codex to Home Assistant and additional services through MCP.
 
-## Stable 0.5.1 — direct screenshot Copy & Paste and file uploads
+## Stable 0.5.3 — Lovelace resource MCP and direct uploads
 
-**The biggest improvement in this release is screenshot paste via Ctrl+V directly into a running Codex session.** Take a Windows screenshot with **Win+Shift+S**, click the active Home Assistant Codex terminal and press **Ctrl+V**. The screenshot is sent over the already authenticated Home Assistant Ingress WebSocket, appears as a real image attachment such as `[Image #1]`, and Codex can analyze its contents. **No Ctrl+C, no shell upload command, no manual file saving and no extra server.** Normal text Ctrl+V is unchanged.
+Stable 0.5.3 adds a dedicated **Lovelace resource-management MCP** alongside the existing Home Assistant MCP. With `enable_mcp: true` (the default), Codex can list local dashboard resources, preview and confirm registration/update or deletion, verify the result and explicitly roll back targeted resource metadata. This is particularly useful for deploying custom dashboard JavaScript cards without editing Home Assistant's internal storage or restarting Core.
+
+The four tools are `ha_config_list_dashboard_resources`, `ha_config_set_dashboard_resource`, `ha_config_delete_dashboard_resource` and `ha_config_rollback_dashboard_resource`. Assets must already be installed under `/homeassistant/www`; registrations use release and SHA-256 versioning, preserve existing resource IDs on update, reject duplicate paths and protect HACS/community resources from mutation. Changes require a same-session, single-use preview confirmation within 120 seconds and explicit operator approval. Targeted backups are private; restoring deleted metadata can allocate a new ID, and restoring old asset bytes is a separate step.
+
+**Safety boundary:** the Supervisor token stays outside the interactive shell, and the helper cannot guarantee atomic changes across independent HA clients. Pause other resource writers (including the other Codex App), keep the asset unchanged during the operation, and stop on uncertain results or conflicts; never automatically retry or compensate.
+
+See the [resource deployment guide](codex/docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) and [changelog](codex/CHANGELOG.md). The 0.5.3 candidate retains Codex CLI 0.172.0 from 0.5.2 and the proven terminal improvements below.
+
+### Screenshot Copy & Paste and file uploads (introduced in 0.5.1)
+
+**Paste screenshots via Ctrl+V directly into a running Codex session.** Take a Windows screenshot with **Win+Shift+S**, click the active Home Assistant Codex terminal and press **Ctrl+V**. The screenshot is sent over the already authenticated Home Assistant Ingress WebSocket, appears as a real image attachment such as `[Image #1]`, and Codex can analyze its contents. **No Ctrl+C, no shell upload command, no manual file saving and no extra server.** Normal text Ctrl+V is unchanged.
 
 **Files and folders are equally easy:** on desktop, the slim collapsible Upload bar offers images, files, folders and drag-and-drop. On iPhone, a **📎 paperclip** in the original 2×8 keyboard toolbar replaces Caps Lock and opens Apple's native Photos/Camera/Files chooser in one tap—without an extra mobile drawer. Terminal selection, paging and keyboard show/hide remain.
 
 Uploads are stored privately in the App's persistent `.codex/uploads` directory (10 MiB per file, 24 files per selection); they **are not automatically removed**. Ordinary files are added as paths for Codex to read on request. New screenshot paste and direct upload switches default ON; legacy `trzsz` remains optional and OFF by default.
 
-The Stable App stays named **Codex**, preserves its slug, boot, auth and persistent state, and retains the earlier SQLite, reconnect and launcher fixes. **New security visibility:** public configuration folders of other Home Assistant Apps are mounted read-only as `/app_configs`; `app_configs_visibility` affects Codex guidance only, not mount access. Review before updating. Remote Control remains optional and OFF by default.
+The Stable App stays named **Codex**, preserves its slug, boot, auth and persistent state, and retains the earlier SQLite, reconnect and launcher fixes. **Security visibility since 0.5.1:** public configuration folders of other Home Assistant Apps are mounted read-only as `/app_configs`; `app_configs_visibility` affects Codex guidance only, not mount access. Review before updating. Remote Control remains optional and OFF by default.
 
-Update through **Settings → Apps → App Store** (not the HACS Marketplace). The separate **Codex Deployment** App is unaffected. Detailed [0.5.1 release notes](codex/CHANGELOG.md) and the [production upgrade checklist](docs/STABLE_0_5_1_PRODUCTION_INSTALL.md) are available here.
+Update through **Settings → Apps → App Store** (not the HACS Marketplace). The separate **Codex Deployment** App is unaffected. See [release notes](codex/CHANGELOG.md) and the [0.5.3 upgrade checklist](docs/STABLE_0_5_3_PRODUCTION_INSTALL.md).
 
 ## Automatic Codex CLI updates
 
@@ -135,12 +145,15 @@ This project is a **Home Assistant App** (formerly called an add-on), not a cust
 - Automated Codex CLI/model-catalog tracking and image publishing.
 - Direct access to `/homeassistant`, `/share`, and `/media`.
 - Read-only access to `/ssl` and `/backup`.
-- Bundled Home Assistant MCP integration for entity lookup and service calls.
+- Bundled Home Assistant MCP for entity lookup and service calls, plus the dedicated local Lovelace resource MCP with preview, confirmation, readback and rollback.
+- Direct PNG screenshot paste, desktop file/folder upload and iOS native paperclip picker over authenticated ingress.
+- Automatic WebSocket reconnect, optional tmux session persistence and private SQLite scratch space.
+- Static read-only `/app_configs` visibility and separate local `/addons` sandbox policy; see the security notes above.
 - Optional additional remote Streamable HTTP MCP servers.
 - Optional environment variables for Codex/MCP sessions.
 - Persistent Codex authentication and settings under `/data/codex-home`.
 - Model, sandbox, approval, MCP, terminal theme, and session-persistence controls in the Home Assistant UI.
-- Touch-friendly two-row mobile terminal controls with `Enter`, `Esc`, `Tab`, one-shot modifiers, Shift Lock, arrows, `Sel`, page navigation, and keyboard controls.
+- Touch-friendly two-row mobile terminal controls with `Enter`, `Esc`, `Tab`, one-shot modifiers, paperclip upload, arrows, `Sel`, page navigation, and keyboard controls.
 - Native iOS text selection/copy/paste through the opt-in `Sel` mode, while normal terminal input remains optimized for touch.
 - iOS software-keyboard avoidance that keeps the active terminal prompt and toolbar above the keyboard.
 - Mobile swipe navigation and tmux copy-mode page navigation.
@@ -192,7 +205,9 @@ Credentials that you explicitly configure for an additional MCP server or as an 
 - Access: `workspace`.
 - Approval policy: `on-request`.
 - Session persistence: off by default; previous Codex conversations remain available through `codex resume`.
-- Bundled Home Assistant MCP: on.
+- Bundled Home Assistant and Lovelace resource MCP: on.
+- Screenshot paste and direct file upload: on; legacy trzsz and Remote Control: off.
+- Local App source access: `read_only`; `/app_configs` guidance hidden by default (not an access control).
 - Codex CLI updates: automatically delivered through Home Assistant App versions, not runtime npm updates.
 
 Use `full_access` only when broad local access inside the App container is intended. Use `codex_approval_policy: never` only when autonomous execution without per-action approval prompts is intended.
@@ -213,6 +228,9 @@ Enable **Auto update** on the Codex App page if Home Assistant should install ne
 
 - [Home Assistant App documentation](codex/DOCS.md)
 - [Detailed repository guide](codex/README.md)
+- [Lovelace resource deployment](codex/docs/LOVELACE_RESOURCE_DEPLOYMENTS.md)
+- [Stable 0.5.3 upgrade and rollback](docs/STABLE_0_5_3_PRODUCTION_INSTALL.md)
+- [Agent workflow](docs/AGENT_WORKFLOW.md)
 - [Migration notes](MIGRATION.md)
 - [ttyd mobile-control implementation notes](codex/ttyd-mobile-keys/README.md)
 

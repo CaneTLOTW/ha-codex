@@ -108,9 +108,11 @@ RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g @openai/codex@${CODEX_VERSION
     && rm -rf /tmp/npm-cache
 
 RUN pip3 install --no-cache-dir --break-system-packages \
-        hass-mcp \
+        hass-mcp==0.6.2 \
+        mcp==1.30.0 \
         PyYAML \
         yamllint \
+        websockets==17.4 \
         trzsz==1.1.7 \
     && trz -v \
     && tsz -v \
@@ -153,6 +155,8 @@ COPY rootfs/ /
 RUN chmod +x \
     /usr/local/bin/hass-mcp-wrapper \
     /usr/local/bin/hass-mcp-root-helper \
+    /usr/local/bin/lovelace-resource-mcp-wrapper \
+    /usr/local/bin/lovelace-resource-mcp-root-helper \
     /usr/local/bin/ha-readonly \
     /usr/local/bin/ha-readonly-root-helper \
     /usr/local/bin/codex-merge-config \
@@ -163,6 +167,7 @@ RUN chmod +x \
     /usr/local/bin/codex-session \
     /usr/local/bin/codex-remote-control \
     /usr/local/bin/codex-start \
+    && /usr/local/bin/python3 -IB -c 'from mcp.server.fastmcp import FastMCP; import websockets' \
     && chmod 440 /etc/sudoers.d/codex-hass-mcp
 
 COPY <<'EOF' /etc/tmux.conf

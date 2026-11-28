@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec /usr/bin/sudo /usr/local/bin/lovelace-resource-mcp-root-helper

@@ -12,13 +12,13 @@ Tracking: #14. This is an optional project workflow; neither a Git repository no
 | `/addons` | Local App source trees: host-level RW mount, Codex access controlled by `addons_access` |
 | `/data` | Persistent private App data; current Codex state lives under `/data/codex-home` |
 
-**Caution:** `addons_access: read_only` is enforced by the Codex sandbox/launch policy, not by a read-only mount on the host. A shell with broader privileges is not equivalent to an enforced sandbox. `addons_access: read_write` grants broad access to local App sources. Other apps' configuration directories are **not automatically mounted**.
+**Caution:** `addons_access: read_only` is enforced by the Codex sandbox/launch policy, not by a read-only mount on the host. A shell with broader privileges is not equivalent to an enforced sandbox. `addons_access: read_write` grants broad access to local App sources. Since Stable 0.5.1, public configuration directories of other Apps are statically mounted read-only at `/app_configs`. `app_configs_visibility` only controls guidance; files can still be read when hidden. Treat credentials as sensitive and never disclose them.
 
 The container's own unmounted/temporary changes are ephemeral. Use managed persistent paths when the change must survive an image update.
 
 ## Tools built into the image
 
-Codex CLI, Bash, Python 3.13, Node/npm, Git/`gh`, `ssh` (client), `curl`, `jq`, `yq`, `yamllint`, `rg`, `sqlite3`, `mosquitto_pub`/`mosquitto_sub`, `dig`, `nc`, `tree`, `rsync`, `tmux`, `7z`, `zip` and `unzip` are part of the current stable image. Home Assistant MCP is available when enabled. The `ha-readonly` helper permits `core info`, `core check` and `core logs` only; the interactive user does not receive the raw Supervisor token. No inbound SSH server is included.
+Codex CLI, Bash, Python 3.13, Node/npm, Git/`gh`, `ssh` (client), `curl`, `jq`, `yq`, `yamllint`, `rg`, `sqlite3`, `mosquitto_pub`/`mosquitto_sub`, `dig`, `nc`, `tree`, `rsync`, `tmux`, `7z`, `zip` and `unzip` are part of the current stable image. Home Assistant MCP and the dedicated [Lovelace resource MCP](../codex/docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) are available when enabled. The latter requires a reviewed preview/confirmation and paused competing writers for mutation. The `ha-readonly` helper permits `core info`, `core check` and `core logs` only; the interactive user does not receive the raw Supervisor token. No inbound SSH server is included.
 
 ## Safe iterative workflow
 

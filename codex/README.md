@@ -4,13 +4,22 @@ Codex App puts the OpenAI Codex CLI inside Home Assistant so you can inspect, ed
 
 For the Home Assistant App documentation shown in the App UI, see [DOCS.md](DOCS.md).
 
-## What's new in Stable 0.5.1
+## What's new in Stable 0.5.3
+
+Stable 0.5.3 adds a dedicated **Lovelace resource-management MCP** alongside the existing Home Assistant MCP. With `enable_mcp: true` (the default), Codex can list local dashboard resources, preview and confirm registration/update or deletion, verify the result and explicitly roll back targeted resource metadata. This is particularly useful for deploying custom dashboard JavaScript cards without editing Home Assistant's internal storage or restarting Core.
+
+The four tools are `ha_config_list_dashboard_resources`, `ha_config_set_dashboard_resource`, `ha_config_delete_dashboard_resource` and `ha_config_rollback_dashboard_resource`. Assets must already be installed under `/homeassistant/www`; registrations use release and SHA-256 versioning, preserve existing resource IDs on update, reject duplicate paths and protect HACS/community resources from mutation. Changes require a same-session, single-use preview confirmation within 120 seconds and explicit operator approval. Targeted backups are private; restoring deleted metadata can allocate a new ID, and restoring old asset bytes is a separate step.
+
+**Safety boundary:** the Supervisor token stays outside the interactive shell, and the helper cannot guarantee atomic changes across independent HA clients. Pause other resource writers (including the other Codex App), keep the asset unchanged during the operation, and stop on uncertain results or conflicts; never automatically retry or compensate.
+
+See [Lovelace resource deployment](docs/LOVELACE_RESOURCE_DEPLOYMENTS.md) for exact operation and rollback instructions. Codex CLI remains 0.172.0. The 0.5.1 terminal improvements remain available:
+
 
 **Paste screenshots directly into running Codex with Ctrl+V.** After taking a Windows screenshot (for example with Win+Shift+S), press Ctrl+V in the Home Assistant terminal and see an image attachment like `[Image #1]`. Codex can read the actual screenshot without exiting to the shell, running an upload command, or manually saving an intermediate file. Ordinary text paste remains supported.
 
 On desktop, a collapsible upload dock handles images, files, folders and drag-and-drop. On iPhone, tap the **📎 paperclip** at the original Caps Lock key position to launch Apple's native Photos/Camera/Files chooser directly. No extra custom upload panel. Files are stored privately (10 MiB per file; up to 24 per selection) and persist until manually removed. For non-image files, ask Codex to open the inserted path.
 
-Clipboard screenshots and direct file uploads are ON by default; legacy `trzsz` and Remote Control are optional and OFF by default. Review the additional read-only `/app_configs` mount of other Apps' public configuration folders. See the detailed [0.5.1 changelog](CHANGELOG.md) and [production upgrade checklist](../docs/STABLE_0_5_1_PRODUCTION_INSTALL.md).
+Clipboard screenshots and direct file uploads are ON by default; legacy `trzsz` and Remote Control are optional and OFF by default. Review the additional read-only `/app_configs` mount of other Apps' public configuration folders. See the detailed [changelog](CHANGELOG.md) and [0.5.3 production upgrade checklist](../docs/STABLE_0_5_3_PRODUCTION_INSTALL.md).
 
 
 ## How It Works
@@ -21,7 +30,7 @@ Clipboard screenshots and direct file uploads are ON by default; legacy `trzsz` 
 4. Codex state is persisted under `/data/codex-home/users/anonymous/.codex`.
 5. Managed defaults are merged into `~/.codex/config.toml` without deleting unrelated user configuration.
 6. The App generates `~/.codex/AGENTS.md` with Home Assistant path and MCP guidance.
-7. The bundled `homeassistant` MCP server is added when `enable_mcp` is enabled.
+7. The bundled `homeassistant` and `ha_lovelace_resources` MCP servers are managed when `enable_mcp` is enabled.
 8. Additional remote Streamable HTTP MCP servers can be managed from App options.
 9. Touch-capable mobile clients get a two-row terminal key bar, page navigation, keyboard controls and keyboard avoidance; native `Sel` selection mode is currently Apple-specific. Narrow desktop windows stay on the desktop interaction path.
 
@@ -56,6 +65,8 @@ Codex caches the login in its persistent home.
 | `/media` | Media files | read-write |
 | `/ssl` | SSL certificates | read-only |
 | `/backup` | Backups | read-only |
+| `/addons` | Local App source trees | Supervisor RW mount; Codex launch/sandbox policy defaults to `read_only` |
+| `/app_configs` | Other Apps' public configurations | static read-only; guidance switch does not revoke access |
 
 When documentation or a prompt refers to Home Assistant Core `/config`, use `/homeassistant` inside this App.
 
@@ -152,7 +163,13 @@ The mobile implementation is kept in `ttyd-mobile-keys/ttyd-1.7.7-mobile-keys.pa
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `enable_mcp` | `true` | Manage the bundled `homeassistant` MCP server |
+| `enable_mcp` | `true` | Manage both bundled MCP servers |
+| `remote_control_enabled` | `false` | Optional native Remote Control app-server; pairing acceptance pending |
+| `file_transfer_enabled` | `false` | Legacy trzsz shell transfer |
+| `clipboard_image_paste` | `true` | Direct PNG clipboard screenshot paste |
+| `direct_file_upload` | `true` | Desktop and mobile upload controls |
+| `app_configs_visibility` | `hidden_from_guidance` | Guidance only, not filesystem access control |
+| `addons_access` | `read_only` | Local App source sandbox/launch policy |
 | `terminal_font_size` | `14` | Web-terminal font size, clamped to `10-24` |
 | `terminal_theme` | `dark` | Dark or light terminal theme |
 | `working_directory` | `/homeassistant` | Starting directory |
@@ -169,7 +186,7 @@ When `enable_mcp` is `true`, the App manages a `homeassistant` MCP entry using `
 
 The Home Assistant Supervisor token is not exported into the interactive shell. It is written to a protected runtime file and used only through the privileged helper path for the bundled Home Assistant MCP server.
 
-An explicit `enable_mcp: false` is preserved. Disabling the option removes the App-managed `homeassistant` MCP entry rather than silently replacing `false` with the default `true`.
+The dedicated `ha_lovelace_resources` server is also managed through this option. An explicit `enable_mcp: false` is preserved; disabling removes the managed entries and preserves unrelated user configuration, including restoration of a previous same-name resource server where recorded. Avoid both managed names for additional MCP servers.
 
 ## Additional MCP Servers
 
@@ -185,7 +202,7 @@ mcp_servers:
 Rules:
 
 - names must be unique;
-- `homeassistant` is reserved;
+- `homeassistant` is reserved; do not reuse `ha_lovelace_resources` (managed resource server);
 - URLs must begin with `http://` or `https://`;
 - bearer tokens are optional.
 
@@ -277,7 +294,7 @@ Read [../MIGRATION.md](../MIGRATION.md) before moving an existing installation b
 
 ### MCP remains enabled after switching it off
 
-Save `enable_mcp: false` and restart the App. Current versions preserve the explicit false value and remove the managed bundled MCP entry.
+Save `enable_mcp: false` and restart the App. Both managed bundled entries are disabled; unrelated user MCP entries are preserved.
 
 ### An additional MCP server does not appear
 

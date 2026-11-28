@@ -1,0 +1,36 @@
+# Lovelace custom-card resource deployment
+
+The Codex App provides a dedicated `ha_lovelace_resources` MCP server when its existing `enable_mcp` option is enabled. It is deliberately separate from the broad Home Assistant service MCP surface and exposes only:
+
+- `ha_config_list_dashboard_resources`
+- `ha_config_set_dashboard_resource`
+- `ha_config_delete_dashboard_resource`
+- `ha_config_rollback_dashboard_resource`
+
+The server calls Home Assistant's authenticated native WebSocket resource API. The dedicated root helper accepts no arguments, starts an isolated interpreter from the image and discards the caller's environment. The server reads the Supervisor token from the private App runtime directory. It uses the token only to authenticate to the fixed Supervisor endpoint. It uses the API to manage Lovelace storage.
+
+## Required deployment sequence
+
+1. Install the JavaScript asset under `/homeassistant/www/<project>/` using the project's reviewed deployment procedure. This service only registers an already installed file.
+2. Compute the exact URL from release and file bytes:
+
+   ```text
+   /local/<project>/<asset>.js?v=<release>-<first-12-hex-of-SHA256>
+   ```
+
+3. Call `ha_config_set_dashboard_resource` first with the path and `release`, leaving `dry_run=true`. It computes the hash from the file under `www`, checks the supplied version/hash if a versioned URL was supplied, refuses path traversal/external resources/HACS paths, and reports whether the operation would create or update.
+4. If the preview says `unchanged`, no registration write is needed. Otherwise pause other writers of the same resource, obtain operator approval for the non-atomic operation, and call the same tool with `dry_run=false` and its returned `non_atomic_confirmation` in the same MCP session within 120 seconds. It matches by normalized file path, refuses multiple registrations, does nothing if URL/type already match, and updates the existing ID when only the release/hash changes. The confirmation is single use and bound to the operation, exact preimage, intended postimage and file SHA-256. A changed resource or asset requires a fresh preview. Do not silently retry a conflict.
+5. Before a write, the server stores the affected resource's preimage and intended postimage under `/data/codex-managed/lovelace-resource-backups/`, with root ownership and directory/file permissions 0700/0600. It checks that the preimage is still current, issues one write, records HA's acknowledgement and verifies ID, URL and type. A failure returns the backup ID without issuing a compensating write. Inspect the registry before making another change.
+6. Use `ha_config_list_dashboard_resources` for readback. Its output redacts query values whose parameter names look credential-like. Verify unrelated resources, especially HACS resources, are unchanged.
+7. If rollback is needed, pause other writers of the same resource and preview with `ha_config_rollback_dashboard_resource(backup_id=..., dry_run=true)`. Review the live state and proposed restore with the operator. After approval, pass `dry_run=false` and the returned `non_atomic_confirmation` in the same MCP session within 120 seconds. The confirmation is single use and bound to the previewed resource and asset. Start again with a fresh preview if the state changes. `manual_review_required` means the original write was unacknowledged and the server offers no write confirmation. Delete also requires a fresh preview and the corresponding single-use confirmation. The tools block mutations of `/local/community/` and `/hacsfiles/`.
+8. Refresh the dashboard/browser cache after registration. A Home Assistant Core restart is not part of this workflow.
+
+The server validates the current hash for new registrations. It accepts canonical local paths with regular assets and rejects symlinks. Backups contain only the targeted local resource. The server rejects existing URLs with query parameters other than a simple `v` cache key. It checks backup ownership, ancestry and metadata before using a record. Rollback restores registry metadata. A matching old asset version requires a separate file rollback. Restoring a deleted resource creates a new ID through the native API.
+
+The native API provides no atomic conditional write. All create/update/delete/rollback writes require a bound, short-lived preview. The helper serializes its own sessions via an OS file lock under the private App data directory; the lock covers the read/backup/write/readback sequence. It does not cover another App installation with its own data directory, HACS, the HA UI or other clients. Do not run both Stable and Deployment resource writers at the same time. Explicit confirmation and the final read reject observed conflicts, and there is never an automatic compensating write. A concurrent external writer can still change the resource between the final read and the write, or change it and restore identical metadata between reads. Similarly, an editable asset may change after its final hash check. The MCP confirmation does not lock out HA clients or authenticate separate operator consent. Leave all mutations in preview mode if other writers cannot be paused or the operator requires absolute protection. A guarantee against concurrent writes requires a conditional mutation enforced by HA Core or mutual exclusion enforced for all writers. This is a bounded best-effort concurrency contract, not an atomic API. The operator accepted this limitation for the controlled release acceptance; other installations must make their own risk decision.
+
+Backups from 0.5.0-dev.12 in `/share/ha-lovelace-resource-backups/` are outside the helper's trust boundary. Keep them for review if needed. The corrected helper does not import or apply these records.
+
+## Acceptance evidence and scope
+
+The isolated Developer dev.13 canary on 2026-11-28 exercised all four tools, including no-op, update, readback, rollback, delete, restore and cleanup. The resource count returned to 36; no Core restart was needed. See [CDX-01 acceptance](https://github.com/CaneTLOTW/ha-codex/issues/65#issuecomment-7238103644). This is not a guarantee that unrelated project-specific card assets load in every browser or that Stable is already installed. Each project must verify its own assets, registry entries and browser behavior independently. Historical project-specific acceptance is tracked in [HA_heimdall#147](https://github.com/CaneTLOTW/HA_heimdall/issues/147).
